@@ -3,27 +3,124 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitBtn = document.getElementById('submit-registration');
     const formMessage = document.getElementById('form-message');
 
+    let compressedPhotoBase64 = null;
+    const photoInput = document.getElementById('reg-photo');
+    const photoPreviewContainer = document.getElementById('photo-preview-container');
+    const photoPreview = document.getElementById('photo-preview');
+
+    if (photoInput) {
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 250;
+                    const MAX_HEIGHT = 250;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.6); // Compress to 60% quality JPEG
+                    photoPreview.src = compressedPhotoBase64;
+                    photoPreviewContainer.style.display = 'block';
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+    }
+
     if(form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Disable button and show loading state
+            if (!compressedPhotoBase64) {
+                alert("Please select a profile photo.");
+                return;
+            }
+            
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
             submitBtn.disabled = true;
             formMessage.innerHTML = '';
             formMessage.className = 'form-message';
 
-            // Gather Data
+            let finalAuditionLink = document.getElementById('reg-link').value || '';
+            const audioInput = document.getElementById('reg-audio');
+
+            // Handle Cloudinary Audio Upload if a file is selected
+            if (audioInput && audioInput.files.length > 0) {
+                const audioFile = audioInput.files[0];
+                
+                // 5MB Limit
+                if (audioFile.size > 5 * 1024 * 1024) {
+                    alert("The audio file must be less than 5MB. Please upload a smaller file or paste a link instead.");
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading MP3...';
+                
+                const formData = new FormData();
+                formData.append('file', audioFile);
+                formData.append('upload_preset', 'dijhnvmtt'); // Using provided string as preset
+
+                try {
+                    const uploadRes = await fetch('https://api.cloudinary.com/v1_1/dijhnvmtt/video/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const uploadData = await uploadRes.json();
+                    
+                    if (uploadData.secure_url) {
+                        finalAuditionLink = uploadData.secure_url;
+                    } else {
+                        console.error("Cloudinary Error:", uploadData);
+                        throw new Error("Invalid Upload Preset. Did you make an Unsigned preset named 'dijhnvmtt'?");
+                    }
+                } catch (error) {
+                    alert("Audio Upload Failed: " + error.message);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+            }
+
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Registration...';
+
             const participantData = {
                 name: document.getElementById('reg-name').value,
                 email: document.getElementById('reg-email').value,
                 phone: document.getElementById('reg-phone').value,
-                auditionLink: document.getElementById('reg-link').value,
+                auditionLink: finalAuditionLink,
                 bio: document.getElementById('reg-bio').value,
+                photoBase64: compressedPhotoBase64,
                 registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'pending', // For admin approval later
-                votes: 0
+                status: 'pending',
+                votes: 0,
+                judgeScore: 0
             };
 
             try {
@@ -118,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const card = document.createElement('div');
                 card.className = 'participant-card';
                 card.innerHTML = `
-                    <div class="participant-avatar">${data.name.charAt(0).toUpperCase()}</div>
+                    ${data.photoBase64 ? `<img src="${data.photoBase64}" class="participant-avatar-img" alt="${data.name}">` : `<div class="participant-avatar">${data.name.charAt(0).toUpperCase()}</div>`}
                     <h3 class="participant-name">${data.name}</h3>
                     <div class="participant-bio">${data.bio ? data.bio.substring(0, 60) + '...' : 'Aspiring Singer'}</div>
                     <div class="vote-stats"><i class="fa-solid fa-heart"></i> <span id="vote-count-${id}">${votes}</span></div>

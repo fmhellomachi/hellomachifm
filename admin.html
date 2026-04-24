@@ -81,14 +81,23 @@
             <a href="supersinger.html" class="btn btn-secondary" style="padding: 8px 16px;" target="_blank">View Live Portal <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
         </div>
 
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;" id="admin-tabs">
+            <button class="btn btn-primary" onclick="filterTable('all')">All</button>
+            <button class="btn btn-secondary" onclick="filterTable('pending')">Pending</button>
+            <button class="btn btn-secondary" onclick="filterTable('Round 1')">Round 1</button>
+            <button class="btn btn-secondary" onclick="filterTable('Round 2')">Round 2</button>
+            <button class="btn btn-secondary" onclick="filterTable('Round 3')">Round 3</button>
+            <button class="btn btn-secondary" onclick="filterTable('Final')">Final</button>
+        </div>
+
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Contact</th>
+                        <th>Photo</th>
+                        <th>Name & Contact</th>
                         <th>Audition</th>
-                        <th>Votes</th>
+                        <th>Votes & Score</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -99,6 +108,29 @@
                             <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Loading data...
                         </td>
                     </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Admin Settings (Only visible to Master Admin) -->
+        <div id="master-admin-section" style="display: none; margin-top: 60px; padding: 30px; background: rgba(255,0,85,0.05); border: 1px solid var(--secondary); border-radius: 16px;">
+            <h3 style="color: var(--secondary); margin-bottom: 20px;"><i class="fa-solid fa-user-shield"></i> Admin Settings (Master Access)</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Add or remove Gmail addresses that are authorized to view and manage this dashboard.</p>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="email" id="new-admin-email" placeholder="Enter Gmail Address" style="flex: 1; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; border-radius: 8px;">
+                <button class="btn btn-primary" onclick="addAdmin()" style="padding: 10px 20px;"><i class="fa-solid fa-plus"></i> Add Admin</button>
+            </div>
+
+            <table style="background: rgba(0,0,0,0.3); border-radius: 8px;">
+                <thead>
+                    <tr>
+                        <th>Authorized Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-list-body">
+                    <!-- Admin list injected via JS -->
                 </tbody>
             </table>
         </div>

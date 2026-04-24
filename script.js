@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             audioPlayer.play().catch(error => {
                 console.error("Audio playback failed:", error);
-                alert("Could not play the stream. Please check your connection or the stream URL.");
+                // Removed the alert so it doesn't annoy mobile users!
             });
             playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
             playerThumb.classList.add('playing');

@@ -753,6 +753,16 @@ footer {
     color: white;
 }
 
+.participant-avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary);
+    margin: 0 auto 15px;
+    display: block;
+}
+
 .participant-name {
     font-size: 1.4rem;
     font-weight: 700;
@@ -803,4 +813,17 @@ footer {
 .vote-btn.voted {
     background: var(--primary);
     color: #000;
+}
+
+/* --- Mobile Responsiveness Guarantee --- */
+@media (max-width: 768px) {
+    .hero-title { font-size: 3.5rem; line-height: 1.1; }
+    .hero-subtitle { font-size: 1rem; padding: 0 10px; }
+    .hero-actions { flex-direction: column; gap: 15px; }
+    .floating-player-wrapper { bottom: 10px; }
+    .floating-player { width: 95%; padding: 10px; flex-direction: column; gap: 10px; border-radius: 16px; }
+    .player-info { width: 100%; justify-content: center; }
+    .player-controls { width: 100%; justify-content: space-between; }
+    .volume-wrapper { display: none; }
+    .nav-links { display: none; }
 }

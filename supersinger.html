@@ -103,11 +103,24 @@
                 </div>
                 <div class="form-group">
                     <label for="reg-phone"><i class="fa-solid fa-phone"></i> WhatsApp Number</label>
-                    <input type="tel" id="reg-phone" required placeholder="+91 98765 43210">
+                    <input type="tel" id="reg-phone" placeholder="Enter your 10-digit number" required>
                 </div>
                 <div class="form-group">
-                    <label for="reg-link"><i class="fa-solid fa-link"></i> Audition Link (Google Drive/YouTube)</label>
-                    <input type="url" id="reg-link" required placeholder="Paste link to your 1-min singing clip">
+                    <label for="reg-photo"><i class="fa-solid fa-camera"></i> Profile Photo (Required)</label>
+                    <input type="file" id="reg-photo" accept="image/*" required style="background: rgba(255,255,255,0.05); padding: 10px;">
+                    <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 5px; display: block;">We will compress this automatically for fast loading.</small>
+                    <div id="photo-preview-container" style="display:none; margin-top:10px; text-align:center;">
+                        <img id="photo-preview" src="" style="width:100px; height:100px; object-fit:cover; border-radius:50%; border:2px solid var(--primary);">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reg-audio"><i class="fa-solid fa-music"></i> Upload Audition MP3 (Max 5MB)</label>
+                    <input type="file" id="reg-audio" accept="audio/*" style="background: rgba(255,255,255,0.05); padding: 10px;">
+                    <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 5px; display: block;">Optional: Upload an MP3, or paste a link below.</small>
+                </div>
+                <div class="form-group">
+                    <label for="reg-link"><i class="fa-solid fa-link"></i> Audition Link</label>
+                    <input type="url" id="reg-link" placeholder="Google Drive, YouTube, or Insta Link">
                 </div>
                 <div class="form-group">
                     <label for="reg-bio"><i class="fa-solid fa-pen"></i> Short Bio (Optional)</label>
@@ -130,6 +143,17 @@
             <p>Log in with Google to cast your vote and support the best singers!</p>
         </div>
         
+        <!-- How to Vote Banner -->
+        <div style="background: rgba(0, 210, 255, 0.1); border: 1px solid var(--primary); padding: 20px; border-radius: 16px; margin-bottom: 40px; text-align: left;">
+            <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-circle-info"></i> How the Selection Works</h3>
+            <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; padding-left: 20px;">
+                <li><strong>Step 1:</strong> Click "Sign In with Google" below to authenticate your identity (prevents spam).</li>
+                <li><strong>Step 2:</strong> Browse the participants currently active in this Round.</li>
+                <li><strong>Step 3:</strong> Click the <b>Vote Now</b> button on your favorite singer.</li>
+                <li style="color: white; margin-top: 10px;"><em>Note: The final selection is a combination of your Audience Votes PLUS Marks given by our live Judges (on a scale of 1 to 10)!</em></li>
+            </ul>
+        </div>
+
         <!-- Auth Container -->
         <div id="auth-container" style="text-align: center; margin-bottom: 40px;">
             <button id="google-login-btn" class="btn btn-secondary" style="background: white; color: black; font-weight: bold;">

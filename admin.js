@@ -1,58 +1,58 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const loginBtn = document.getElementById('admin-login-btn');
-    const logoutBtn = document.getElementById('admin-logout-btn');
-    const adminUserInfo = document.getElementById('admin-user-info');
-    const adminName = document.getElementById('admin-name');
-    const adminContent = document.getElementById('admin-content');
-    const lockedContent = document.getElementById('locked-content');
-    const tableBody = document.getElementById('participants-table-body');
+    // --- SAFE SELECTORS ---
+    const getEl = (id) => document.getElementById(id);
+    
+    const loginBtn = getEl('admin-login-btn');
+    const logoutBtn = getEl('admin-logout-btn');
+    const adminUserInfo = getEl('admin-user-info');
+    const adminName = getEl('admin-name');
+    const adminContent = getEl('admin-content');
+    const lockedContent = getEl('locked-content');
+    const tableBody = getEl('participants-table-body');
+    const masterAdminSection = getEl('master-admin-section');
+    const adminListBody = getEl('admin-list-body');
 
     const provider = new firebase.auth.GoogleAuthProvider();
     let currentFilter = 'all';
 
-    const masterAdminSection = document.getElementById('master-admin-section');
-    const adminListBody = document.getElementById('admin-list-body');
+    // Ensure Firebase is ready
+    if (!firebase || !auth || !db) {
+        console.error("Firebase not initialized correctly.");
+        return;
+    }
 
     // Setup Auth Listener
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             let isAuthorized = false;
-            let isMaster = false;
+            let isMaster = (user.email === 'fmhellomachi@gmail.com');
 
-            if (user.email === 'fmhellomachi@gmail.com') {
+            if (isMaster) {
                 isAuthorized = true;
-                isMaster = true;
             } else {
                 try {
                     const adminDoc = await db.collection('admins').doc(user.email).get();
                     if (adminDoc.exists) isAuthorized = true;
-                } catch (err) { console.error(err); }
+                } catch (err) { console.error("Admin check failed", err); }
             }
 
             if (isAuthorized) {
-                loginBtn.style.display = 'none';
-                adminUserInfo.style.display = 'flex';
-                adminName.textContent = user.displayName;
-                lockedContent.style.display = 'none';
-                adminContent.style.display = 'block';
+                if(loginBtn) loginBtn.style.display = 'none';
+                if(adminUserInfo) adminUserInfo.style.display = 'flex';
+                if(adminName) adminName.textContent = user.displayName;
+                if(lockedContent) lockedContent.style.display = 'none';
+                if(adminContent) adminContent.style.display = 'block';
                 
                 switchMainTab('participants');
-
-                if (isMaster) {
-                    masterAdminSection.style.display = 'block';
-                    fetchAdminsList();
-                } else {
-                    masterAdminSection.style.display = 'none';
-                }
             } else {
                 auth.signOut();
-                alert("Access Denied.");
+                alert("Access Denied: " + user.email);
             }
         } else {
-            loginBtn.style.display = 'block';
-            adminUserInfo.style.display = 'none';
-            lockedContent.style.display = 'block';
-            adminContent.style.display = 'none';
+            if(loginBtn) loginBtn.style.display = 'block';
+            if(adminUserInfo) adminUserInfo.style.display = 'none';
+            if(lockedContent) lockedContent.style.display = 'block';
+            if(adminContent) adminContent.style.display = 'none';
         }
     });
 
@@ -60,347 +60,254 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) logoutBtn.addEventListener('click', () => auth.signOut());
 
     window.switchMainTab = (tabId) => {
-        // Hide all panels
-        document.querySelectorAll('.main-panel').forEach(p => p.style.display = 'none');
-        document.getElementById('view-cms').style.display = 'none';
-        document.getElementById('master-admin-section').style.display = 'none';
-        document.getElementById('live-control-panel').style.display = 'none';
+        console.log("Switching to tab:", tabId);
+        
+        // Panels to toggle
+        const panels = {
+            'participants': getEl('participants-panel'),
+            'cms': getEl('view-cms'),
+            'admins': getEl('master-admin-section'),
+            'live-control': getEl('live-control-panel'),
+            'leaderboard': getEl('leaderboard-panel')
+        };
 
-        // Show selected panel
-        if (tabId === 'participants') {
-            document.getElementById('participants-panel').style.display = 'block';
-            fetchAdminData();
-        } else if (tabId === 'cms') {
-            document.getElementById('view-cms').style.display = 'block';
-            fetchCMS();
-        } else if (tabId === 'leaderboard') {
-            document.getElementById('leaderboard-panel').style.display = 'block';
-            calculateLeaderboard();
-        } else if (tabId === 'admins') {
-            document.getElementById('master-admin-section').style.display = 'block';
-            fetchAdminsList();
-        } else if (tabId === 'live-control') {
-            document.getElementById('live-control-panel').style.display = 'block';
-            fetchParticipantsForLive();
-            listenToLiveStats();
+        // Hide all
+        Object.values(panels).forEach(p => { if(p) p.style.display = 'none'; });
+
+        // Show target
+        if (panels[tabId]) {
+            panels[tabId].style.display = 'block';
+            if (tabId === 'participants') fetchAdminData();
+            if (tabId === 'cms') fetchCMS();
+            if (tabId === 'admins') fetchAdminsList();
+            if (tabId === 'live-control') { fetchParticipantsForLive(); listenToLiveStats(); }
+            if (tabId === 'leaderboard') calculateLeaderboard();
         }
 
-        // Update active button state
-        document.querySelectorAll('#admin-content .btn').forEach(btn => {
+        // Update Button States
+        document.querySelectorAll('#admin-content .btn, #admin-content li.btn').forEach(btn => {
             btn.classList.remove('btn-primary');
             btn.classList.add('btn-secondary');
         });
-        // Find the button that was clicked (based on tabId)
-        const clickedBtn = Array.from(document.querySelectorAll('#admin-content li')).find(li => li.getAttribute('onclick').includes(tabId));
-        if (clickedBtn) {
-            clickedBtn.classList.add('btn-primary');
-            clickedBtn.classList.remove('btn-secondary');
+
+        // Find the active tab button
+        const activeBtn = Array.from(document.querySelectorAll('#admin-content li, #admin-content .btn'))
+            .find(el => el.getAttribute('onclick') && el.getAttribute('onclick').includes(tabId));
+        if (activeBtn) {
+            activeBtn.classList.add('btn-primary');
+            activeBtn.classList.remove('btn-secondary');
         }
     };
 
     // --- Live Control Room Logic ---
     async function fetchParticipantsForLive() {
-        const s1 = document.getElementById('live-singer-1');
-        const s2 = document.getElementById('live-singer-2');
+        const s1 = getEl('live-singer-1');
+        const s2 = getEl('live-singer-2');
         if (!s1 || !s2) return;
 
-        s1.innerHTML = '<option value="">Loading participants...</option>';
-        s2.innerHTML = '<option value="">Loading participants...</option>';
+        s1.innerHTML = '<option value="">Loading...</option>';
+        s2.innerHTML = '<option value="">Loading...</option>';
 
         try {
-            // Fetch ALL participants so the list is never empty
             const snap = await db.collection('participants').orderBy('name', 'asc').get();
-            
             let options = '<option value="">-- Select Participant --</option>';
             snap.forEach(doc => {
                 const data = doc.data();
                 options += `<option value="${doc.id}">${data.name} (${data.status})</option>`;
             });
-
             s1.innerHTML = options;
-            s2.innerHTML = options.replace('-- Select Participant --', '-- Select Secondary (Optional) --');
+            s2.innerHTML = options.replace('-- Select Participant --', '-- Optional Secondary --');
 
-            // Pre-fill current live state
             const stateDoc = await db.collection('live_state').doc('current').get();
             if (stateDoc.exists) {
                 const state = stateDoc.data();
-                document.getElementById('live-round').value = state.round || "1";
+                if(getEl('live-round')) getEl('live-round').value = state.round || "1";
                 s1.value = state.singer1 || "";
                 s2.value = state.singer2 || "";
                 updateVotingUI(state.votingOpen);
             }
-        } catch (err) {
-            console.error("Live fetch error:", err);
-            s1.innerHTML = '<option value="">Error loading data</option>';
-        }
+        } catch (err) { console.error(err); }
     }
 
     window.updateLiveState = async (status) => {
-        const round = document.getElementById('live-round').value;
-        const singer1 = document.getElementById('live-singer-1').value;
-        const singer2 = document.getElementById('live-singer-2').value;
+        const round = getEl('live-round').value;
+        const s1 = getEl('live-singer-1').value;
+        const s2 = getEl('live-singer-2').value;
 
-        if (!singer1 && status === 'on-air') {
-            alert("Please select at least one singer!");
-            return;
-        }
+        if (!s1 && status === 'on-air') { alert("Select a singer!"); return; }
 
         try {
             await db.collection('live_state').doc('current').set({
-                status: status,
-                round: round,
-                singer1: singer1,
-                singer2: singer2,
-                votingOpen: false, // Always close voting when changing singers
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                status: status, round: round, singer1: s1, singer2: s2,
+                votingOpen: false, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            // Clear previous votes when starting a new performance
-            const voteSnap = await db.collection('live_votes').get();
+            // Clear current live votes
+            const vSnap = await db.collection('live_votes').get();
             const batch = db.batch();
-            voteSnap.docs.forEach(doc => batch.delete(doc.ref));
+            vSnap.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
 
-            alert("Live Stage Updated!");
+            alert("Stage Updated!");
             updateVotingUI(false);
         } catch (err) { console.error(err); }
     };
 
     window.toggleVoting = async (isOpen) => {
         try {
-            await db.collection('live_state').doc('current').update({
-                votingOpen: isOpen
-            });
+            await db.collection('live_state').doc('current').update({ votingOpen: isOpen });
             updateVotingUI(isOpen);
         } catch (err) { console.error(err); }
     };
 
-    window.resetLiveState = () => {
-        if(confirm("Reset the stage? This will clear all live data.")) {
-            updateLiveState('idle');
-        }
-    };
+    window.resetLiveState = () => { if(confirm("Reset Stage?")) updateLiveState('idle'); };
 
     function updateVotingUI(isOpen) {
-        const badge = document.getElementById('voting-status-badge');
-        if (isOpen) {
-            badge.innerHTML = 'Status: <strong style="color:#28a745;">OPEN</strong>';
-            badge.style.background = 'rgba(40, 167, 69, 0.1)';
-        } else {
-            badge.innerHTML = 'Status: <strong style="color:#dc3545;">CLOSED</strong>';
-            badge.style.background = 'rgba(220, 53, 69, 0.1)';
-        }
+        const badge = getEl('voting-status-badge');
+        if(!badge) return;
+        badge.innerHTML = isOpen ? 'Status: <strong style="color:#28a745;">OPEN</strong>' : 'Status: <strong style="color:#dc3545;">CLOSED</strong>';
+        badge.style.background = isOpen ? 'rgba(40,167,69,0.1)' : 'rgba(220,53,69,0.1)';
     }
 
-    let statsUnsubscribe = null;
+    let statsUnsub = null;
     function listenToLiveStats() {
-        if (statsUnsubscribe) statsUnsubscribe();
-        
-        statsUnsubscribe = db.collection('live_votes').onSnapshot(snap => {
+        if (statsUnsub) statsUnsub();
+        statsUnsub = db.collection('live_votes').onSnapshot(snap => {
             const count = snap.size;
             let total = 0;
             snap.forEach(doc => total += doc.data().score);
-            const avg = count > 0 ? (total / count).toFixed(1) : "0.0";
-
-            document.getElementById('stat-total-votes').textContent = count;
-            document.getElementById('stat-avg-score').textContent = avg;
+            if(getEl('stat-total-votes')) getEl('stat-total-votes').textContent = count;
+            if(getEl('stat-avg-score')) getEl('stat-avg-score').textContent = count > 0 ? (total/count).toFixed(1) : "0.0";
         });
     }
 
-    // --- Original Participant Logic ---
+    // --- Participants Logic ---
     async function fetchAdminData() {
+        if (!tableBody) return;
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading participants...</td></tr>';
         try {
-            let q = db.collection("participants").orderBy("registeredAt", "desc");
-            const querySnapshot = await q.get();
+            const snap = await db.collection("participants").orderBy("registeredAt", "desc").get();
             tableBody.innerHTML = '';
-            querySnapshot.forEach((doc) => {
+            snap.forEach((doc) => {
                 const data = doc.data();
                 const id = doc.id;
                 if (currentFilter !== 'all' && data.status !== currentFilter) return;
                 const tr = document.createElement('tr');
-                let badgeClass = data.status === 'pending' ? 'badge-pending' : 'badge-approved';
-                const waPhone = data.phone.replace(/[^0-9]/g, '');
+                let bClass = data.status === 'pending' ? 'badge-pending' : 'badge-approved';
+                const ph = data.phone.replace(/[^0-9]/g, '');
                 tr.innerHTML = `
-                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" class="singer-preview" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;color:white;display:flex;align-items:center;justify-content:center;">${data.name.charAt(0)}</div>`}</td>
-                    <td data-label="NAME"><strong>${data.name}</strong><br><a href="https://wa.me/${waPhone}" target="_blank" style="color:#25D366;text-decoration:none;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> ${data.phone}</a></td>
+                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;">${data.name.charAt(0)}</div>`}</td>
+                    <td data-label="NAME"><strong>${data.name}</strong><br><a href="https://wa.me/${ph}" target="_blank" style="color:#25D366;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> ${data.phone}</a></td>
                     <td data-label="EMAIL" style="font-size:0.85rem;color:var(--text-muted);">${data.email || 'N/A'}</td>
-                    <td data-label="LINK">${data.auditionLink ? `<a href="${data.auditionLink}" target="_blank" style="color:var(--primary);text-decoration:none;"><i class="fa-solid fa-play"></i> Link</a>` : '<span style="color:#666;">None</span>'}</td>
-                    <td data-label="SCORE">
-                        <div style="display:flex;align-items:center;gap:5px;">
-                            <input type="number" min="0" max="10" value="${data.judgeScore || 0}" id="score-${id}" style="width:50px;background:rgba(0,0,0,0.5);color:white;border:1px solid #444;padding:2px 5px;border-radius:4px;">
-                            <button onclick="saveScore('${id}')" style="background:var(--primary);border:none;border-radius:4px;padding:2px 5px;cursor:pointer;"><i class="fa-solid fa-save"></i></button>
-                        </div>
-                    </td>
-                    <td data-label="STATUS"><span class="badge ${badgeClass}">${data.status.toUpperCase()}</span></td>
+                    <td data-label="LINK">${data.auditionLink ? `<a href="${data.auditionLink}" target="_blank" style="color:var(--primary);"><i class="fa-solid fa-play"></i> Link</a>` : 'None'}</td>
+                    <td data-label="SCORE"><div style="display:flex;gap:5px;"><input type="number" value="${data.judgeScore||0}" id="sc-${id}" style="width:45px;background:#222;color:white;border:1px solid #444;"><button onclick="saveScore('${id}')" style="background:var(--primary);border:none;padding:2px 5px;"><i class="fa-solid fa-save"></i></button></div></td>
+                    <td data-label="STATUS"><span class="badge ${bClass}">${data.status.toUpperCase()}</span></td>
                     <td data-label="ACTIONS">
-                        <select onchange="updateStatus('${id}', this.value)" style="background:rgba(0,0,0,0.5);color:white;border:1px solid #444;padding:5px;border-radius:4px;">
-                            <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
-                            <option value="Round 1" ${data.status === 'Round 1' ? 'selected' : ''}>Round 1</option>
-                            <option value="Round 2" ${data.status === 'Round 2' ? 'selected' : ''}>Round 2</option>
-                            <option value="Round 3" ${data.status === 'Round 3' ? 'selected' : ''}>Round 3</option>
-                            <option value="Final" ${data.status === 'Final' ? 'selected' : ''}>Final</option>
+                        <select onchange="updateStatus('${id}', this.value)" style="background:#222;color:white;border:1px solid #444;padding:4px;">
+                            <option value="pending" ${data.status==='pending'?'selected':''}>Pending</option>
+                            <option value="Round 1" ${data.status==='Round 1'?'selected':''}>Round 1</option>
+                            <option value="Round 2" ${data.status==='Round 2'?'selected':''}>Round 2</option>
+                            <option value="Final" ${data.status==='Final'?'selected':''}>Final</option>
                         </select>
                         <button class="action-btn btn-danger" onclick="deleteParticipant('${id}')"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tableBody.appendChild(tr);
             });
-        } catch (error) { console.error(error); }
+        } catch (e) { console.error(e); }
     }
 
     window.saveScore = async (id) => {
-        const score = parseFloat(document.getElementById(`score-${id}`).value) || 0;
-        try {
-            await db.collection("participants").doc(id).update({ judgeScore: score });
-            alert("Score saved!");
-        } catch (err) { console.error(err); }
+        const sc = parseFloat(getEl(`sc-${id}`).value) || 0;
+        try { await db.collection("participants").doc(id).update({ judgeScore: sc }); alert("Saved!"); } catch(e){}
     };
 
-    window.updateStatus = async (id, newStatus) => {
-        try {
-            await db.collection("participants").doc(id).update({ status: newStatus });
-            fetchAdminData();
-        } catch (err) { console.error(err); }
+    window.updateStatus = async (id, s) => {
+        try { await db.collection("participants").doc(id).update({ status: s }); fetchAdminData(); } catch(e){}
     };
 
     window.deleteParticipant = async (id) => {
-        if(!confirm("Are you sure?")) return;
-        try {
-            await db.collection("participants").doc(id).delete();
-            fetchAdminData();
-        } catch (err) { console.error(err); }
+        if(confirm("Delete?")) { await db.collection("participants").doc(id).delete(); fetchAdminData(); }
     };
 
-    // --- Admin Management ---
-    async function fetchAdminsList() {
-        try {
-            const snap = await db.collection("admins").get();
-            adminListBody.innerHTML = '';
-            snap.forEach((doc) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${doc.id}</td><td><button class="action-btn btn-danger" onclick="removeAdmin('${doc.id}')"><i class="fa-solid fa-trash"></i></button></td>`;
-                adminListBody.appendChild(tr);
-            });
-        } catch (err) { console.error(err); }
-    }
-
-    window.addAdmin = async () => {
-        const email = document.getElementById('new-admin-email').value.trim().toLowerCase();
-        if (!email.includes('@')) return;
-        try {
-            await db.collection("admins").doc(email).set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            fetchAdminsList();
-        } catch (err) { console.error(err); }
-    };
-
-    window.removeAdmin = async (email) => {
-        if(!confirm("Remove?")) return;
-        try {
-            await db.collection("admins").doc(email).delete();
-            fetchAdminsList();
-        } catch (err) { console.error(err); }
-    };
-
-    // --- CMS Logic ---
-    let scheduleBlocksData = [];
-    async function fetchCMS() {
-        const doc = await db.collection('cms').doc('homepage').get();
-        if (doc.exists) {
-            const data = doc.data();
-            document.getElementById('cms-hero-title').value = data.heroTitle || '';
-            document.getElementById('cms-hero-subtitle').value = data.heroSubtitle || '';
-            scheduleBlocksData = data.scheduleBlocks || [];
-            renderScheduleBlocks();
-        }
-    }
-
-    window.saveCMS = async () => {
-        try {
-            await db.collection('cms').doc('homepage').set({
-                heroTitle: document.getElementById('cms-hero-title').value,
-                heroSubtitle: document.getElementById('cms-hero-subtitle').value,
-                scheduleBlocks: scheduleBlocksData,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            alert("Homepage updated!");
-        } catch (err) { console.error(err); }
-    };
-
-    window.addScheduleBlock = () => {
-        const t = document.getElementById('new-schedule-time').value;
-        const tt = document.getElementById('new-schedule-title').value;
-        const rj = document.getElementById('new-schedule-rj').value;
-        if (!t || !tt) return;
-        scheduleBlocksData.push({ time: t, title: tt, rj: rj });
-        renderScheduleBlocks();
-    };
-
-    window.removeScheduleBlock = (i) => {
-        scheduleBlocksData.splice(i, 1);
-        renderScheduleBlocks();
-    };
-
-    function renderScheduleBlocks() {
-        const list = document.getElementById('cms-schedule-list');
-        list.innerHTML = '';
-        scheduleBlocksData.forEach((block, i) => {
-            const div = document.createElement('div');
-            div.className = 'cms-schedule-item';
-            div.innerHTML = `<span>${block.time} - ${block.title} (RJ: ${block.rj})</span> <button onclick="removeScheduleBlock(${i})"><i class="fa-solid fa-trash"></i></button>`;
-            list.appendChild(div);
-        });
-    }
+    // --- Leaderboard ---
     async function calculateLeaderboard() {
-        const body = document.getElementById('leaderboard-body');
-        if (!body) return;
-        body.innerHTML = '<tr><td colspan="6" style="text-align:center;">Calculating scores...</td></tr>';
-
+        const body = getEl('leaderboard-body');
+        if(!body) return;
+        body.innerHTML = '<tr><td colspan="6">Calculating...</td></tr>';
         try {
-            const participantsSnap = await db.collection('participants').get();
-            const votesSnap = await db.collection('live_votes').get();
-            
-            const results = [];
-
-            participantsSnap.forEach(doc => {
+            const pSnap = await db.collection('participants').get();
+            const vSnap = await db.collection('live_votes').get();
+            const res = [];
+            pSnap.forEach(doc => {
                 const p = doc.data();
-                const id = doc.id;
-                
-                const pVotes = votesSnap.docs.filter(v => v.data().singerId === id).map(v => v.data().score);
-                const audienceAvg = pVotes.length > 0 ? (pVotes.reduce((a,b) => a+b, 0) / pVotes.length) : 0;
-                
-                const judgeScore = p.judgeScore || 0;
-                const totalScore = (judgeScore * 6) + (audienceAvg * 4); // 60/40 Weight
-
-                results.push({
-                    name: p.name,
-                    photo: p.photoBase64,
-                    judgeScore: judgeScore,
-                    audienceAvg: audienceAvg.toFixed(1),
-                    totalScore: totalScore.toFixed(1),
-                    status: p.status
-                });
+                const v = vSnap.docs.filter(d => d.data().singerId === doc.id).map(d => d.data().score);
+                const aud = v.length > 0 ? (v.reduce((a,b)=>a+b,0)/v.length) : 0;
+                res.push({ name: p.name, photo: p.photoBase64, judge: p.judgeScore||0, audience: aud, status: p.status });
             });
-
-            results.sort((a,b) => b.totalScore - a.totalScore);
-
+            res.sort((a,b) => (b.judge*6 + b.audience*4) - (a.judge*6 + a.audience*4));
             body.innerHTML = '';
-            results.forEach((res, index) => {
+            res.forEach((r, i) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td data-label="RANK" style="font-size:1.5rem; font-weight:800; color:var(--primary);">#${index + 1}</td>
-                    <td data-label="SINGER">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <img src="${res.photo || 'logo.jpg'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                            <strong>${res.name}</strong>
-                        </div>
-                    </td>
-                    <td data-label="JUDGE">${res.judgeScore}</td>
-                    <td data-label="AUDIENCE">${res.audienceAvg}</td>
-                    <td data-label="TOTAL"><strong style="color:var(--secondary); font-size:1.2rem;">${res.totalScore}</strong></td>
-                    <td data-label="STATUS"><span class="badge ${res.status === 'Eliminated' ? 'badge-pending' : 'badge-approved'}">${res.status}</span></td>
-                `;
+                tr.innerHTML = `<td data-label="RANK">#${i+1}</td><td data-label="SINGER">${r.name}</td><td data-label="JUDGE">${r.judge}</td><td data-label="AUDIENCE">${r.audience.toFixed(1)}</td><td data-label="TOTAL"><strong>${(r.judge*6 + r.audience*4).toFixed(1)}</strong></td><td data-label="STATUS">${r.status}</td>`;
                 body.appendChild(tr);
             });
-        } catch (err) { console.error(err); }
+        } catch(e){}
     }
+
+    // --- CMS ---
+    let scheduleData = [];
+    async function fetchCMS() {
+        const doc = await db.collection('cms').doc('homepage').get();
+        if(doc.exists) {
+            getEl('cms-hero-title').value = doc.data().heroTitle || '';
+            getEl('cms-hero-subtitle').value = doc.data().heroSubtitle || '';
+            scheduleData = doc.data().scheduleBlocks || [];
+            renderSchedule();
+        }
+    }
+    window.saveCMS = async () => {
+        await db.collection('cms').doc('homepage').set({
+            heroTitle: getEl('cms-hero-title').value,
+            heroSubtitle: getEl('cms-hero-subtitle').value,
+            scheduleBlocks: scheduleData
+        }, {merge:true});
+        alert("Saved!");
+    };
+    window.addScheduleBlock = () => {
+        scheduleData.push({ time: getEl('new-schedule-time').value, title: getEl('new-schedule-title').value, rj: getEl('new-schedule-rj').value });
+        renderSchedule();
+    };
+    window.removeScheduleBlock = (i) => { scheduleData.splice(i,1); renderSchedule(); };
+    function renderSchedule() {
+        const list = getEl('cms-schedule-list');
+        list.innerHTML = '';
+        scheduleData.forEach((s, i) => {
+            const d = document.createElement('div');
+            d.innerHTML = `${s.time} - ${s.title} <button onclick="removeScheduleBlock(${i})">X</button>`;
+            list.appendChild(d);
+        });
+    }
+
+    // --- Admins ---
+    async function fetchAdminsList() {
+        const snap = await db.collection("admins").get();
+        if(adminListBody) {
+            adminListBody.innerHTML = '';
+            snap.forEach(doc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${doc.id}</td><td><button onclick="removeAdmin('${doc.id}')">X</button></td>`;
+                adminListBody.appendChild(tr);
+            });
+        }
+    }
+    window.addAdmin = async () => {
+        const e = getEl('new-admin-email').value;
+        await db.collection("admins").doc(e).set({addedAt: firebase.firestore.FieldValue.serverTimestamp()});
+        fetchAdminsList();
+    };
+    window.removeAdmin = async (e) => {
+        await db.collection("admins").doc(e).delete();
+        fetchAdminsList();
+    };
 });

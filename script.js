@@ -1,74 +1,139 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Audio Player Logic ---
-    const audioPlayer = document.getElementById('azuracast-player');
+    // --- Audio Control System ---
+    const audio = document.getElementById('azuracast-player');
     const playPauseBtn = document.getElementById('play-pause-btn');
     const heroPlayBtn = document.getElementById('play-hero-btn');
     const volumeSlider = document.getElementById('volume-slider');
+    const tapOverlay = document.getElementById('tap-to-play-overlay');
     const playerThumb = document.querySelector('.player-thumb');
-    
-    let isPlaying = false;
+    const statusLabel = document.querySelector('.now-playing-label');
 
-    function togglePlay() {
-        if (isPlaying) {
-            audioPlayer.pause();
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-            playerThumb.classList.remove('playing');
-        } else {
-            // Force load the stream if needed
-            if (audioPlayer.readyState === 0) {
-                audioPlayer.load();
-            }
-            audioPlayer.play().catch(error => {
-                console.error("Audio playback failed:", error);
-                // Removed the alert so it doesn't annoy mobile users!
-            });
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-            playerThumb.classList.add('playing');
+    function updateUIState(isPlaying) {
+        const iconClass = isPlaying ? 'fa-pause' : 'fa-play';
+        const labelText = isPlaying ? 'PLAYING LIVE' : 'STREAMING LIVE';
+        
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+            playPauseBtn.className = `control-btn ${isPlaying ? 'pause-btn' : 'play-btn'}`;
         }
-        isPlaying = !isPlaying;
+        
+        if (heroPlayBtn) {
+            heroPlayBtn.innerHTML = `<i class="fa-solid ${iconClass}"></i> ${isPlaying ? 'STOP LISTENING' : 'LISTEN LIVE'}`;
+        }
+
+        if (statusLabel) {
+            statusLabel.textContent = labelText;
+        }
+
+        if (playerThumb) {
+            if (isPlaying) playerThumb.classList.add('playing');
+            else playerThumb.classList.remove('playing');
+        }
+
+        // Animated visualizer bars
+        document.querySelectorAll('.visualizer span').forEach(span => {
+            span.style.animationPlayState = isPlaying ? 'running' : 'paused';
+        });
     }
 
-    // Event Listeners for Play Buttons
-    playPauseBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        togglePlay();
-    });
-    
-    heroPlayBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if(!isPlaying) togglePlay();
-        // Scroll to player or visually indicate it's playing
-        const playerElement = document.querySelector('.floating-player');
-        if (playerElement) {
-            playerElement.style.transform = 'translateX(-50%) scale(1.05)';
-            setTimeout(() => {
-                playerElement.style.transform = 'translateX(-50%) scale(1)';
-            }, 300);
+    async function togglePlay() {
+        if (audio.paused) {
+            try {
+                await audio.play();
+                updateUIState(true);
+                if(tapOverlay) tapOverlay.style.display = 'none';
+            } catch (err) {
+                console.error("Autoplay/Play blocked:", err);
+                if(tapOverlay) tapOverlay.style.display = 'flex';
+            }
+        } else {
+            audio.pause();
+            updateUIState(false);
         }
+    }
+
+    if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlay);
+    if (heroPlayBtn) heroPlayBtn.addEventListener('click', togglePlay);
+    if (tapOverlay) tapOverlay.addEventListener('click', togglePlay);
+
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', (e) => {
+            audio.volume = e.target.value;
+        });
+    }
+
+    // --- Live Chat System ---
+    const socket = io('https://hello-machi-backend.onrender.com');
+    const chatToggle = document.getElementById('chat-toggle-btn');
+    const chatWindow = document.getElementById('chat-window');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const chatSend = document.getElementById('chat-send-btn');
+    
+    let chatUsername = localStorage.getItem('chat_username') || ('Listener_' + Math.floor(Math.random() * 9000 + 1000));
+
+    window.toggleChat = () => {
+        const isOpen = chatWindow.style.display === 'flex';
+        chatWindow.style.display = isOpen ? 'none' : 'flex';
+        if (!isOpen) {
+            chatInput.focus();
+        }
+    };
+
+    if (chatToggle) chatToggle.addEventListener('click', toggleChat);
+
+    function addMessageToUI(data) {
+        const div = document.createElement('div');
+        const isMe = data.user === chatUsername;
+        div.style.alignSelf = isMe ? 'flex-end' : 'flex-start';
+        div.style.maxWidth = '80%';
+        div.style.background = isMe ? 'var(--primary)' : 'rgba(255,255,255,0.1)';
+        div.style.color = isMe ? 'black' : 'white';
+        div.style.padding = '8px 12px';
+        div.style.borderRadius = isMe ? '15px 15px 0 15px' : '15px 15px 15px 0';
+        div.style.fontSize = '0.9rem';
+        div.style.wordBreak = 'break-word';
+        
+        div.innerHTML = `
+            <div style="font-size:0.7rem; opacity:0.7; font-weight:bold; margin-bottom:2px;">${data.user}</div>
+            <div>${data.text}</div>
+        `;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Existing Backend Events
+    socket.on('new_message', (data) => {
+        addMessageToUI(data);
     });
 
-    // Volume Control
-    volumeSlider.addEventListener('input', (e) => {
-        audioPlayer.volume = e.target.value;
+    socket.on('chat_history', (history) => {
+        chatMessages.innerHTML = '';
+        history.forEach(addMessageToUI);
     });
 
-    // Update state if audio ends or stalls
-    audioPlayer.addEventListener('pause', () => {
-        isPlaying = false;
-        playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-        playerThumb.classList.remove('playing');
-    });
+    async function sendMessage() {
+        const text = chatInput.value.trim();
+        if (!text) return;
 
-    audioPlayer.addEventListener('playing', () => {
-        isPlaying = true;
-        playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-        playerThumb.classList.add('playing');
-    });
+        const msgData = {
+            user: chatUsername,
+            text: text
+        };
 
+        // Emit via Socket (The backend will handle saving to Firestore once you update it)
+        socket.emit('send_message', msgData);
+        chatInput.value = '';
+    }
 
-    // --- Dynamic CMS Data Fetching ---
+    if (chatSend) chatSend.addEventListener('click', sendMessage);
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    }
+
+    // --- Website CMS Logic ---
     async function loadCMSData() {
         try {
             const doc = await db.collection('cms').doc('homepage').get();
@@ -113,7 +178,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadCMSData();
 
-    // --- Smooth Scrolling for Anchor Links ---
+    // --- Homepage Live Banner Logic ---
+    const voteBanner = document.getElementById('live-vote-banner');
+    const bannerSinger = document.getElementById('banner-singer-name');
+
+    if (voteBanner) {
+        db.collection('live_state').doc('current').onSnapshot(doc => {
+            const state = doc.data();
+            if (state && state.status === 'on-air' && state.votingOpen) {
+                // Fetch singer name for the banner
+                db.collection('participants').doc(state.singer1).get().then(pDoc => {
+                    if (pDoc.exists) {
+                        bannerSinger.textContent = pDoc.data().name.toUpperCase();
+                        voteBanner.style.display = 'block';
+                    }
+                });
+            } else {
+                voteBanner.style.display = 'none';
+            }
+        });
+    }
+
+    // --- General UI ---
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
@@ -123,14 +209,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetElement = document.querySelector(targetId);
             if (targetElement) {
                 window.scrollTo({
-                    top: targetElement.offsetTop - 70, // Offset for fixed navbar
+                    top: targetElement.offsetTop - 70,
                     behavior: 'smooth'
                 });
             }
         });
     });
 
-    // --- Navbar Scroll Effect ---
     window.addEventListener('scroll', () => {
         const navbar = document.querySelector('.navbar');
         if (window.scrollY > 50) {

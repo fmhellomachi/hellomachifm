@@ -65,7 +65,22 @@ document.addEventListener('DOMContentLoaded', () => {
             formMessage.innerHTML = '';
             formMessage.className = 'form-message';
 
-            let finalAuditionLink = document.getElementById('reg-link').value || '';
+            const email = document.getElementById('reg-email').value.trim().toLowerCase();
+            
+            // Check for duplicate registration
+            try {
+                const existing = await db.collection("participants").where("email", "==", email).get();
+                if (!existing.empty) {
+                    alert("This email is already registered! If you need to update your details, please contact Hello Machi FM support.");
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+            } catch (err) {
+                console.error("Duplicate check failed:", err);
+            }
+
+            let finalAuditionLink = '';
             const audioInput = document.getElementById('reg-audio');
 
             // Handle Cloudinary Audio Upload if a file is selected
@@ -74,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // 5MB Limit
                 if (audioFile.size > 5 * 1024 * 1024) {
-                    alert("The audio file must be less than 5MB. Please upload a smaller file or paste a link instead.");
+                    alert("The audio file must be less than 5MB. Please upload a smaller file.");
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
                     return;
@@ -84,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const formData = new FormData();
                 formData.append('file', audioFile);
-                formData.append('upload_preset', 'dijhnvmtt'); // Using provided string as preset
+                formData.append('upload_preset', 'dijhnvmtt');
 
                 try {
                     const uploadRes = await fetch('https://api.cloudinary.com/v1_1/dijhnvmtt/video/upload', {
@@ -97,8 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (uploadData.secure_url) {
                         finalAuditionLink = uploadData.secure_url;
                     } else {
-                        console.error("Cloudinary Error:", uploadData);
-                        throw new Error("Invalid Upload Preset. Did you make an Unsigned preset named 'dijhnvmtt'?");
+                        throw new Error("Cloudinary upload failed.");
                     }
                 } catch (error) {
                     alert("Audio Upload Failed: " + error.message);
@@ -106,13 +120,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     submitBtn.disabled = false;
                     return;
                 }
+            } else {
+                alert("Please upload your audition MP3 file.");
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
             }
 
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Registration...';
 
             const participantData = {
                 name: document.getElementById('reg-name').value,
-                email: document.getElementById('reg-email').value,
+                email: email,
                 phone: document.getElementById('reg-phone').value,
                 auditionLink: finalAuditionLink,
                 bio: document.getElementById('reg-bio').value,

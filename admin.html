@@ -51,58 +51,93 @@
         }
         .action-btn:hover { background: var(--primary); color: black; }
         .btn-danger:hover { background: var(--secondary); color: white; }
-        .admin-table th:nth-child(3), .admin-table td:nth-child(3) { display: table-cell; }
-
-        /* Mobile Responsive Overrides */
+        /* --- AGGRESSIVE MOBILE OVERRIDES --- */
         @media (max-width: 768px) {
-            .nav-container { flex-direction: column; gap: 15px; }
-            #admin-content > div:first-child { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+            body { padding: 10px; font-size: 14px; }
+            .nav-container { flex-direction: row; justify-content: space-between; padding: 10px; }
+            .logo-text { font-size: 1rem; }
             
-            /* Tabs as a scrollable bar */
-            #admin-content ul, #admin-content .btn-group {
-                display: flex !important;
-                overflow-x: auto;
-                width: 100%;
-                padding-bottom: 10px;
-                gap: 10px;
-                white-space: nowrap;
-                -webkit-overflow-scrolling: touch;
+            #admin-content { padding-top: 20px; }
+            #admin-content > div:first-child { 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                gap: 15px; 
+                margin-bottom: 30px;
             }
-            #admin-content li.btn { flex: 0 0 auto; }
+
+            /* Navigation Tabs Grid */
+            #admin-content .btn-group, #admin-content div[style*="display: flex; gap: 10px"] {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                width: 100%;
+                gap: 10px !important;
+            }
+            #admin-content li.btn, #admin-content .btn {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 15px 5px !important;
+                font-size: 0.85rem !important;
+                text-align: center;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            /* The "Live Portal" link as a full-width button */
+            #admin-content a.btn-secondary {
+                grid-column: span 2;
+                background: var(--primary) !important;
+                color: black !important;
+            }
 
             /* Table to Cards */
             .admin-table thead { display: none; }
             .admin-table, .admin-table tbody, .admin-table tr, .admin-table td {
-                display: block;
-                width: 100%;
+                display: block !important;
+                width: 100% !important;
             }
             .admin-table tr {
-                background: rgba(255,255,255,0.05);
-                margin-bottom: 20px;
-                border-radius: 15px;
-                padding: 15px;
-                border: 1px solid var(--glass-border);
+                background: rgba(255,255,255,0.07) !important;
+                margin-bottom: 25px !important;
+                border-radius: 20px !important;
+                padding: 20px !important;
+                border: 1px solid rgba(255,255,255,0.1) !important;
             }
             .admin-table td {
-                text-align: left;
-                padding: 8px 0;
-                border: none;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                padding: 12px 0 !important;
+                border: none !important;
+                border-bottom: 1px solid rgba(255,255,255,0.05) !important;
             }
+            .admin-table td:last-child { border-bottom: none; }
             .admin-table td::before {
                 content: attr(data-label);
-                font-weight: bold;
+                font-weight: 800;
                 color: var(--primary);
-                font-size: 0.8rem;
+                font-size: 0.75rem;
+                letter-spacing: 1px;
             }
 
-            .cms-grid { grid-template-columns: 1fr; }
-            .save-btn { width: 100%; padding: 15px; font-size: 1.1rem; }
+            /* Control Room Fixes */
+            .cms-grid { grid-template-columns: 1fr !important; gap: 20px; }
+            .save-btn { 
+                width: 100% !important; 
+                padding: 20px !important; 
+                font-size: 1.2rem !important; 
+                font-weight: 900 !important;
+                margin-top: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .save-btn i { font-size: 1.5rem; } /* Make play/pause icons huge */
             
-            .main-panel { padding: 10px; }
-            h2 { font-size: 1.5rem; }
+            .form-group label { font-size: 1rem; margin-bottom: 10px; }
+            select, input { padding: 12px !important; font-size: 1rem !important; }
         }
     </style>
 </head>

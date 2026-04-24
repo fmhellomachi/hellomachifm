@@ -422,23 +422,23 @@ h1, h2, h3, h4, .logo span {
     display: flex;
     justify-content: center;
     z-index: 9999;
-    pointer-events: none; /* Let clicks pass through wrapper */
+    pointer-events: none;
 }
 
 .floating-player {
-    pointer-events: auto; /* Catch clicks on the player */
-    width: 90%;
-    max-width: 1000px;
-    background: rgba(5, 5, 8, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: 16px 32px;
+    pointer-events: auto;
+    width: 95%;
+    max-width: 900px;
+    background: rgba(10, 10, 16, 0.95); /* Darker for more contrast */
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 20, 147, 0.3); /* Pink border */
+    border-radius: 30px;
+    padding: 12px 25px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(255, 20, 147, 0.2);
     position: relative;
     overflow: hidden;
 }
@@ -448,11 +448,11 @@ h1, h2, h3, h4, .logo span {
     position: absolute;
     bottom: 0; left: 0; width: 100%; height: 30px;
     display: flex; align-items: flex-end; justify-content: space-around;
-    opacity: 0.1;
+    opacity: 0.15;
     z-index: 0;
 }
 .visualizer span {
-    width: 20%; background: var(--primary);
+    width: 15%; background: var(--primary);
     animation: eq 1s ease-in-out infinite alternate;
     transform-origin: bottom;
 }
@@ -469,13 +469,13 @@ h1, h2, h3, h4, .logo span {
 .player-info {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     z-index: 1;
 }
 
 .player-thumb-container {
     position: relative;
-    width: 60px; height: 60px;
+    width: 50px; height: 50px;
 }
 
 .player-thumb {
@@ -484,13 +484,14 @@ h1, h2, h3, h4, .logo span {
     object-fit: cover;
     z-index: 2;
     position: relative;
+    border: 2px solid rgba(255,255,255,0.1);
 }
 
 .thumb-ring {
     position: absolute;
     top: -4px; left: -4px; right: -4px; bottom: -4px;
     border-radius: 50%;
-    background: conic-gradient(from 0deg, var(--primary), var(--secondary), var(--primary));
+    background: conic-gradient(from 0deg, var(--primary), #00f2ff, var(--primary));
     z-index: 1;
     animation: rotate 4s linear infinite;
     animation-play-state: paused;
@@ -506,27 +507,29 @@ h1, h2, h3, h4, .logo span {
 @keyframes rotate { 100% { transform: rotate(360deg); } }
 
 .now-playing-label {
-    font-size: 0.7rem;
-    font-weight: 800;
-    color: var(--secondary);
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: var(--primary);
     letter-spacing: 2px;
     margin-bottom: 2px;
+    text-transform: uppercase;
 }
 
 .station-name {
-    font-weight: 700;
-    font-size: 1.1rem;
+    font-weight: 800;
+    font-size: 1rem;
     font-family: 'Outfit';
+    color: white;
 }
 .show-name {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
 }
 
 .player-controls {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 20px;
     z-index: 1;
 }
 
@@ -539,7 +542,7 @@ h1, h2, h3, h4, .logo span {
 
 .premium-slider {
     -webkit-appearance: none;
-    width: 120px;
+    width: 80px;
     height: 4px;
     background: rgba(255,255,255,0.1);
     border-radius: 2px;
@@ -549,28 +552,48 @@ h1, h2, h3, h4, .logo span {
     -webkit-appearance: none;
     width: 14px; height: 14px;
     border-radius: 50%;
-    background: white;
+    background: var(--primary);
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+    box-shadow: 0 0 10px var(--primary-glow);
 }
 
+/* Play/Pause Button Visibility Fix */
 .play-btn {
-    width: 60px; height: 60px;
+    width: 55px; height: 55px;
     border-radius: 50%;
     background: white;
-    color: var(--bg-dark);
+    color: black;
     border: none;
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     display: flex; justify-content: center; align-items: center;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 10px 20px rgba(255,255,255,0.2);
+    box-shadow: 0 5px 20px rgba(255,255,255,0.3);
+}
+
+/* When the song is playing (Pause icon visible) */
+.play-btn.playing {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 0 25px var(--primary-glow);
+}
+
+/* When the song is paused (Play icon visible) */
+.play-btn:not(.playing) {
+    background: #ff0044; /* Bright Neon Red for Pause Visibility */
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 0, 68, 0.6);
+    animation: btnPulse 2s infinite;
+}
+
+@keyframes btnPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 68, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 0, 68, 0); }
+    100% { transform: scale(1); }
 }
 
 .play-btn:hover {
-    transform: scale(1.05);
-    background: var(--primary);
-    box-shadow: 0 10px 25px var(--primary-glow);
+    transform: scale(1.1);
 }
 
 /* Footer */

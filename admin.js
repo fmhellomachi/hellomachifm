@@ -102,25 +102,36 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchParticipantsForLive() {
         const s1 = document.getElementById('live-singer-1');
         const s2 = document.getElementById('live-singer-2');
-        s1.innerHTML = '<option value="">-- Select Participant --</option>';
-        s2.innerHTML = '<option value="">-- Select Participant (Optional) --</option>';
+        if (!s1 || !s2) return;
 
-        const snap = await db.collection('participants').where('status', '!=', 'pending').get();
-        snap.forEach(doc => {
-            const data = doc.data();
-            const opt = `<option value="${doc.id}">${data.name} (${data.status})</option>`;
-            s1.innerHTML += opt;
-            s2.innerHTML += opt;
-        });
+        s1.innerHTML = '<option value="">Loading participants...</option>';
+        s2.innerHTML = '<option value="">Loading participants...</option>';
 
-        // Load current state to pre-fill
-        const stateDoc = await db.collection('live_state').doc('current').get();
-        if (stateDoc.exists) {
-            const state = stateDoc.data();
-            document.getElementById('live-round').value = state.round || "1";
-            s1.value = state.singer1 || "";
-            s2.value = state.singer2 || "";
-            updateVotingUI(state.votingOpen);
+        try {
+            // Fetch ALL participants so the list is never empty
+            const snap = await db.collection('participants').orderBy('name', 'asc').get();
+            
+            let options = '<option value="">-- Select Participant --</option>';
+            snap.forEach(doc => {
+                const data = doc.data();
+                options += `<option value="${doc.id}">${data.name} (${data.status})</option>`;
+            });
+
+            s1.innerHTML = options;
+            s2.innerHTML = options.replace('-- Select Participant --', '-- Select Secondary (Optional) --');
+
+            // Pre-fill current live state
+            const stateDoc = await db.collection('live_state').doc('current').get();
+            if (stateDoc.exists) {
+                const state = stateDoc.data();
+                document.getElementById('live-round').value = state.round || "1";
+                s1.value = state.singer1 || "";
+                s2.value = state.singer2 || "";
+                updateVotingUI(state.votingOpen);
+            }
+        } catch (err) {
+            console.error("Live fetch error:", err);
+            s1.innerHTML = '<option value="">Error loading data</option>';
         }
     }
 

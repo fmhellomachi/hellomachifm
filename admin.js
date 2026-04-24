@@ -32,7 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
-            auth.signInWithPopup(provider).catch(console.error);
+            auth.signInWithPopup(provider).catch((error) => {
+                console.error("Auth Error:", error);
+                alert("Login Failed: " + error.message + "\n\n(If you are using Incognito mode, Brave, or Safari, this might be because third-party cookies are blocked).");
+            });
         });
     }
 

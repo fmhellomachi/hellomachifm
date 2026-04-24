@@ -43,12 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 lockedContent.style.display = 'none';
                 adminContent.style.display = 'block';
                 
-                fetchAdminData();
+                // Set default view
+                switchMainTab('participants');
 
                 if (isMaster) {
+                    document.getElementById('tab-cms').style.display = 'inline-block';
                     masterAdminSection.style.display = 'block';
                     fetchAdminsList();
                 } else {
+                    document.getElementById('tab-cms').style.display = 'none';
                     masterAdminSection.style.display = 'none';
                 }
             } else {
@@ -269,4 +272,118 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Failed to remove admin.");
         }
     };
+
+    // --- Website CMS Functions ---
+    window.switchMainTab = (tab) => {
+        const viewParticipants = document.getElementById('view-participants');
+        const viewCms = document.getElementById('view-cms');
+        const btnPart = document.getElementById('tab-participants');
+        const btnCms = document.getElementById('tab-cms');
+
+        if (tab === 'participants') {
+            viewParticipants.style.display = 'block';
+            viewCms.style.display = 'none';
+            btnPart.className = 'btn btn-primary';
+            btnCms.className = 'btn btn-secondary';
+            fetchAdminData();
+        } else {
+            viewParticipants.style.display = 'none';
+            viewCms.style.display = 'block';
+            btnPart.className = 'btn btn-secondary';
+            btnCms.className = 'btn btn-primary';
+            fetchCMS();
+        }
+    };
+
+    let scheduleBlocksData = [];
+
+    async function fetchCMS() {
+        try {
+            const doc = await db.collection('cms').doc('homepage').get();
+            if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('cms-hero-title').value = data.heroTitle || '';
+                document.getElementById('cms-hero-subtitle').value = data.heroSubtitle || '';
+                scheduleBlocksData = data.scheduleBlocks || [];
+                renderScheduleBlocks();
+            }
+        } catch (error) {
+            console.error("Error fetching CMS data:", error);
+        }
+    }
+
+    window.saveCMS = async () => {
+        const title = document.getElementById('cms-hero-title').value;
+        const subtitle = document.getElementById('cms-hero-subtitle').value;
+        
+        try {
+            await db.collection('cms').doc('homepage').set({
+                heroTitle: title,
+                heroSubtitle: subtitle,
+                scheduleBlocks: scheduleBlocksData,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            alert("Homepage updated successfully!");
+        } catch (error) {
+            console.error("Error saving CMS:", error);
+            alert("Failed to save. Check console.");
+        }
+    };
+
+    window.addScheduleBlock = () => {
+        const timeInput = document.getElementById('new-schedule-time');
+        const titleInput = document.getElementById('new-schedule-title');
+        const rjInput = document.getElementById('new-schedule-rj');
+
+        if (!timeInput.value || !titleInput.value) {
+            alert("Please enter at least a Time and Title.");
+            return;
+        }
+
+        scheduleBlocksData.push({
+            time: timeInput.value,
+            title: titleInput.value,
+            rj: rjInput.value
+        });
+
+        timeInput.value = '';
+        titleInput.value = '';
+        rjInput.value = '';
+        
+        renderScheduleBlocks();
+    };
+
+    window.removeScheduleBlock = (index) => {
+        scheduleBlocksData.splice(index, 1);
+        renderScheduleBlocks();
+    };
+
+    function renderScheduleBlocks() {
+        const list = document.getElementById('cms-schedule-list');
+        list.innerHTML = '';
+        
+        if (scheduleBlocksData.length === 0) {
+            list.innerHTML = '<div style="color:#666;">No schedule blocks added yet.</div>';
+            return;
+        }
+
+        scheduleBlocksData.forEach((block, index) => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.background = 'rgba(255,255,255,0.05)';
+            div.style.padding = '10px 15px';
+            div.style.borderRadius = '8px';
+            div.style.alignItems = 'center';
+            div.innerHTML = `
+                <div>
+                    <span style="color:var(--primary); font-weight:bold; margin-right:15px;">${block.time}</span>
+                    <strong>${block.title}</strong>
+                    <span style="color:#888; margin-left:10px;">(RJ: ${block.rj})</span>
+                </div>
+                <button class="action-btn btn-danger" onclick="removeScheduleBlock(${index})"><i class="fa-solid fa-trash"></i></button>
+            `;
+            list.appendChild(div);
+        });
+    }
 });

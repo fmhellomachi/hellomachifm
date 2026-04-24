@@ -1,16 +1,18 @@
 :root {
-    --bg-dark: #050508;
+    --primary: #FF1493; /* Deep Pink */
+    --secondary: #C71585; /* Dark Pink */
+    --accent: #FF69B4; /* Hot Pink */
+    --bg-dark: #050505; /* Deep Black */
+    --text-main: #FFFFFF; /* White */
+    --text-muted: #B0B0B0;
+    --glass-bg: rgba(255, 20, 147, 0.05); /* Pink tinted glass */
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --danger: #FF3366;
+    --success: #00E676;
     --bg-card: #0a0a10;
     --bg-card-hover: #12121c;
-    --primary: #00d2ff; /* Bright Cyan */
-    --primary-glow: rgba(0, 210, 255, 0.5);
-    --secondary: #ff0055; /* Neon Pink */
-    --accent: #3a0088; /* Deep Purple */
-    --text-main: #ffffff;
-    --text-muted: #8a8a9e;
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-bg: rgba(10, 10, 15, 0.7);
-    --gradient-brand: linear-gradient(135deg, var(--primary) 0%, #0066ff 100%);
+    --primary-glow: rgba(255, 20, 147, 0.5);
+    --gradient-brand: linear-gradient(135deg, var(--primary) 0%, #ff69b4 100%);
 }
 
 * {
@@ -817,13 +819,61 @@ footer {
 
 /* --- Mobile Responsiveness Guarantee --- */
 @media (max-width: 768px) {
-    .hero-title { font-size: 3.5rem; line-height: 1.1; }
+    .hero-title { font-size: 3rem; line-height: 1.1; }
     .hero-subtitle { font-size: 1rem; padding: 0 10px; }
     .hero-actions { flex-direction: column; gap: 15px; }
-    .floating-player-wrapper { bottom: 10px; }
-    .floating-player { width: 95%; padding: 10px; flex-direction: column; gap: 10px; border-radius: 16px; }
-    .player-info { width: 100%; justify-content: center; }
-    .player-controls { width: 100%; justify-content: space-between; }
+    
+    /* Sleek Mobile Player */
+    .floating-player-wrapper { 
+        bottom: 0; 
+        width: 100%; 
+        display: flex; 
+        justify-content: center; 
+        padding: 0;
+    }
+    
+    .floating-player { 
+        width: 100%; 
+        border-radius: 20px 20px 0 0; 
+        padding: 10px 15px; 
+        flex-direction: row; 
+        gap: 15px; 
+        margin: 0;
+        background: rgba(5, 5, 5, 0.95);
+        border-bottom: none;
+    }
+    
+    .player-info { 
+        width: auto; 
+        flex: 1;
+        justify-content: flex-start; 
+    }
+    
+    .player-thumb-container {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .station-name {
+        font-size: 0.9rem;
+    }
+    
+    .show-name {
+        font-size: 0.75rem;
+    }
+    
+    .player-controls { 
+        width: auto; 
+        justify-content: flex-end; 
+    }
+    
+    .control-btn.play-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+    }
+    
+    .visualizer { display: none; }
     .volume-wrapper { display: none; }
     .nav-links { display: none; }
 }

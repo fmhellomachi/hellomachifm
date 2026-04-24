@@ -28,44 +28,25 @@ document.addEventListener('DOMContentLoaded', () => {
         isPlaying = !isPlaying;
     }
 
-    // Handle Autoplay Policy
-    // Modern browsers block autoplaying audio unless the user has interacted with the page.
-    const attemptAutoplay = async () => {
-        try {
-            await audioPlayer.play();
-            isPlaying = true;
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-            playerThumb.classList.add('playing');
-        } catch (error) {
-            console.log("Browser blocked autoplay. Waiting for user interaction.");
-            // If blocked, wait for the first user interaction anywhere on the document to start playing
-            const startOnInteraction = () => {
-                // Ensure we don't call it multiple times
-                if (!isPlaying) togglePlay();
-                document.removeEventListener('click', startOnInteraction);
-                document.removeEventListener('keydown', startOnInteraction);
-                document.removeEventListener('touchstart', startOnInteraction);
-            };
-            document.addEventListener('click', startOnInteraction);
-            document.addEventListener('keydown', startOnInteraction);
-            document.addEventListener('touchstart', startOnInteraction);
-        }
-    };
-    
-    // Call attempt immediately
-    attemptAutoplay();
-
     // Event Listeners for Play Buttons
-    playPauseBtn.addEventListener('click', togglePlay);
+    playPauseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePlay();
+    });
+    
     heroPlayBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         if(!isPlaying) togglePlay();
         // Scroll to player or visually indicate it's playing
         const playerElement = document.querySelector('.floating-player');
-        playerElement.style.transform = 'translateX(-50%) scale(1.05)';
-        setTimeout(() => {
-            playerElement.style.transform = 'translateX(-50%) scale(1)';
-        }, 300);
+        if (playerElement) {
+            playerElement.style.transform = 'translateX(-50%) scale(1.05)';
+            setTimeout(() => {
+                playerElement.style.transform = 'translateX(-50%) scale(1)';
+            }, 300);
+        }
     });
 
     // Volume Control
@@ -86,6 +67,51 @@ document.addEventListener('DOMContentLoaded', () => {
         playerThumb.classList.add('playing');
     });
 
+
+    // --- Dynamic CMS Data Fetching ---
+    async function loadCMSData() {
+        try {
+            const doc = await db.collection('cms').doc('homepage').get();
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.heroTitle) document.getElementById('hero-title').innerHTML = data.heroTitle;
+                if (data.heroSubtitle) document.getElementById('hero-subtitle').textContent = data.heroSubtitle;
+                
+                if (data.scheduleBlocks && data.scheduleBlocks.length > 0) {
+                    renderScheduleGrid(data.scheduleBlocks);
+                }
+            }
+        } catch (error) {
+            console.error("Error loading CMS data:", error);
+        }
+    }
+
+    function renderScheduleGrid(blocks) {
+        const grid = document.getElementById('schedule-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        
+        blocks.forEach((block, index) => {
+            const card = document.createElement('div');
+            card.className = `schedule-card ${index === 0 ? 'active' : ''}`;
+            if (index === 0) {
+                card.innerHTML = `<div class="live-indicator">LIVE</div>`;
+            }
+            card.innerHTML += `
+                <div class="card-glow"></div>
+                <div class="time">${block.time}</div>
+                <h3>${block.title}</h3>
+                <p>Enjoy the best music and conversation with our RJs.</p>
+                <div class="rj-info">
+                    <div class="rj-avatar"><i class="fa-solid fa-user"></i></div>
+                    <span>${block.rj || 'Hello Machi RJ'}</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    loadCMSData();
 
     // --- Smooth Scrolling for Anchor Links ---
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {

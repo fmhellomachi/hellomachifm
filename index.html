@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Machi FM | Premium Tamil Radio</title>
+    <meta name="description" content="Experience Premium Tamil Radio with Hello Machi FM. Listen live, participate in Super Singer, and more!">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="logo.jpg" alt="Hello Machi FM Logo">
+                <span>HELLO MACHI <b>FM</b></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#schedule">Lineup</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="supersinger.html" class="highlight-link"><i class="fa-solid fa-microphone-lines"></i> Super Singer</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="home" class="hero">
+        <!-- Premium background layer (e.g., soundwaves or studio) -->
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        
+        <div class="hero-content">
+            <div class="live-badge">
+                <span class="pulse"></span> ON AIR NOW
+            </div>
+            <h1 class="hero-title">THE BEAT OF <br><span class="gradient-text">CHENNAI</span></h1>
+            <p class="hero-subtitle">Your exclusive destination for the finest Tamil hits, nostalgic classics, and interactive live RJ shows. Turn up the volume.</p>
+            
+            <div class="hero-actions">
+                <button class="btn btn-primary btn-glow" id="play-hero-btn">
+                    <i class="fa-solid fa-play"></i> LISTEN LIVE
+                </button>
+                <a href="#whatsapp" class="btn btn-secondary">
+                    <i class="fa-brands fa-whatsapp"></i> REQUEST A SONG
+                </a>
+            </div>
+
+            <!-- Event Promo Card (Links to Super Singer) -->
+            <a href="supersinger.html" class="event-promo-card mt-5">
+                <div class="promo-icon"><i class="fa-solid fa-trophy"></i></div>
+                <div class="promo-text">
+                    <strong>Super Singer 2026</strong>
+                    <span>Registrations & Voting Portal Open Now! &rarr;</span>
+                </div>
+            </a>
+        </div>
+    </header>
+
+    <!-- Schedule Section -->
+    <section id="schedule" class="schedule-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>TODAY'S <span class="gradient-text">LINEUP</span></h2>
+                <p>Never miss a beat with our daily schedule.</p>
+            </div>
+            
+            <div class="schedule-grid">
+                <div class="schedule-card">
+                    <div class="card-glow"></div>
+                    <div class="time">08:00 AM - 11:00 AM</div>
+                    <h3>Morning Filter Kaapi</h3>
+                    <p>Start your day with energetic hits and positive vibes.</p>
+                    <div class="rj-info">
+                        <div class="rj-avatar"><i class="fa-solid fa-user"></i></div>
+                        <span>RJ Example</span>
+                    </div>
+                </div>
+                
+                <div class="schedule-card active">
+                    <div class="card-glow"></div>
+                    <div class="live-indicator">LIVE</div>
+                    <div class="time">11:00 AM - 02:00 PM</div>
+                    <h3>Retro Rewind 90s</h3>
+                    <p>Classic melodies and unforgettable memories from the golden era.</p>
+                    <div class="rj-info">
+                        <div class="rj-avatar"><i class="fa-solid fa-user"></i></div>
+                        <span>RJ MusicLover</span>
+                    </div>
+                </div>
+                
+                <div class="schedule-card">
+                    <div class="card-glow"></div>
+                    <div class="time">06:00 PM - 09:00 PM</div>
+                    <h3>Evening Drive</h3>
+                    <p>Beat the traffic with the latest chartbusters and interactive chat.</p>
+                    <div class="rj-info">
+                        <div class="rj-avatar"><i class="fa-solid fa-user"></i></div>
+                        <span>RJ Host</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Floating Audio Player -->
+    <div class="floating-player-wrapper">
+        <div class="floating-player">
+            <!-- Visualizer Bars (Decorative) -->
+            <div class="visualizer">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            
+            <div class="player-info">
+                <div class="player-thumb-container">
+                    <img src="logo.jpg" alt="Station Logo" class="player-thumb">
+                    <div class="thumb-ring"></div>
+                </div>
+                <div class="track-details">
+                    <div class="now-playing-label">STREAMING LIVE</div>
+                    <div class="station-name">Hello Machi FM</div>
+                    <div class="show-name">Retro Rewind 90s</div>
+                </div>
+            </div>
+            
+            <div class="player-controls">
+                <audio id="azuracast-player" preload="auto" autoplay>
+                    <!-- Actual Azuracast URL -->
+                    <source src="https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3" type="audio/mpeg">
+                </audio>
+                
+                <div class="volume-wrapper">
+                    <i class="fa-solid fa-volume-low"></i>
+                    <input type="range" id="volume-slider" class="premium-slider" min="0" max="1" step="0.01" value="1">
+                    <i class="fa-solid fa-volume-high"></i>
+                </div>
+                
+                <button id="play-pause-btn" class="control-btn play-btn">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="brand">
+                <img src="logo.jpg" alt="Logo" style="width: 40px; border-radius: 50%; margin-bottom: 10px;">
+                <h3>HELLO MACHI FM</h3>
+                <p>Premium Tamil Radio Broadcasting worldwide.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <a href="#home">Home</a>
+                <a href="#schedule">Schedule</a>
+                <a href="supersinger.html">Super Singer</a>
+                <a href="#"><i class="fa-solid fa-lock"></i> Admin Login</a>
+            </div>
+            <div class="socials">
+                <h4>Connect With Us</h4>
+                <div class="social-icons">
+                    <a href="#" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="social-icon"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="#" class="social-icon"><i class="fa-brands fa-whatsapp"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <div class="container">
+                &copy; 2026 Hello Machi FM. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

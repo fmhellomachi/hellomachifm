@@ -51,6 +51,59 @@
         }
         .action-btn:hover { background: var(--primary); color: black; }
         .btn-danger:hover { background: var(--secondary); color: white; }
+        .admin-table th:nth-child(3), .admin-table td:nth-child(3) { display: table-cell; }
+
+        /* Mobile Responsive Overrides */
+        @media (max-width: 768px) {
+            .nav-container { flex-direction: column; gap: 15px; }
+            #admin-content > div:first-child { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+            
+            /* Tabs as a scrollable bar */
+            #admin-content ul, #admin-content .btn-group {
+                display: flex !important;
+                overflow-x: auto;
+                width: 100%;
+                padding-bottom: 10px;
+                gap: 10px;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+            #admin-content li.btn { flex: 0 0 auto; }
+
+            /* Table to Cards */
+            .admin-table thead { display: none; }
+            .admin-table, .admin-table tbody, .admin-table tr, .admin-table td {
+                display: block;
+                width: 100%;
+            }
+            .admin-table tr {
+                background: rgba(255,255,255,0.05);
+                margin-bottom: 20px;
+                border-radius: 15px;
+                padding: 15px;
+                border: 1px solid var(--glass-border);
+            }
+            .admin-table td {
+                text-align: left;
+                padding: 8px 0;
+                border: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .admin-table td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: var(--primary);
+                font-size: 0.8rem;
+            }
+
+            .cms-grid { grid-template-columns: 1fr; }
+            .save-btn { width: 100%; padding: 15px; font-size: 1.1rem; }
+            
+            .main-panel { padding: 10px; }
+            h2 { font-size: 1.5rem; }
+        }
     </style>
 </head>
 <body>

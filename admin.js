@@ -210,19 +210,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 let badgeClass = data.status === 'pending' ? 'badge-pending' : 'badge-approved';
                 const waPhone = data.phone.replace(/[^0-9]/g, '');
                 tr.innerHTML = `
-                    <td>${data.photoBase64 ? `<img src="${data.photoBase64}" class="singer-preview" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;color:white;display:flex;align-items:center;justify-content:center;">${data.name.charAt(0)}</div>`}</td>
-                    <td><strong>${data.name}</strong><br><a href="https://wa.me/${waPhone}" target="_blank" style="color:#25D366;text-decoration:none;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> ${data.phone}</a></td>
-                    <td style="font-size:0.85rem;color:var(--text-muted);">${data.email || 'N/A'}</td>
-                    <td>${data.auditionLink ? `<a href="${data.auditionLink}" target="_blank" style="color:var(--primary);text-decoration:none;"><i class="fa-solid fa-play"></i> Link</a>` : '<span style="color:#666;">None</span>'}</td>
-                    <td>
-                        <div style="margin-bottom:5px;">Votes: <strong style="color:var(--primary);">${data.votes || 0}</strong></div>
+                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" class="singer-preview" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;color:white;display:flex;align-items:center;justify-content:center;">${data.name.charAt(0)}</div>`}</td>
+                    <td data-label="NAME"><strong>${data.name}</strong><br><a href="https://wa.me/${waPhone}" target="_blank" style="color:#25D366;text-decoration:none;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> ${data.phone}</a></td>
+                    <td data-label="EMAIL" style="font-size:0.85rem;color:var(--text-muted);">${data.email || 'N/A'}</td>
+                    <td data-label="LINK">${data.auditionLink ? `<a href="${data.auditionLink}" target="_blank" style="color:var(--primary);text-decoration:none;"><i class="fa-solid fa-play"></i> Link</a>` : '<span style="color:#666;">None</span>'}</td>
+                    <td data-label="SCORE">
                         <div style="display:flex;align-items:center;gap:5px;">
                             <input type="number" min="0" max="10" value="${data.judgeScore || 0}" id="score-${id}" style="width:50px;background:rgba(0,0,0,0.5);color:white;border:1px solid #444;padding:2px 5px;border-radius:4px;">
                             <button onclick="saveScore('${id}')" style="background:var(--primary);border:none;border-radius:4px;padding:2px 5px;cursor:pointer;"><i class="fa-solid fa-save"></i></button>
                         </div>
                     </td>
-                    <td><span class="badge ${badgeClass}">${data.status.toUpperCase()}</span></td>
-                    <td>
+                    <td data-label="STATUS"><span class="badge ${badgeClass}">${data.status.toUpperCase()}</span></td>
+                    <td data-label="ACTIONS">
                         <select onchange="updateStatus('${id}', this.value)" style="background:rgba(0,0,0,0.5);color:white;border:1px solid #444;padding:5px;border-radius:4px;">
                             <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
                             <option value="Round 1" ${data.status === 'Round 1' ? 'selected' : ''}>Round 1</option>
@@ -377,17 +376,17 @@ document.addEventListener('DOMContentLoaded', () => {
             results.forEach((res, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="font-size:1.5rem; font-weight:800; color:var(--primary);">#${index + 1}</td>
-                    <td>
+                    <td data-label="RANK" style="font-size:1.5rem; font-weight:800; color:var(--primary);">#${index + 1}</td>
+                    <td data-label="SINGER">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <img src="${res.photo || 'logo.jpg'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
                             <strong>${res.name}</strong>
                         </div>
                     </td>
-                    <td>${res.judgeScore}</td>
-                    <td>${res.audienceAvg}</td>
-                    <td><strong style="color:var(--secondary); font-size:1.2rem;">${res.totalScore}</strong></td>
-                    <td><span class="badge ${res.status === 'Eliminated' ? 'badge-pending' : 'badge-approved'}">${res.status}</span></td>
+                    <td data-label="JUDGE">${res.judgeScore}</td>
+                    <td data-label="AUDIENCE">${res.audienceAvg}</td>
+                    <td data-label="TOTAL"><strong style="color:var(--secondary); font-size:1.2rem;">${res.totalScore}</strong></td>
+                    <td data-label="STATUS"><span class="badge ${res.status === 'Eliminated' ? 'badge-pending' : 'badge-approved'}">${res.status}</span></td>
                 `;
                 body.appendChild(tr);
             });

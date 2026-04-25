@@ -195,19 +195,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tr = document.createElement('tr');
                 let bClass = data.status === 'pending' ? 'badge-pending' : 'badge-approved';
                 const ph = data.phone.replace(/[^0-9]/g, '');
+                
+                // Professional WhatsApp Template
+                const message = `Hi ${data.name}! 👋 This is Hello Machi FM. We are excited to inform you that you have been ${data.status === 'rejected' ? 'not selected' : 'SELECTED'} for ${data.status.toUpperCase()} of Super Singer 2026! 🎤 Check your status here: https://hello-machi-fm-6ebe4.web.app/supersinger.html`;
+                const encodedMsg = encodeURIComponent(message);
+                
                 tr.innerHTML = `
                     <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;">${data.name.charAt(0)}</div>`}</td>
-                    <td data-label="NAME"><strong>${data.name}</strong><br><a href="https://wa.me/${ph}" target="_blank" style="color:#25D366;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> ${data.phone}</a></td>
-                    <td data-label="EMAIL" style="font-size:0.85rem;color:var(--text-muted);">${data.email || 'N/A'}</td>
-                    <td data-label="LINK">${data.auditionLink ? `<a href="${data.auditionLink}" target="_blank" style="color:var(--primary);"><i class="fa-solid fa-play"></i> Link</a>` : 'None'}</td>
+                    <td data-label="NAME">
+                        <strong>${data.name}</strong><br>
+                        <a href="https://wa.me/${ph}?text=${encodedMsg}" target="_blank" style="color:#25D366;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> Notify WhatsApp</a>
+                    </td>
+                    <td data-label="LOCATION" style="font-size:0.85rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-city"></i> ${data.city || 'N/A'}<br>
+                        <small>${data.address || ''}</small>
+                    </td>
+                    <td data-label="LINK">${data.auditionLink ? `<a href="${data.auditionLink}" target="_blank" style="color:var(--primary);"><i class="fa-solid fa-play"></i> Audition</a>` : 'None'}</td>
                     <td data-label="SCORE"><div style="display:flex;gap:5px;"><input type="number" value="${data.judgeScore||0}" id="sc-${id}" style="width:45px;background:#222;color:white;border:1px solid #444;"><button onclick="saveScore('${id}')" style="background:var(--primary);border:none;padding:2px 5px;"><i class="fa-solid fa-save"></i></button></div></td>
-                    <td data-label="STATUS"><span class="badge ${bClass}">${data.status.toUpperCase()}</span></td>
+                    <td data-label="STATUS">
+                        <span class="badge ${bClass}">${data.status.toUpperCase()}</span><br>
+                        <button onclick="toggleReveal('${id}', ${data.isRevealed})" style="margin-top:5px; font-size:0.7rem; background:${data.isRevealed?'#28a745':'#444'}; border:none; color:white; border-radius:4px; padding:2px 5px;">
+                            ${data.isRevealed ? '<i class="fa-solid fa-eye"></i> Revealed' : '<i class="fa-solid fa-eye-slash"></i> Hidden'}
+                        </button>
+                    </td>
                     <td data-label="ACTIONS">
                         <select onchange="updateStatus('${id}', this.value)" style="background:#222;color:white;border:1px solid #444;padding:4px;">
                             <option value="pending" ${data.status==='pending'?'selected':''}>Pending</option>
                             <option value="Round 1" ${data.status==='Round 1'?'selected':''}>Round 1</option>
                             <option value="Round 2" ${data.status==='Round 2'?'selected':''}>Round 2</option>
+                            <option value="Round 3" ${data.status==='Round 3'?'selected':''}>Round 3</option>
                             <option value="Final" ${data.status==='Final'?'selected':''}>Final</option>
+                            <option value="waitlisted" ${data.status==='waitlisted'?'selected':''}>Waitlist</option>
+                            <option value="Eliminated" ${data.status==='Eliminated'?'selected':''}>Eliminated</option>
                         </select>
                         <button class="action-btn btn-danger" onclick="deleteParticipant('${id}')"><i class="fa-solid fa-trash"></i></button>
                     </td>
@@ -223,7 +242,34 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.updateStatus = async (id, s) => {
-        try { await db.collection("participants").doc(id).update({ status: s }); fetchAdminData(); } catch(e){}
+        try { 
+            const updates = { status: s };
+            // If advancing, hide until revealed
+            if (s !== 'pending') updates.isRevealed = false;
+            await db.collection("participants").doc(id).update(updates); 
+            fetchAdminData(); 
+        } catch(e){}
+    };
+
+    window.toggleReveal = async (id, currentVal) => {
+        try {
+            await db.collection("participants").doc(id).update({ isRevealed: !currentVal });
+            fetchAdminData();
+        } catch(e) {}
+    };
+
+    window.filterTable = (status) => {
+        currentFilter = status;
+        fetchAdminData();
+        // Update tab buttons
+        document.querySelectorAll('#admin-tabs button').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-secondary');
+            if(btn.textContent.toLowerCase() === status.toLowerCase() || (status === 'all' && btn.textContent === 'All')) {
+                btn.classList.add('btn-primary');
+                btn.classList.remove('btn-secondary');
+            }
+        });
     };
 
     window.deleteParticipant = async (id) => {

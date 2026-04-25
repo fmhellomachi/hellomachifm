@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WALL OF FAME | HELLO MACHI SUPER SINGER</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #FFD700;
+            --gold-dark: #B8860B;
+            --bg-dark: #000000;
+            --primary: #FF1493;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* --- STAGE BACKGROUND --- */
+        .stage-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
+            z-index: 1;
+        }
+
+        .spotlight {
+            position: absolute;
+            width: 30vw;
+            height: 100vh;
+            background: linear-gradient(to top, rgba(255, 215, 0, 0.1), transparent);
+            top: 0;
+            transform-origin: top center;
+            animation: sweep 10s infinite alternate ease-in-out;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            opacity: 0.5;
+        }
+
+        @keyframes sweep { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
+
+        /* --- MAIN LAYOUT --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            background: linear-gradient(to bottom, #FFD700, #FFFACD, #B8860B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .round-badge {
+            display: inline-block;
+            background: var(--primary);
+            padding: 5px 20px;
+            border-radius: 50px;
+            font-weight: 900;
+            font-size: 1.2rem;
+            margin-top: 10px;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        /* --- GRID LAYOUT --- */
+        .wall-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            overflow-y: auto;
+            padding: 20px;
+            flex-grow: 1;
+            align-content: start;
+        }
+
+        /* --- SPLIT SCREEN (FOR ROUND 2+) --- */
+        .split-container {
+            display: none; /* Controlled by JS */
+            grid-template-columns: 1fr 1fr;
+            height: 100%;
+            gap: 40px;
+        }
+
+        .split-zone {
+            display: flex;
+            flex-direction: column;
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .zone-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 15px;
+            font-weight: 900;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+        }
+
+        .zone-selected { border-color: var(--gold); }
+        .zone-selected .zone-header { background: rgba(255, 215, 0, 0.2); color: var(--gold); }
+
+        .zone-eliminated { border-color: #444; }
+        .zone-eliminated .zone-header { background: rgba(255, 255, 255, 0.05); color: #666; }
+
+        /* --- PARTICIPANT CARD --- */
+        .p-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            animation: revealPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            transition: 0.3s;
+        }
+
+        @keyframes revealPop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .p-card.selected {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0.5) 100%);
+        }
+
+        .p-card.eliminated {
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        .p-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid var(--gold);
+            margin: 0 auto 10px;
+            object-fit: cover;
+            box-shadow: 0 0 15px var(--gold);
+        }
+
+        .p-name { font-weight: 900; font-size: 1.1rem; margin-bottom: 5px; color: var(--gold); }
+        .p-city { font-size: 0.8rem; opacity: 0.7; letter-spacing: 1px; }
+
+        .p-badge {
+            position: absolute;
+            top: 10px; right: 10px;
+            background: var(--gold);
+            color: black;
+            font-size: 0.6rem;
+            font-weight: 900;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* --- GOLDEN TICKET OVERLAY (For one-by-one reveal) --- */
+        #reveal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .reveal-big-card {
+            width: 400px;
+            padding: 50px;
+            background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
+            border-radius: 30px;
+            text-align: center;
+            color: black;
+            box-shadow: 0 0 100px var(--gold);
+            animation: bigPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes bigPop { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
+
+        .flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; opacity: 0; pointer-events: none; }
+        .flash.active { animation: flashEffect 0.5s ease-out; }
+        @keyframes flashEffect { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        #setup-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .btn-start { background: var(--gold); color: black; border:none; padding: 20px 60px; font-size: 1.5rem; font-weight:900; border-radius:50px; cursor:pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-overlay">
+        <h1 style="margin-bottom:30px; letter-spacing:10px;">SELECTION PORTAL</h1>
+        <button class="btn-start" onclick="startPortal()">ENTER SELECTION STAGE</button>
+    </div>
+
+    <div class="stage-bg" id="stage-bg">
+        <div class="spotlight" style="left: 15%; animation-delay: 0s;"></div>
+        <div class="spotlight" style="left: 75%; animation-delay: -5s;"></div>
+    </div>
+
+    <div class="flash" id="flash"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>WALL OF FAME</h1>
+            <div id="current-round-label" class="round-badge">LOADING...</div>
+        </div>
+
+        <!-- Single Grid View -->
+        <div id="main-grid" class="wall-grid"></div>
+
+        <!-- Split View (For Elimination Rounds) -->
+        <div id="split-view" class="split-container">
+            <div class="split-zone zone-selected">
+                <div class="zone-header">SELECTED</div>
+                <div id="selected-grid" class="wall-grid"></div>
+            </div>
+            <div class="split-zone zone-eliminated">
+                <div class="zone-header">ELIMINATED</div>
+                <div id="eliminated-grid" class="wall-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- The One-by-One Reveal Overlay -->
+    <div id="reveal-overlay">
+        <div class="reveal-big-card">
+            <i class="fa-solid fa-star fa-4x mb-4"></i>
+            <h3 style="font-size: 1.5rem; letter-spacing: 2px;">CONGRATULATIONS</h3>
+            <img id="reveal-img" src="" style="width: 200px; height: 200px; border-radius: 50%; border: 8px solid white; margin: 20px 0; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h2 id="reveal-name" style="font-size: 2.5rem; font-weight: 900;">NAME HERE</h2>
+            <div id="reveal-status" style="margin-top: 15px; font-weight: 900; border-top: 1px solid rgba(0,0,0,0.2); padding-top: 15px;">ADVANCED TO ROUND 2</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let revealedIds = new Set();
+        let lastRevealId = null;
+
+        function startPortal() {
+            document.getElementById('setup-overlay').style.display = 'none';
+            initLiveSync();
+        }
+
+        function triggerFlash() {
+            const f = document.getElementById('flash');
+            f.classList.remove('active');
+            void f.offsetWidth;
+            f.classList.add('active');
+        }
+
+        function showBigReveal(participant) {
+            if (lastRevealId === participant.id) return;
+            lastRevealId = participant.id;
+
+            triggerFlash();
+            const overlay = document.getElementById('reveal-overlay');
+            document.getElementById('reveal-img').src = participant.photoBase64 || 'logo.jpg';
+            document.getElementById('reveal-name').textContent = participant.name.toUpperCase();
+            document.getElementById('reveal-status').textContent = `ADVANCED TO ${participant.status.toUpperCase()}`;
+            
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 6000); // 6 seconds reveal
+        }
+
+        function initLiveSync() {
+            // Listen to Live State for Round Info
+            db.collection('live_state').doc('current').onSnapshot(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('current-round-label').textContent = data.round ? `CURRENT: ${data.round.toUpperCase()}` : 'SELECTION PHASE';
+                }
+            });
+
+            // Listen to Participants
+            db.collection('participants').onSnapshot(snap => {
+                const participants = [];
+                snap.forEach(doc => participants.push({ id: doc.id, ...doc.data() }));
+
+                // Filter for "Revealed" participants
+                const revealedList = participants.filter(p => p.isRevealed === true);
+                
+                // Check if any NEW reveal happened
+                revealedList.forEach(p => {
+                    if (!revealedIds.has(p.id)) {
+                        revealedIds.add(p.id);
+                        showBigReveal(p);
+                    }
+                });
+
+                renderGrids(revealedList);
+            });
+        }
+
+        function renderGrids(list) {
+            const mainGrid = document.getElementById('main-grid');
+            const splitView = document.getElementById('split-view');
+            const selectedGrid = document.getElementById('selected-grid');
+            const eliminatedGrid = document.getElementById('eliminated-grid');
+
+            // Logic: If there are eliminated people, show split view
+            const eliminated = list.filter(p => p.status === 'rejected' || p.status === 'Eliminated');
+            const selected = list.filter(p => p.status !== 'rejected' && p.status !== 'Eliminated' && p.status !== 'pending');
+
+            if (eliminated.length > 0) {
+                mainGrid.style.display = 'none';
+                splitView.style.display = 'grid';
+                
+                selectedGrid.innerHTML = '';
+                selected.forEach(p => selectedGrid.appendChild(createCard(p, 'selected')));
+                
+                eliminatedGrid.innerHTML = '';
+                eliminated.forEach(p => eliminatedGrid.appendChild(createCard(p, 'eliminated')));
+            } else {
+                mainGrid.style.display = 'grid';
+                splitView.style.display = 'none';
+                
+                mainGrid.innerHTML = '';
+                selected.forEach(p => mainGrid.appendChild(createCard(p, 'selected')));
+            }
+        }
+
+        function createCard(p, type) {
+            const div = document.createElement('div');
+            div.className = `p-card ${type}`;
+            div.innerHTML = `
+                ${p.photoBase64 ? `<img src="${p.photoBase64}" class="p-avatar">` : `<div class="p-avatar" style="background:#333; display:flex; align-items:center; justify-content:center; font-size:3rem;">${p.name.charAt(0)}</div>`}
+                <div class="p-badge">${p.status.toUpperCase()}</div>
+                <div class="p-name">${p.name}</div>
+                <div class="p-city"><i class="fa-solid fa-location-dot"></i> ${p.city || 'Tamil Nadu'}</div>
+            `;
+            return div;
+        }
+    </script>
+</body>
+</html>

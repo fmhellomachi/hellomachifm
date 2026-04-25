@@ -179,6 +179,23 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCMSData();
 
     // --- Homepage Live Banner Logic ---
+    const phone = document.getElementById('reg-phone').value;
+    const place = document.getElementById('reg-place').value;
+    const link = document.getElementById('reg-link').value;
+    const email = auth.currentUser.email;
+
+    try {
+        await db.collection("participants").add({
+            name: name,
+            phone: phone,
+            place: place,
+            auditionLink: link,
+            email: email
+        });
+    } catch (e) {
+        console.error(e);
+    }
+    
     const voteBanner = document.getElementById('live-vote-banner');
     const bannerSinger = document.getElementById('banner-singer-name');
 

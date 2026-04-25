@@ -133,11 +133,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: document.getElementById('reg-name').value,
                 email: email,
                 phone: document.getElementById('reg-phone').value,
+                city: document.getElementById('reg-city').value,
+                address: document.getElementById('reg-address').value,
                 auditionLink: finalAuditionLink,
                 bio: document.getElementById('reg-bio').value,
                 photoBase64: compressedPhotoBase64,
                 registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
                 status: 'pending',
+                isRevealed: false,
                 votes: 0,
                 judgeScore: 0
             };
@@ -301,3 +304,92 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+// --- Status Checker Logic ---
+async function checkStatus() {
+    const phone = document.getElementById('status-phone').value.trim();
+    const resultDiv = document.getElementById('status-result');
+    
+    if (!phone) {
+        alert("Please enter your phone number.");
+        return;
+    }
+
+    resultDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking status...';
+    resultDiv.style.display = 'block';
+
+    try {
+        const querySnapshot = await db.collection("participants").where("phone", "==", phone).get();
+        
+        if (querySnapshot.empty) {
+            resultDiv.innerHTML = `
+                <div style="padding: 20px; background: rgba(220, 53, 69, 0.1); border: 1px solid #dc3545; border-radius: 12px; color: #dc3545;">
+                    <i class="fa-solid fa-circle-xmark fa-2x"></i><br>
+                    <strong>No registration found!</strong><br>
+                    Please make sure you entered the correct number used during registration.
+                </div>
+            `;
+            return;
+        }
+
+        const data = querySnapshot.docs[0].data();
+        const status = data.status || 'pending';
+        const isRevealed = data.isRevealed !== false; // Default to true if not specified, but we set it to false now
+        
+        if (!isRevealed && status !== 'pending') {
+            resultDiv.innerHTML = `
+                <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 12px;">
+                    <i class="fa-solid fa-clock fa-2x" style="color: var(--secondary);"></i><br>
+                    <h3 class="mt-2">Result Pending</h3>
+                    <p class="text-muted">Your result hasn't been officially revealed yet. Stay tuned to Hello Machi FM!</p>
+                </div>
+            `;
+            return;
+        }
+
+        if (status === 'pending') {
+            resultDiv.innerHTML = `
+                <div style="padding: 20px; background: rgba(0, 210, 255, 0.05); border: 1px solid var(--primary); border-radius: 12px;">
+                    <i class="fa-solid fa-hourglass-half fa-2x" style="color: var(--primary);"></i><br>
+                    <h3 class="mt-2">Application Received</h3>
+                    <p>Hi <strong>${data.name}</strong>, your application is currently under review by our judges. We will notify you once the selection is made!</p>
+                </div>
+            `;
+        } else if (status === 'rejected' || status === 'Eliminated') {
+            resultDiv.innerHTML = `
+                <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid #444; border-radius: 12px;">
+                    <i class="fa-solid fa-heart fa-2x" style="color: #666;"></i><br>
+                    <h3 class="mt-2">Not Selected</h3>
+                    <p>Thank you for participating, <strong>${data.name}</strong>. Unfortunately, you didn't make it to the next round this time. Keep singing and keep the passion alive!</p>
+                </div>
+            `;
+        } else {
+            // SELECTED / ROUND 1 / ROUND 2 etc. -> SHOW GOLDEN TICKET
+            resultDiv.innerHTML = `
+                <div style="padding: 40px; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); border-radius: 20px; color: black; box-shadow: 0 0 50px rgba(255, 215, 0, 0.5); position: relative; overflow: hidden; animation: goldenPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                    <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(15deg);"><i class="fa-solid fa-trophy"></i></div>
+                    <i class="fa-solid fa-star fa-3x" style="color: white; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));"></i>
+                    <h2 style="font-size: 2.5rem; margin: 15px 0; font-family: 'Outfit', sans-serif;">CONGRATULATIONS!</h2>
+                    <p style="font-size: 1.2rem; font-weight: bold;">${data.name.toUpperCase()}</p>
+                    <div style="margin: 20px 0; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 10px; display: inline-block;">
+                        <span style="letter-spacing: 2px; font-weight: 900;">SELECTED FOR: ${status.toUpperCase()}</span>
+                    </div>
+                    <p style="font-size: 0.9rem; opacity: 0.8;">You have been officially promoted to the next phase of Hello Machi Super Singer 2026. Get ready to shine!</p>
+                    <div style="margin-top: 25px;">
+                        <button onclick="window.print()" class="btn" style="background: black; color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold;"><i class="fa-solid fa-download"></i> Save Ticket</button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes goldenPop {
+                        0% { transform: scale(0.5); opacity: 0; }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                </style>
+            `;
+        }
+
+    } catch (error) {
+        console.error("Error checking status: ", error);
+        resultDiv.innerHTML = '❌ Error checking status. Please try again.';
+    }
+}

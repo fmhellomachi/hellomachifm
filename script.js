@@ -223,6 +223,19 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessageToUI(data);
     });
 
+    socket.on('user_count', (count) => {
+        console.log("Real-time User Count Update:", count);
+        const mainCounter = document.getElementById('onlineCount');
+        const chatCounter = document.getElementById('chatOnlineCount');
+        
+        if (mainCounter) {
+            mainCounter.innerHTML = `<span class="pulse"></span> ${count} Listeners Online`;
+        }
+        if (chatCounter) {
+            chatCounter.textContent = `${count} Online`;
+        }
+    });
+
     socket.on('chat_history', (history) => {
         chatMessages.innerHTML = '';
         history.forEach(addMessageToUI);
@@ -410,32 +423,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 navigateTo(relativePath);
             }
         }
-    });    // --- Real-time Presence Logic ---
-    function syncListeners() {
-        console.log("Initializing Real-time Presence Sync...");
-        const presenceRef = db.collection('stats').doc('presence');
-        
-        presenceRef.onSnapshot(doc => {
-            if (doc.exists) {
-                const count = doc.data().count || 0;
-                console.log("Real-time Listeners Updated:", count);
-                const counters = document.querySelectorAll('#online-counter, .chat-online-count');
-                counters.forEach(el => {
-                    el.innerHTML = `<span class="pulse"></span> ${count} Listeners Online`;
-                });
-            }
-        });
-
-        presenceRef.get().then(doc => {
-            if (!doc.exists) presenceRef.set({ count: 1 });
-            else presenceRef.update({ count: firebase.firestore.FieldValue.increment(1) });
-        });
-
-        window.addEventListener('beforeunload', () => {
-            presenceRef.update({ count: firebase.firestore.FieldValue.increment(-1) });
-        });
-    }
-    syncListeners();
+    });    // --- Presence Logic is now handled via Socket.io above ---
+    // syncListeners(); // Disabling Firebase fallback to avoid conflicts
 
     // --- RJ Introduction Rendering ---
     window.renderRJs = function(blocks) {

@@ -24,18 +24,18 @@
         .page { position:relative; z-index:10; height:100vh; display:flex; flex-direction:column; padding:20px 28px; }
 
         /* Header */
-        .header { text-align:center; margin-bottom:14px; display:flex; flex-direction:column; align-items:center; gap:6px; }
-        .logo-img { width:72px; height:72px; border-radius:50%; border:3px solid var(--gold); object-fit:cover; box-shadow:0 0 20px var(--gold),0 0 50px rgba(255,215,0,0.3); animation:logoPulse 3s ease-in-out infinite; }
+        .header { display:flex; align-items:center; justify-content:center; gap:40px; margin-bottom:15px; }
+        .header-text { font-size:clamp(1.2rem,4vw,2.4rem); font-weight:900; letter-spacing:4px; background:linear-gradient(to bottom,#FFD700,#FFFACD,#B8860B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0; }
+        .logo-img { width:85px; height:85px; border-radius:50%; border:3px solid var(--gold); object-fit:cover; box-shadow:0 0 20px var(--gold),0 0 50px rgba(255,215,0,0.3); animation:logoPulse 3s ease-in-out infinite; }
         @keyframes logoPulse { 0%,100%{box-shadow:0 0 18px var(--gold),0 0 40px rgba(255,215,0,0.2)} 50%{box-shadow:0 0 35px var(--gold),0 0 80px rgba(255,215,0,0.5)} }
-        .header h1 { font-size:clamp(1.6rem,5vw,3.2rem); font-weight:900; letter-spacing:5px; background:linear-gradient(to bottom,#FFD700,#FFFACD,#B8860B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .round-badge { display:inline-block; background:var(--primary); padding:4px 22px; border-radius:50px; font-weight:900; font-size:0.95rem; box-shadow:0 0 16px var(--primary); animation:bPulse 2s infinite; }
+        .round-badge { display:inline-block; background:var(--primary); padding:4px 22px; border-radius:50px; font-weight:900; font-size:0.85rem; box-shadow:0 0 16px var(--primary); animation:bPulse 2s infinite; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); z-index:2; }
         @keyframes bPulse { 0%,100%{box-shadow:0 0 14px var(--primary)} 50%{box-shadow:0 0 32px var(--primary),0 0 60px rgba(255,20,147,0.4)} }
 
         /* Grids */
         .wall-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:14px; overflow-y:auto; padding:6px; flex-grow:1; align-content:start; }
-        .split-container { display:none; flex-direction:column; flex-grow:1; gap:20px; overflow-y:auto; padding-bottom:30px; }
-        .split-zone { display:flex; flex-direction:column; border:2px dashed rgba(255,255,255,0.08); border-radius:20px; padding:14px; background:rgba(255,255,255,0.02); }
-        .zone-header { padding:8px 15px; border-radius:12px; font-weight:900; letter-spacing:2px; margin-bottom:12px; align-self:flex-start; }
+        .split-container { display:none; flex-direction:row; flex-grow:1; gap:20px; overflow:hidden; padding-bottom:10px; }
+        .split-zone { display:flex; flex-direction:column; border:2px dashed rgba(255,255,255,0.08); border-radius:20px; padding:14px; background:rgba(255,255,255,0.02); min-width: 200px; transition: flex 0.5s ease; }
+        .zone-header { padding:8px 15px; border-radius:12px; font-weight:900; letter-spacing:2px; margin-bottom:12px; align-self:stretch; text-align:center; }
         .zone-selected .zone-header { background:rgba(255,215,0,0.1); color:var(--gold); border:1px solid rgba(255,215,0,0.3); }
         .zone-waitlisted .zone-header { background:rgba(0,191,255,0.1); color:#00BFFF; border:1px solid rgba(0,191,255,0.3); }
         .zone-eliminated .zone-header { background:rgba(255,20,147,0.1); color:var(--primary); border:1px solid rgba(255,20,147,0.3); }
@@ -119,9 +119,10 @@
 <div class="flash" id="flash"></div>
 
 <div class="page">
-    <div class="header">
+    <div class="header" style="position:relative;">
+        <h1 class="header-text">HELLO MACHI</h1>
         <img src="logo.jpg" class="logo-img" alt="Hello Machi FM">
-        <h1>WALL OF FAME</h1>
+        <h1 class="header-text">SUPER SINGER</h1>
         <div id="round-label" class="round-badge">SELECTION PHASE</div>
     </div>
     <div id="main-grid" class="wall-grid"></div>
@@ -319,13 +320,46 @@
         const wait = list.filter(p => (p.status || '').toLowerCase() === 'waitlisted');
         const active = list.filter(p => !['eliminated', 'waitlisted'].includes((p.status || '').toLowerCase()));
 
-        if (currentWofFilter === 'all_everyone' || elim.length > 0 || wait.length > 0) {
+        if (currentWofFilter === 'grand_finale') {
+            splitView.style.display = 'none';
+            mainGrid.style.display = 'flex';
+            mainGrid.style.justifyContent = 'center';
+            mainGrid.style.alignItems = 'center';
+            mainGrid.style.gap = '40px';
+            mainGrid.innerHTML = '';
+            
+            // Order: Runner Up 1, Winner, Runner Up 2
+            const winner = list.find(p => (p.status || '').toLowerCase() === 'winner');
+            const ru1 = list.find(p => (p.status || '').toLowerCase() === 'runner up 1');
+            const ru2 = list.find(p => (p.status || '').toLowerCase() === 'runner up 2');
+            
+            if (ru1) mainGrid.appendChild(makeCard(ru1, 0));
+            if (winner) {
+                const wCard = makeCard(winner, 1);
+                wCard.style.transform = 'scale(1.3)';
+                wCard.style.zIndex = '10';
+                mainGrid.appendChild(wCard);
+            }
+            if (ru2) mainGrid.appendChild(makeCard(ru2, 2));
+
+        } else if (currentWofFilter === 'all_everyone' || elim.length > 0 || wait.length > 0) {
             mainGrid.style.display = 'none';
+            mainGrid.style.justifyContent = 'start';
+            mainGrid.style.alignItems = 'start';
             splitView.style.display = 'flex'; // changed to flex from grid
             
             selGrid.innerHTML = ''; active.forEach((p, i) => selGrid.appendChild(makeCard(p, i)));
             waitGrid.innerHTML = ''; wait.forEach((p, i) => waitGrid.appendChild(makeCard(p, i)));
             elGrid.innerHTML = ''; elim.forEach((p, i) => elGrid.appendChild(makeCard(p, i)));
+
+            // Dynamic Proportional Partitioning
+            const selWeight = Math.max(active.length, 1);
+            const waitWeight = Math.max(wait.length, 0.5);
+            const elimWeight = Math.max(elim.length, 0.5);
+
+            selGrid.parentElement.style.flex = `${selWeight} 1 0%`;
+            waitGrid.parentElement.style.flex = `${waitWeight} 1 0%`;
+            elGrid.parentElement.style.flex = `${elimWeight} 1 0%`;
 
             // Hide empty zones dynamically
             selGrid.parentElement.style.display = active.length > 0 ? 'flex' : 'none';
@@ -334,6 +368,8 @@
         } else {
             splitView.style.display = 'none';
             mainGrid.style.display = 'grid';
+            mainGrid.style.justifyContent = 'start';
+            mainGrid.style.alignItems = 'start';
             mainGrid.innerHTML = ''; active.forEach((p, i) => mainGrid.appendChild(makeCard(p, i)));
         }
     }
@@ -366,16 +402,28 @@
     }
 
     function applyFilterAndRender() {
-        // Only include candidates who are strictly revealed AND not pending
-        let visible = currentParticipants.filter(p => p.isRevealed === true && p.status && p.status !== 'pending');
+        let visible = [];
+        
+        // Master override: If "Show Absolutely Everyone" or specific "Waitlisted/Eliminated" filters, show even if hidden
+        const showHidden = ['all_everyone', 'waitlisted', 'eliminated'].includes(currentWofFilter.toLowerCase());
+        
+        if (showHidden) {
+            visible = currentParticipants.filter(p => p.status && p.status !== 'pending');
+        } else {
+            // Otherwise, only show candidates who are strictly revealed
+            visible = currentParticipants.filter(p => p.isRevealed === true && p.status && p.status !== 'pending');
+        }
 
         // Apply admin display filter
         if (currentWofFilter === 'all_everyone') {
-            // Keep everyone
+            // Keep everyone (already filtered above)
+        } else if (currentWofFilter === 'grand_finale') {
+            visible = visible.filter(p => ['winner', 'runner up 1', 'runner up 2'].includes((p.status || '').toLowerCase()));
         } else if (currentWofFilter === 'all_active') {
             visible = visible.filter(p => !['eliminated', 'waitlisted'].includes(p.status.toLowerCase()));
         } else if (currentWofFilter) {
-            visible = visible.filter(p => p.status === currentWofFilter);
+            // Case-insensitive status matching
+            visible = visible.filter(p => (p.status || '').toLowerCase() === currentWofFilter.toLowerCase());
         }
 
         // Trigger big reveal for newly isRevealed participants

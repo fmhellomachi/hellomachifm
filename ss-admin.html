@@ -56,13 +56,14 @@
             body { 
                 padding: 0;
                 font-size: 14px;
-                height: 100vh;
+                height: 100dvh;
                 overflow: hidden;
                 display: flex;
                 flex-direction: column;
             }
-            .admin-nav { padding: 10px 15px; border-bottom: 1px solid var(--glass-border); flex-wrap: wrap; gap: 8px; }
-            .admin-nav .logo span { font-size: 0.85rem; }
+            .admin-header { padding: 15px 0; margin-bottom: 20px; }
+            .admin-nav { padding: 0 15px; flex-direction: column; gap: 10px; align-items: center; }
+            .admin-nav .logo span { font-size: 0.9rem; }
             #admin-content {
                 flex: 1;
                 overflow-y: auto;
@@ -124,9 +125,10 @@
                 display: flex !important;
                 background: #0a0a0f;
                 border-top: 1px solid #333;
-                padding: 8px 10px;
+                padding: 10px 12px;
                 justify-content: space-around;
-                z-index: 1000;
+                z-index: 5000;
+                position: relative;
             }
             .mobile-tab-btn {
                 display: flex;
@@ -142,10 +144,12 @@
             .mobile-tab-btn.active { color: var(--primary); }
             .desktop-nav-tabs { display: none !important; }
             
-            /* Edit modal grid → single column on mobile */
+            #edit-modal > div { padding: 20px !important; width: 95% !important; border-radius: 12px !important; }
             #edit-modal > div > div[style*="grid"] {
                 grid-template-columns: 1fr !important;
+                gap: 10px !important;
             }
+            #edit-modal > div > div[style*="grid"] > div { grid-column: span 1 !important; }
         }
         
         @media (min-width: 769px) {

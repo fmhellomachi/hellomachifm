@@ -90,16 +90,18 @@
 
         /* Mobile */
         @media(max-width:768px){
-            .page { padding:10px; }
+            body { overflow-y: auto; height: auto; }
+            .page { padding:10px; height: auto; min-height: 100dvh; }
             .logo-img { width:52px; height:52px; }
-            .header { gap:15px; }
+            .header { gap:12px; margin-bottom: 30px; }
             .header-text { font-size:1.1rem; letter-spacing:1px; }
-            .split-container { flex-direction:column; overflow-y:auto; }
-            .split-zone { min-width:0; flex:none !important; }
-            .wall-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
+            .round-badge { font-size: 0.75rem; padding: 3px 15px; bottom: -20px; }
+            .split-container { flex-direction:column; overflow:visible; gap: 40px; }
+            .split-zone { min-width:0; flex:none !important; min-height: 300px; }
+            .wall-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; overflow: visible; }
             .p-avatar,.p-placeholder { width:70px; height:70px; font-size:1.6rem; }
             .p-name { font-size:0.8rem; }
-            .reveal-card { padding:28px 18px; }
+            .reveal-card { padding:28px 18px; width: 95%; }
             .reveal-card img { width:110px; height:110px; }
         }
     </style>

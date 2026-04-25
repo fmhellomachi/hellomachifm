@@ -161,26 +161,10 @@
         <p style="color:rgba(255,255,255,0.6);">Mobile browsers require a tap to start the music</p>
     </div>
 
-    <!-- Premium Protruding Disk Player Bar -->
+    <!-- Premium Rotating Disk Pill Player -->
     <div class="floating-player-wrapper">
         <div class="floating-player">
-            <!-- LEFT: Info -->
-            <div class="player-left">
-                <div class="live-indicator-player">
-                    <div class="waveform">
-                        <div class="wave-bar"></div>
-                        <div class="wave-bar"></div>
-                        <div class="wave-bar"></div>
-                        <div class="wave-bar"></div>
-                    </div>
-                    LIVE STREAMING
-                </div>
-                <div class="player-station-info">
-                    <h4 class="neon-text">HELLO MACHI FM</h4>
-                </div>
-            </div>
-
-            <!-- CENTER: Protruding Disk Button -->
+            <!-- Left: Disk -->
             <div class="disk-control-wrapper">
                 <button id="play-pause-btn" class="disk-button">
                     <img src="logo.jpg" alt="Disk" id="player-disk-img" class="disk-img">
@@ -189,13 +173,19 @@
                     </div>
                 </button>
             </div>
-
-            <!-- RIGHT: Controls -->
-            <div class="player-right">
-                <div class="volume-container-new">
-                    <i class="fa-solid fa-volume-high" style="color: white; font-size: 1.2rem;"></i>
-                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="0.8">
+            
+            <!-- Middle: Info -->
+            <div class="player-info-center">
+                <h4 id="now-playing-title">HELLO MACHI FM</h4>
+                <div class="live-status-pill">
+                    <span class="pulse"></span> LIVE BROADCAST
                 </div>
+            </div>
+
+            <!-- Right: Volume -->
+            <div class="player-right-controls">
+                <i class="fa-solid fa-volume-low" style="color:rgba(255,255,255,0.5); font-size:0.8rem;"></i>
+                <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="0.8">
             </div>
         </div>
     </div>

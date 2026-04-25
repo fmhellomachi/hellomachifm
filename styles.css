@@ -505,299 +505,123 @@ h1, h2, h3, h4, .logo span {
 }
 .rj-info span { font-weight: 700; font-size: 1rem; color: white; }
 
-/* Premium Full-Width Player Bar */
+/* ============================================================
+   PREMIUM ROTATING DISK PLAYER (PILL DESIGN)
+   ============================================================ */
 .floating-player-wrapper {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 9999;
+    bottom: 25px; left: 50%;
+    transform: translateX(-50%);
+    width: 92%; max-width: 500px;
+    z-index: 10000;
     pointer-events: auto;
 }
 
-/* Premium Protruding Disk Player Bar */
-.floating-player-wrapper {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 9999;
-    height: 120px; /* More height for protrusion */
-    display: flex;
-    align-items: flex-end;
-}
-
 .floating-player {
-    width: 95%;
-    max-width: 1200px;
-    height: 80px;
-    background: rgba(10, 10, 15, 0.8);
-    backdrop-filter: blur(40px);
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 60px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 40px;
-    position: relative;
-}
-
-.player-left, .player-right {
-    flex: 1;
+    border-radius: 100px;
+    height: 75px;
     display: flex;
     align-items: center;
+    padding: 0 10px 0 8px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,20,147,0.2);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.player-center {
-    flex: 0 0 100px; /* Fixed width for the disk to prevent overlap */
-    display: flex;
-    justify-content: center;
+/* --- THE ROTATING DISK (LEFT) --- */
+.disk-control-wrapper {
     position: relative;
-    z-index: 10;
+    width: 62px; height: 62px;
+    flex-shrink: 0;
 }
 
-.player-left { justify-content: flex-start; gap: 15px; }
-.player-right { justify-content: flex-end; gap: 15px; }
-
-/* Animated Waveform */
-.waveform {
-    display: flex;
-    align-items: flex-end;
-    gap: 3px;
-    height: 15px;
-    margin-right: 10px;
+.disk-button {
+    width: 100%; height: 100%;
+    background: #000;
+    border-radius: 50%;
+    border: 2px solid #333;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.4s;
+    padding: 0;
 }
 
-.wave-bar {
-    width: 3px;
+.disk-img {
+    width: 100%; height: 100%;
+    object-fit: cover; opacity: 0.7;
+    transition: transform 0.5s ease;
+}
+
+/* Spin Animation */
+.spinning .disk-img { animation: spin 4s linear infinite; }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* Play/Pause Icon (Centered in Disk) */
+.disk-inner-play {
+    position: absolute;
+    width: 28px; height: 28px;
     background: var(--primary);
-    border-radius: 3px;
-    animation: wave 1s ease-in-out infinite;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #000; font-size: 0.8rem;
+    box-shadow: 0 0 15px var(--primary);
+    z-index: 10;
+    pointer-events: none; /* Let clicks pass to disk-button */
 }
 
-.wave-bar:nth-child(2) { animation-delay: 0.2s; height: 10px; }
-.wave-bar:nth-child(3) { animation-delay: 0.4s; height: 15px; }
-.wave-bar:nth-child(4) { animation-delay: 0.6s; height: 8px; }
-
-@keyframes wave {
-    0%, 100% { height: 5px; }
-    50% { height: 15px; }
+/* --- PLAYER INFO (MIDDLE) --- */
+.player-info-center {
+    flex: 1;
+    padding: 0 20px;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
 }
 
-.live-indicator-player {
-    background: #ff0000;
-    color: white;
-    font-size: 0.65rem;
-    font-weight: 900;
-    padding: 4px 12px;
-    border-radius: 4px;
-    box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.player-info-center h4 {
+    color: #fff; font-size: 0.9rem; margin: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    letter-spacing: 1px;
 }
 
-.player-station-info h4 {
-    color: white;
-    font-size: 0.85rem;
-    margin: 0;
-    white-space: nowrap;
+.live-status-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.6rem; font-weight: 800; color: var(--primary);
+    text-transform: uppercase; margin-top: 2px;
 }
 
-.volume-container-new {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 8px 15px;
-    border-radius: 30px;
+/* --- VOLUME (RIGHT) --- */
+.player-right-controls {
+    display: flex; align-items: center; gap: 12px;
+    padding-right: 15px;
 }
 
 .volume-slider {
     -webkit-appearance: none;
-    width: 120px;
-    height: 8px; /* Thick and clear */
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    outline: none;
-    opacity: 0.9;
-    transition: opacity .2s;
+    width: 80px; height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 5px; outline: none;
 }
-
-.volume-slider:hover {
-    opacity: 1;
-}
-
 .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: var(--primary);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 15px var(--primary);
+    width: 12px; height: 12px;
+    background: #fff; border-radius: 50%;
+    cursor: pointer; box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
-.floating-player-wrapper {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    display: flex;
-    justify-content: center;
+/* MOBILE ADAPTATION */
+@media (max-width: 480px) {
+    .floating-player-wrapper { width: 95%; bottom: 15px; }
+    .floating-player { height: 68px; }
+    .disk-control-wrapper { width: 54px; height: 54px; }
+    .player-info-center { padding: 0 15px; }
+    .volume-slider { width: 60px; }
 }
-
-@media (max-width: 768px) {
-    /* On mobile, the disk sits INSIDE the bar, not protruding */
-    .floating-player-wrapper {
-        height: auto;
-        align-items: flex-end;
-    }
-    .floating-player {
-        width: 100%;
-        height: 64px;
-        padding: 0 12px;
-        border-radius: 0;
-        margin-bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    /* Hide protrusion wrapper, show normal inline button */
-    .disk-control-wrapper {
-        position: static !important;
-        transform: none !important;
-        top: auto !important;
-        left: auto !important;
-    }
-    .disk-button {
-        width: 48px;
-        height: 48px;
-        border-width: 3px;
-        box-shadow: 0 0 10px rgba(255,20,147,0.4);
-    }
-    .disk-img { width: 42px; height: 42px; }
-    .player-station-info { display: none; }
-    .live-indicator-player { font-size: 0.55rem; padding: 3px 8px; gap: 5px; }
-    .waveform { height: 10px; }
-    .player-left { flex: 1; gap: 6px; }
-    .player-right { flex: 0; }
-    .volume-container-new { padding: 4px 8px; gap: 6px; }
-    .volume-slider { width: 70px; }
-}
-
-.disk-control-wrapper {
-    position: absolute;
-    left: 50%;
-    top: -45px; /* Protrude above the bar */
-    transform: translateX(-50%);
-}
-
-.disk-button {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: #000;
-    border: 5px solid rgba(255, 20, 147, 0.8);
-    position: relative;
-    cursor: pointer;
-    box-shadow: 0 -10px 30px rgba(255, 20, 147, 0.3), 0 10px 30px rgba(0,0,0,0.5);
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.disk-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.6;
-    transition: all 0.5s ease;
-}
-
-.disk-button.spinning .disk-img {
-    animation: spinDisk 3s linear infinite;
-}
-
-.disk-inner-play {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    background: var(--primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: black;
-    font-size: 1.2rem;
-    box-shadow: 0 0 20px var(--primary);
-    z-index: 5;
-}
-
-.player-info-side { width: 35%; display: flex; flex-direction: column; }
-.player-controls-side { width: 35%; display: flex; justify-content: flex-end; align-items: center; }
-
-.volume-container { display: flex; align-items: center; gap: 10px; width: 150px; }
-
-@media (max-width: 768px) {
-    .floating-player { padding: 0 15px; }
-    .player-info-side { display: none; }
-    .player-controls-side { width: auto; flex: 1; }
-    .disk-control-wrapper { left: 30px; transform: none; }
-}
-
-/* Disk Rotation Animation */
-@keyframes spinDisk {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.rotating-disk {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: #000;
-    border: 2px solid #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: all 0.5s ease;
-    flex-shrink: 0;
-}
-
-.rotating-disk.spinning {
-    animation: spinDisk 3s linear infinite;
-    border-color: var(--primary);
-    box-shadow: 0 0 20px var(--primary-glow);
-}
-
-.disk-center {
-    width: 15px;
-    height: 15px;
-    background: #333;
-    border-radius: 50%;
-    border: 2px solid #000;
-    z-index: 5;
-}
-
-.disk-label {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    overflow: hidden;
-    opacity: 0.8;
-}
-
-.disk-label img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
 }
 
 /* Visualizer Animation */
@@ -1311,15 +1135,17 @@ footer {
 
 .footer-brand h3 {
     color: var(--primary);
-    font-size: 1.6rem;
-    margin-bottom: 15px;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
     font-family: 'Outfit', sans-serif;
+    letter-spacing: 2px;
 }
 
 .footer-brand p {
     color: var(--text-muted);
-    line-height: 1.6;
-    font-size: 0.95rem;
+    line-height: 1.5;
+    font-size: 0.9rem;
+    max-width: 400px;
 }
 
 .footer-links-group h4, .footer-social-group h4 {
@@ -1402,10 +1228,23 @@ footer {
 .footer-bottom {
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     margin-top: 50px;
-    padding-top: 30px;
+    padding: 30px 0 100px; /* Added extra bottom padding for floating player */
     text-align: center;
     color: #555;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+}
+
+/* Footer Mobile Refinement */
+@media (max-width: 768px) {
+    .footer-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 40px;
+    }
+    .footer-brand { display: flex; flex-direction: column; align-items: center; }
+    .footer-brand p { margin: 0 auto; }
+    .footer-social-group .social-icons { justify-content: center; }
+    .footer-links-group h4, .footer-social-group h4 { margin-bottom: 15px; }
 }
 
 /* Super Singer Promo Banner */

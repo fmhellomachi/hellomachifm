@@ -282,6 +282,9 @@
         }
     }
 
+    let isInitialLoad = true;
+    let revealedState = new Map();
+
     function initSync() {
         db.collection('live_state').doc('current').onSnapshot(doc => {
             if (doc.exists) {
@@ -300,11 +303,15 @@
 
             // Trigger big reveal for newly isRevealed participants
             visible.forEach(p => {
-                if (p.isRevealed && !knownIds.has(p.id)) {
+                // If it's not the initial page load, and the participant is newly revealed, show it!
+                if (!isInitialLoad && p.isRevealed === true && revealedState.get(p.id) !== true) {
                     setTimeout(() => showReveal(p), 600);
                 }
-                knownIds.add(p.id);
+                // Track their current reveal state
+                revealedState.set(p.id, p.isRevealed === true);
             });
+            
+            isInitialLoad = false; // After first load, any changes can trigger a reveal
 
             renderWall(visible);
         });

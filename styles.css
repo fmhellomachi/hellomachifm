@@ -506,121 +506,137 @@ h1, h2, h3, h4, .logo span {
 .rj-info span { font-weight: 700; font-size: 1rem; color: white; }
 
 /* ============================================================
-   PREMIUM ROTATING DISK PLAYER (PILL DESIGN)
+   LUXURY BROADCAST PLAYER (FROSTED VINYL DESIGN)
    ============================================================ */
 .floating-player-wrapper {
     position: fixed;
     bottom: 25px; left: 50%;
     transform: translateX(-50%);
-    width: 92%; max-width: 500px;
+    width: 94%; max-width: 550px;
     z-index: 10000;
     pointer-events: auto;
 }
 
 .floating-player {
-    background: rgba(10, 10, 15, 0.85);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 100px;
-    height: 75px;
+    background: rgba(15, 15, 20, 0.7);
+    backdrop-filter: blur(35px) saturate(180%);
+    -webkit-backdrop-filter: blur(35px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 35px;
+    height: 100px;
     display: flex;
     align-items: center;
-    padding: 0 10px 0 8px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255,20,147,0.2);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    padding: 0 25px 0 15px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.9), 0 0 30px rgba(255,20,147,0.15);
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* --- THE ROTATING DISK (LEFT) --- */
+/* --- THE VINYL DISK (LEFT) --- */
 .disk-control-wrapper {
     position: relative;
-    width: 62px; height: 62px;
+    width: 85px; height: 85px;
     flex-shrink: 0;
+    margin-right: 15px;
 }
 
 .disk-button {
     width: 100%; height: 100%;
     background: #000;
     border-radius: 50%;
-    border: 2px solid #333;
+    border: 3px solid #222;
     position: relative;
     cursor: pointer;
     overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    transition: border-color 0.4s;
-    padding: 0;
+    box-shadow: inset 0 0 20px rgba(255,255,255,0.1);
 }
 
 .disk-img {
     width: 100%; height: 100%;
-    object-fit: cover; opacity: 0.7;
-    transition: transform 0.5s ease;
+    object-fit: cover; opacity: 0.8;
+    filter: grayscale(0.2);
 }
 
-/* Spin Animation */
-.spinning .disk-img { animation: spin 4s linear infinite; }
-@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+/* Vinyl Grooves Effect */
+.disk-button::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-radial-gradient(circle, transparent, transparent 2px, rgba(255,255,255,0.03) 3px);
+    pointer-events: none;
+}
 
-/* Play/Pause Icon (Centered in Disk) */
+.spinning .disk-img { animation: spin 5s linear infinite; }
+
 .disk-inner-play {
     position: absolute;
-    width: 28px; height: 28px;
+    width: 35px; height: 35px;
     background: var(--primary);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    color: #000; font-size: 0.8rem;
-    box-shadow: 0 0 15px var(--primary);
+    color: #000; font-size: 1rem;
+    box-shadow: 0 0 25px var(--primary);
     z-index: 10;
-    pointer-events: none; /* Let clicks pass to disk-button */
 }
 
-/* --- PLAYER INFO (MIDDLE) --- */
-.player-info-center {
+/* --- LIVE VISUALIZER & INFO (CENTER) --- */
+.player-content-main {
     flex: 1;
-    padding: 0 20px;
     display: flex; flex-direction: column;
     justify-content: center;
-    overflow: hidden;
+    gap: 8px;
 }
 
-.player-info-center h4 {
-    color: #fff; font-size: 0.9rem; margin: 0;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    letter-spacing: 1px;
+.player-title-row {
+    display: flex; align-items: center; justify-content: space-between;
 }
 
-.live-status-pill {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 0.6rem; font-weight: 800; color: var(--primary);
-    text-transform: uppercase; margin-top: 2px;
+.player-title-row h4 {
+    color: #fff; font-size: 1rem; font-weight: 800; margin: 0;
+    letter-spacing: 1px; font-family: 'Outfit';
 }
 
-/* --- VOLUME (RIGHT) --- */
-.player-right-controls {
-    display: flex; align-items: center; gap: 12px;
-    padding-right: 15px;
+.visualizer-container {
+    display: flex; align-items: flex-end; gap: 3px; height: 18px;
+}
+.vis-bar {
+    width: 3px; background: var(--primary); border-radius: 2px;
+    height: 4px;
+}
+.spinning .vis-bar { animation: visBounce 1s ease-in-out infinite alternate; }
+.vis-bar:nth-child(2) { animation-delay: 0.1s; }
+.vis-bar:nth-child(3) { animation-delay: 0.3s; }
+.vis-bar:nth-child(4) { animation-delay: 0.2s; }
+.vis-bar:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes visBounce { from{height:4px} to{height:18px} }
+
+/* --- PREMIUM SLIDER (RIGHT) --- */
+.volume-control-group {
+    display: flex; align-items: center; gap: 15px;
+    margin-left: 20px;
 }
 
 .volume-slider {
     -webkit-appearance: none;
-    width: 80px; height: 4px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 5px; outline: none;
+    width: 100px; height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px; outline: none;
+    cursor: pointer;
 }
 .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 12px; height: 12px;
-    background: #fff; border-radius: 50%;
-    cursor: pointer; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    width: 16px; height: 16px;
+    background: var(--primary); border-radius: 50%;
+    box-shadow: 0 0 15px var(--primary); border: 2px solid #fff;
 }
 
-/* MOBILE ADAPTATION */
+/* MOBILE DESIGN */
 @media (max-width: 480px) {
     .floating-player-wrapper { width: 95%; bottom: 15px; }
-    .floating-player { height: 68px; }
-    .disk-control-wrapper { width: 54px; height: 54px; }
-    .player-info-center { padding: 0 15px; }
-    .volume-slider { width: 60px; }
+    .floating-player { height: 85px; padding: 0 15px 0 10px; }
+    .disk-control-wrapper { width: 65px; height: 65px; margin-right: 12px; }
+    .player-title-row h4 { font-size: 0.85rem; }
+    .volume-slider { width: 70px; }
+    .visualizer-container { display: none; } /* Hide on tiny mobile for space */
 }
 }
 

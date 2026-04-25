@@ -161,10 +161,10 @@
         <p style="color:rgba(255,255,255,0.6);">Mobile browsers require a tap to start the music</p>
     </div>
 
-    <!-- Premium Rotating Disk Pill Player -->
+    <!-- Luxury Broadcast Player (Frosted Vinyl Design) -->
     <div class="floating-player-wrapper">
         <div class="floating-player">
-            <!-- Left: Disk -->
+            <!-- Left: Premium Vinyl Disk -->
             <div class="disk-control-wrapper">
                 <button id="play-pause-btn" class="disk-button">
                     <img src="logo.jpg" alt="Disk" id="player-disk-img" class="disk-img">
@@ -174,17 +174,26 @@
                 </button>
             </div>
             
-            <!-- Middle: Info -->
-            <div class="player-info-center">
-                <h4 id="now-playing-title">HELLO MACHI FM</h4>
-                <div class="live-status-pill">
-                    <span class="pulse"></span> LIVE BROADCAST
+            <!-- Middle: Live Visualizer & Info -->
+            <div class="player-content-main">
+                <div class="player-title-row">
+                    <h4 id="now-playing-title">HELLO MACHI FM</h4>
+                    <div class="visualizer-container">
+                        <div class="vis-bar"></div>
+                        <div class="vis-bar"></div>
+                        <div class="vis-bar"></div>
+                        <div class="vis-bar"></div>
+                        <div class="vis-bar"></div>
+                    </div>
+                </div>
+                <div class="live-status-pill" style="margin-top: -5px;">
+                    <span class="pulse"></span> ON AIR NOW
                 </div>
             </div>
 
-            <!-- Right: Volume -->
-            <div class="player-right-controls">
-                <i class="fa-solid fa-volume-low" style="color:rgba(255,255,255,0.5); font-size:0.8rem;"></i>
+            <!-- Right: Premium Volume Slider -->
+            <div class="volume-control-group">
+                <i class="fa-solid fa-volume-high" style="color:rgba(255,255,255,0.4); font-size:0.8rem;"></i>
                 <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="0.8">
             </div>
         </div>

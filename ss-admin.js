@@ -483,8 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 updates.participantId = await generateUniqueId();
             }
 
-            // Automatically trigger the cinematic reveal on Wall of Fame when advancing
-            if (s !== 'pending') updates.isRevealed = true;
+            // Automatically trigger reveal ONLY for competitive transitions (not initial approval)
+            const revealTriggers = ['Round 1', 'Round 2', 'Round 3', 'Final', 'Winner', 'Runner Up 1', 'Runner Up 2', 'waitlisted', 'Eliminated'];
+            if (revealTriggers.includes(s)) {
+                updates.isRevealed = true;
+            }
             
             await docRef.update(updates); 
             // ---- NO full reload — update the single row in-place ----

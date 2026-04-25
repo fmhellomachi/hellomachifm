@@ -1503,3 +1503,24 @@ footer {
 }
 
 
+/* --- RESPONSIVE CHAT WIDGET --- */
+@media (max-width: 480px) {
+    #chat-widget-container {
+        bottom: 100px !important;
+        right: 15px !important;
+    }
+    
+    #chat-window {
+        width: calc(100vw - 30px) !important;
+        max-width: 350px;
+        height: 450px !important;
+        right: 0 !important;
+        bottom: 75px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    #chat-window {
+        height: 400px !important;
+    }
+}

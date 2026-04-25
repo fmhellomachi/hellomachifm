@@ -471,8 +471,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updates.participantId = await generateUniqueId();
             }
 
-            // If advancing, hide until revealed
-            if (s !== 'pending') updates.isRevealed = false;
+            // Automatically trigger the cinematic reveal on Wall of Fame when advancing
+            if (s !== 'pending') updates.isRevealed = true;
             
             await docRef.update(updates); 
             // ---- NO full reload — update the single row in-place ----

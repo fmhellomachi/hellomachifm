@@ -138,6 +138,7 @@
 </div>
 
 <div id="reveal-overlay">
+    <button id="unmute-btn" onclick="unmuteAudio()" style="display:none; position:absolute; top:20px; right:20px; background:var(--primary); color:black; font-weight:bold; border:none; padding:10px 20px; border-radius:10px; z-index:99999; font-size:1.2rem; cursor:pointer; box-shadow:0 0 15px var(--primary);"><i class="fa-solid fa-volume-high"></i> UNMUTE SOUND</button>
     <div class="reveal-card" id="reveal-card">
         <i id="reveal-icon" class="fa-solid fa-trophy fa-3x"></i>
         <h3 id="reveal-title" style="font-size:1.1rem;letter-spacing:3px;margin:14px 0 0;">CONGRATULATIONS!</h3>
@@ -195,33 +196,49 @@
         card.className = 'reveal-card';
         overlay.style.background = 'rgba(0,0,0,0.94)';
 
+        let audioPromise;
         if (statusLower === 'eliminated') {
             card.classList.add('card-eliminated');
             icon.className = 'fa-solid fa-heart-crack fa-3x';
             title.textContent = 'HARD LUCK!';
             statusText.textContent = 'ELIMINATED';
             overlay.style.background = 'rgba(100,0,0,0.9)';
-            document.getElementById('audio-eliminated').play().catch(e=>console.log(e));
+            audioPromise = document.getElementById('audio-eliminated').play();
         } else if (statusLower === 'waitlisted') {
             card.classList.add('card-waitlisted');
             icon.className = 'fa-solid fa-hourglass-half fa-3x';
             title.textContent = 'HANG TIGHT!';
             statusText.textContent = 'WAITLISTED';
-            document.getElementById('audio-waitlisted').play().catch(e=>console.log(e));
+            audioPromise = document.getElementById('audio-waitlisted').play();
         } else {
             card.classList.add('card-selected');
             icon.className = 'fa-solid fa-trophy fa-3x';
             title.textContent = 'CONGRATULATIONS!';
             statusText.textContent = `ADVANCED TO ${(p.status || '').toUpperCase()}`;
-            document.getElementById('audio-selected').play().catch(e=>console.log(e));
+            audioPromise = document.getElementById('audio-selected').play();
             confetti({ particleCount: 220, spread: 85, origin: { y: 0.6 }, colors: ['#FFD700','#B8860B','#fff','#FF1493'] });
+        }
+
+        if (audioPromise) {
+            audioPromise.catch(e => {
+                console.log("Audio autoplay blocked by browser", e);
+                document.getElementById('unmute-btn').style.display = 'block';
+            });
         }
 
         document.getElementById('reveal-img').src = p.photoBase64 || 'logo.jpg';
         document.getElementById('reveal-name').textContent = (p.name || '').toUpperCase();
         overlay.style.display = 'flex';
         
-        setTimeout(() => { overlay.style.display = 'none'; }, 7000);
+        setTimeout(() => { 
+            overlay.style.display = 'none'; 
+            document.getElementById('unmute-btn').style.display = 'none';
+        }, 7000);
+    }
+
+    function unmuteAudio() {
+        document.getElementById('unmute-btn').style.display = 'none';
+        document.getElementById('audio-selected').play().catch(e=>console.log(e));
     }
 
     function badgeClass(s) {
@@ -310,10 +327,10 @@
     }
 
     function applyFilterAndRender() {
-        // Remove pending
-        let visible = currentParticipants.filter(p => p.status && p.status !== 'pending');
+        // Only include candidates who are strictly revealed AND not pending
+        let visible = currentParticipants.filter(p => p.isRevealed === true && p.status && p.status !== 'pending');
 
-        // Apply admin filter
+        // Apply admin display filter
         if (currentWofFilter === 'all_active') {
             visible = visible.filter(p => !['eliminated', 'waitlisted'].includes(p.status.toLowerCase()));
         } else if (currentWofFilter) {

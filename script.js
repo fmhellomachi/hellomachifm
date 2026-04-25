@@ -39,15 +39,28 @@ document.addEventListener('DOMContentLoaded', () => {
     async function togglePlay() {
         if (audio.paused) {
             try {
+                // Force reload the source to ensure fresh buffer
+                const currentSrc = audio.querySelector('source').src;
+                audio.src = currentSrc + "?t=" + new Date().getTime(); 
+                audio.load();
+                
                 await audio.play();
                 updateUIState(true);
                 if(tapOverlay) tapOverlay.style.display = 'none';
             } catch (err) {
-                console.error("Autoplay/Play blocked:", err);
-                if(tapOverlay) tapOverlay.style.display = 'flex';
+                console.error("Playback failed:", err);
+                // If it failed, try the fallback URL
+                try {
+                    audio.src = "https://azuracast.hellomachi.com/listen/hello_machi_fm/radio.mp3";
+                    await audio.play();
+                    updateUIState(true);
+                } catch(e) {
+                    if(tapOverlay) tapOverlay.style.display = 'flex';
+                }
             }
         } else {
             audio.pause();
+            audio.src = ""; // Stop the download stream entirely
             updateUIState(false);
         }
     }

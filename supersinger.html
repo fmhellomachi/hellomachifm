@@ -144,6 +144,12 @@
                     <div class="form-group">
                         <label for="reg-photo"><i class="fa-solid fa-camera"></i> Profile Photo</label>
                         <input type="file" id="reg-photo" accept="image/*" required style="background: rgba(255,255,255,0.05); padding: 5px;">
+                        <!-- Face Preview after crop -->
+                        <div id="photo-preview-container" style="display:none; margin-top:12px; text-align:center;">
+                            <p style="font-size:0.8rem; color:#888; margin-bottom:6px;">✅ Face Preview</p>
+                            <img id="photo-preview" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);">
+                            <button type="button" id="recrop-btn" style="display:block; margin:8px auto 0; background:transparent; border:1px solid #666; color:#aaa; padding:4px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer;">Re-crop</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="reg-audio"><i class="fa-solid fa-music"></i> Audition MP3</label>
@@ -159,6 +165,32 @@
             </form>
         </div>
     </section>
+
+    <!-- ===== FACE CROP MODAL ===== -->
+    <div id="crop-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:99999; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+        <div style="background:#111; border:1px solid #333; border-radius:20px; padding:25px; max-width:400px; width:100%; text-align:center;">
+            <h3 style="color:var(--primary); margin-bottom:5px;"><i class="fa-solid fa-face-smile"></i> Frame Your Face</h3>
+            <p style="color:#888; font-size:0.85rem; margin-bottom:15px;">Drag to reposition · Pinch or scroll to zoom</p>
+
+            <!-- Circular viewport -->
+            <div id="crop-viewport" style="width:220px; height:220px; border-radius:50%; overflow:hidden; border:4px solid var(--primary); margin:0 auto; position:relative; cursor:grab; touch-action:none; box-shadow:0 0 30px rgba(255,20,147,0.4);">
+                <img id="crop-image" style="position:absolute; transform-origin:top left; user-select:none; -webkit-user-drag:none; pointer-events:none;">
+            </div>
+
+            <!-- Zoom slider -->
+            <div style="margin:15px auto; display:flex; align-items:center; gap:10px; max-width:260px;">
+                <i class="fa-solid fa-magnifying-glass-minus" style="color:#888;"></i>
+                <input type="range" id="zoom-slider" min="50" max="300" value="100" style="flex:1; accent-color:var(--primary);">
+                <i class="fa-solid fa-magnifying-glass-plus" style="color:#888;"></i>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button id="crop-cancel-btn" type="button" style="flex:1; padding:12px; background:#222; border:1px solid #444; color:#aaa; border-radius:12px; cursor:pointer;">Cancel</button>
+                <button id="crop-confirm-btn" type="button" style="flex:1; padding:12px; background:var(--primary); border:none; color:black; font-weight:900; border-radius:12px; cursor:pointer;"><i class="fa-solid fa-check"></i> Use This Photo</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Selection Status Checker -->
     <section class="container mb-5">

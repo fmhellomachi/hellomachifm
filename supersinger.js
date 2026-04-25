@@ -4,49 +4,127 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitBtn = document.getElementById('submit-registration');
     const formMessage = document.getElementById('form-message');
 
+    // ===== INTERACTIVE FACE CROPPER =====
     let compressedPhotoBase64 = null;
     const photoInput = document.getElementById('reg-photo');
     const photoPreviewContainer = document.getElementById('photo-preview-container');
     const photoPreview = document.getElementById('photo-preview');
+    const cropModal = document.getElementById('crop-modal');
+    const cropViewport = document.getElementById('crop-viewport');
+    const cropImg = document.getElementById('crop-image');
+    const zoomSlider = document.getElementById('zoom-slider');
+    const recropBtn = document.getElementById('recrop-btn');
 
+    let scale = 1, offsetX = 0, offsetY = 0;
+    let isDragging = false, startX = 0, startY = 0;
+    let rawImageSrc = null;
+    const VIEWPORT_SIZE = 220;
+
+    function applyTransform() {
+        cropImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+    }
+
+    function openCropModal(src) {
+        rawImageSrc = src;
+        cropImg.src = src;
+        cropImg.onload = () => {
+            // Auto-fit image to fill the circular viewport
+            const naturalW = cropImg.naturalWidth;
+            const naturalH = cropImg.naturalHeight;
+            const fitScale = Math.max(VIEWPORT_SIZE / naturalW, VIEWPORT_SIZE / naturalH);
+            scale = fitScale;
+            offsetX = (VIEWPORT_SIZE - naturalW * scale) / 2;
+            offsetY = (VIEWPORT_SIZE - naturalH * scale) / 2;
+            zoomSlider.value = Math.round(scale * 100);
+            applyTransform();
+        };
+        cropModal.style.display = 'flex';
+    }
+
+    // Drag (Mouse)
+    cropViewport.addEventListener('mousedown', (e) => {
+        isDragging = true; startX = e.clientX - offsetX; startY = e.clientY - offsetY;
+        cropViewport.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        offsetX = e.clientX - startX; offsetY = e.clientY - startY;
+        applyTransform();
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; cropViewport.style.cursor = 'grab'; });
+
+    // Drag (Touch)
+    cropViewport.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isDragging = true;
+            startX = e.touches[0].clientX - offsetX;
+            startY = e.touches[0].clientY - offsetY;
+        }
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+        if (!isDragging || e.touches.length !== 1) return;
+        offsetX = e.touches[0].clientX - startX;
+        offsetY = e.touches[0].clientY - startY;
+        applyTransform();
+    }, { passive: true });
+    window.addEventListener('touchend', () => { isDragging = false; });
+
+    // Zoom via scroll wheel
+    cropViewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        scale = Math.max(0.5, Math.min(3, scale - e.deltaY * 0.002));
+        zoomSlider.value = Math.round(scale * 100);
+        applyTransform();
+    }, { passive: false });
+
+    // Zoom via slider
+    if (zoomSlider) {
+        zoomSlider.addEventListener('input', () => {
+            scale = parseInt(zoomSlider.value) / 100;
+            applyTransform();
+        });
+    }
+
+    // Confirm crop — render visible area to a 250x250 canvas
+    document.getElementById('crop-confirm-btn')?.addEventListener('click', () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 250; canvas.height = 250;
+        const ctx = canvas.getContext('2d');
+        // Draw circular clip
+        ctx.beginPath();
+        ctx.arc(125, 125, 125, 0, Math.PI * 2);
+        ctx.clip();
+        // The viewport is 220px; scale factor from viewport to output canvas
+        const vp = VIEWPORT_SIZE;
+        const outSize = 250;
+        const ratio = outSize / vp;
+        const img = new Image();
+        img.src = rawImageSrc;
+        img.onload = () => {
+            ctx.drawImage(img, offsetX * ratio, offsetY * ratio, img.naturalWidth * scale * ratio, img.naturalHeight * scale * ratio);
+            compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+            photoPreview.src = compressedPhotoBase64;
+            photoPreviewContainer.style.display = 'block';
+            cropModal.style.display = 'none';
+        };
+    });
+
+    // Cancel crop
+    document.getElementById('crop-cancel-btn')?.addEventListener('click', () => {
+        cropModal.style.display = 'none';
+        if (!compressedPhotoBase64) photoInput.value = ''; // clear file if no crop done
+    });
+
+    // Re-crop button
+    if (recropBtn) recropBtn.addEventListener('click', () => openCropModal(rawImageSrc));
+
+    // Open modal when file chosen
     if (photoInput) {
-        photoInput.addEventListener('change', function(e) {
+        photoInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 250;
-                    const MAX_HEIGHT = 250;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.6); // Compress to 60% quality JPEG
-                    photoPreview.src = compressedPhotoBase64;
-                    photoPreviewContainer.style.display = 'block';
-                }
-                img.src = event.target.result;
-            }
+            reader.onload = (ev) => openCropModal(ev.target.result);
             reader.readAsDataURL(file);
         });
     }
@@ -154,6 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 formMessage.innerHTML = '🎉 Registration Successful! We will contact you soon.';
                 formMessage.className = 'form-message success';
                 form.reset();
+                // Reset crop state
+                compressedPhotoBase64 = null;
+                rawImageSrc = null;
+                if (photoPreviewContainer) photoPreviewContainer.style.display = 'none';
                 loadParticipants(); // Refresh the list
             } catch (error) {
                 console.error("Error adding document: ", error);

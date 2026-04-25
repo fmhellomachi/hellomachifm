@@ -163,15 +163,20 @@
         </div>
 
         <div id="view-participants">
-            <div style="margin-bottom: 20px; display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;" id="admin-tabs">
-                <button class="btn btn-primary" onclick="filterTable('all')">All</button>
-                <button class="btn btn-secondary" onclick="filterTable('pending')">Pending</button>
-                <button class="btn btn-secondary" onclick="filterTable('Round 1')">Round 1</button>
-                <button class="btn btn-secondary" onclick="filterTable('Round 2')">Round 2</button>
-                <button class="btn btn-secondary" onclick="filterTable('Round 3')">Round 3</button>
-                <button class="btn btn-secondary" onclick="filterTable('Final')">Final</button>
-                <button class="btn btn-secondary" onclick="filterTable('waitlisted')">Waitlist</button>
-                <button class="btn btn-secondary" onclick="filterTable('Eliminated')">Eliminated</button>
+            <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content:space-between; align-items:center;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;" id="admin-tabs">
+                    <button class="btn btn-primary" onclick="filterTable('all')">All</button>
+                    <button class="btn btn-secondary" onclick="filterTable('pending')">Pending</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Round 1')">Round 1</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Round 2')">Round 2</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Round 3')">Round 3</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Final')">Final</button>
+                    <button class="btn btn-secondary" onclick="filterTable('waitlisted')">Waitlist</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Eliminated')">Eliminated</button>
+                </div>
+                <button onclick="openAddModal()" class="btn btn-primary" style="background:var(--secondary); white-space:nowrap;">
+                    <i class="fa-solid fa-user-plus"></i> Add Participant
+                </button>
             </div>
 
             <div class="table-container">
@@ -309,34 +314,70 @@
         <p class="text-muted">Please sign in with your admin Google account to manage the portal.</p>
     </section>
 
-    <!-- Edit Participant Modal -->
-    <div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center;">
-        <div style="background: #111; border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
-            <h2 style="margin-bottom: 20px; color: var(--primary);">Edit Participant Info</h2>
+    <!-- Edit / Add Participant Modal (shared) -->
+    <div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: #111; border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; width: 92%; max-width: 650px; max-height: 92vh; overflow-y: auto;">
+            <h2 id="modal-title" style="margin-bottom: 20px; color: var(--primary);"><i class="fa-solid fa-user-pen"></i> Edit Participant</h2>
             <input type="hidden" id="edit-id">
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>Full Name</label>
-                <input type="text" id="edit-name" style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px;">
+
+            <!-- 2-column grid -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <div>
+                    <label style="font-size:0.8rem;color:#888;">Full Name *</label>
+                    <input type="text" id="edit-name" placeholder="Full name" style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem;color:#888;">Email *</label>
+                    <input type="email" id="edit-email" placeholder="email@example.com" style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem;color:#888;">WhatsApp Number</label>
+                    <input type="tel" id="edit-phone" placeholder="10-digit number" style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem;color:#888;">City</label>
+                    <input type="text" id="edit-city" placeholder="City" style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                </div>
+                <div style="grid-column:span 2;">
+                    <label style="font-size:0.8rem;color:#888;">Address</label>
+                    <input type="text" id="edit-address" placeholder="Full address" style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                </div>
+                <div style="grid-column:span 2;">
+                    <label style="font-size:0.8rem;color:#888;">Bio</label>
+                    <textarea id="edit-bio" rows="2" placeholder="Short bio..." style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;"></textarea>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem;color:#888;">Status</label>
+                    <select id="edit-status" style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved (Selected)</option>
+                        <option value="Round 1">Round 1</option>
+                        <option value="Round 2">Round 2</option>
+                        <option value="Round 3">Round 3</option>
+                        <option value="Final">Final</option>
+                        <option value="waitlisted">Waitlisted</option>
+                        <option value="Eliminated">Eliminated</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem;color:#888;">Judge Score (0–10)</label>
+                    <input type="number" id="edit-judge-score" min="0" max="10" placeholder="0" style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                </div>
+                <div style="grid-column:span 2;">
+                    <label style="font-size:0.8rem;color:#888;">Audition Link (MP3 URL)</label>
+                    <input type="url" id="edit-audition-link" placeholder="https://..." style="width:100%;padding:10px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                </div>
+                <!-- Photo upload -->
+                <div style="grid-column:span 2;">
+                    <label style="font-size:0.8rem;color:#888;">Profile Photo (leave blank to keep existing)</label>
+                    <input type="file" id="edit-photo-file" accept="image/*" style="width:100%;padding:8px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
+                    <img id="edit-photo-preview" src="" style="display:none;width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);margin-top:8px;">
+                </div>
             </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>WhatsApp Number</label>
-                <input type="tel" id="edit-phone" style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px;">
-            </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>City</label>
-                <input type="text" id="edit-city" style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px;">
-            </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>Address</label>
-                <textarea id="edit-address" rows="2" style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px;"></textarea>
-            </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>Bio</label>
-                <textarea id="edit-bio" rows="3" style="width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px;"></textarea>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="saveParticipantChanges()" style="flex: 1;">Save Changes</button>
-                <button class="btn btn-secondary" onclick="closeEditModal()" style="flex: 1;">Cancel</button>
+
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn btn-primary" onclick="saveParticipantChanges()" style="flex:1;" id="modal-save-btn">Save Changes</button>
+                <button class="btn btn-secondary" onclick="closeEditModal()" style="flex:1;">Cancel</button>
             </div>
         </div>
     </div>
@@ -359,6 +400,7 @@
             <i class="fa-solid fa-tv"></i>
             <span>Display</span>
         </a>
+        <a href="index.html" class="mobile-tab-btn" style="text-decoration: none;">
             <i class="fa-solid fa-house-chimney"></i>
             <span>Main FM</span>
         </a>

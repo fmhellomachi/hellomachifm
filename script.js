@@ -74,27 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let chatUsername = localStorage.getItem('chat_username') || ('Listener_' + Math.floor(Math.random() * 9000 + 1000));
 
-    // Update Listener Counter (Sync with Firestore)
-    function syncListeners() {
-        const statsRef = db.collection('stats').doc('presence');
-        // Increment on load
-        statsRef.set({ count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
-        
-        // Listen for updates
-        statsRef.onSnapshot(doc => {
-            if (doc.exists) {
-                const count = doc.data().count || 1; // Real count
-                const counterEl = document.getElementById('online-counter');
-                if (counterEl) counterEl.innerHTML = `<span class="pulse"></span> ${count} Listeners Online`;
-            }
-        });
-
-        // Decrement on close (best effort)
-        window.addEventListener('beforeunload', () => {
-            statsRef.update({ count: firebase.firestore.FieldValue.increment(-1) });
-        });
-    }
-    syncListeners();
+    // Listener count is synced via the complete syncListeners() below
 
     window.setChatName = () => {
         const name = prompt("Choose a unique nickname:", chatUsername);

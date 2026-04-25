@@ -293,34 +293,132 @@ document.addEventListener('DOMContentLoaded', () => {
         return `HMSS-S1-${count.toString().padStart(3, '0')}`;
     }
 
-    // --- Edit Modal Logic ---
-    window.openEditModal = async (id) => {
-        const doc = await db.collection("participants").doc(id).get();
-        const data = doc.data();
-        getEl('edit-id').value = id;
-        getEl('edit-name').value = data.name || '';
-        getEl('edit-phone').value = data.phone || '';
-        getEl('edit-city').value = data.city || '';
-        getEl('edit-address').value = data.address || '';
-        getEl('edit-bio').value = data.bio || '';
-        getEl('edit-modal').style.display = 'flex';
+    // ---- Photo preview inside modal ----
+    const editPhotoFile = document.getElementById('edit-photo-file');
+    const editPhotoPreview = document.getElementById('edit-photo-preview');
+    let editPhotoBase64 = null;
+    if (editPhotoFile) {
+        editPhotoFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                // Compress to 250x250
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 250; canvas.height = 250;
+                    const ctx = canvas.getContext('2d');
+                    const scale = Math.max(250 / img.width, 250 / img.height);
+                    const x = (250 - img.width * scale) / 2;
+                    const y = (250 - img.height * scale) / 2;
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                    editPhotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                    editPhotoPreview.src = editPhotoBase64;
+                    editPhotoPreview.style.display = 'block';
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ---- Open ADD modal (blank form) ----
+    window.openAddModal = () => {
+        editPhotoBase64 = null;
+        document.getElementById('edit-id').value = '';
+        document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> Add New Participant';
+        document.getElementById('modal-save-btn').textContent = 'Add Participant';
+        ['edit-name','edit-email','edit-phone','edit-city','edit-address','edit-bio','edit-audition-link'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        document.getElementById('edit-status').value = 'pending';
+        document.getElementById('edit-judge-score').value = '0';
+        if (editPhotoPreview) editPhotoPreview.style.display = 'none';
+        if (editPhotoFile) editPhotoFile.value = '';
+        document.getElementById('edit-modal').style.display = 'flex';
     };
 
-    window.closeEditModal = () => { getEl('edit-modal').style.display = 'none'; };
+    // ---- Open EDIT modal (prefilled) ----
+    window.openEditModal = async (id) => {
+        editPhotoBase64 = null;
+        const doc = await db.collection("participants").doc(id).get();
+        const data = doc.data();
+        document.getElementById('edit-id').value = id;
+        document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-user-pen"></i> Edit Participant';
+        document.getElementById('modal-save-btn').textContent = 'Save Changes';
+        document.getElementById('edit-name').value = data.name || '';
+        document.getElementById('edit-email').value = data.email || '';
+        document.getElementById('edit-phone').value = data.phone || '';
+        document.getElementById('edit-city').value = data.city || '';
+        document.getElementById('edit-address').value = data.address || '';
+        document.getElementById('edit-bio').value = data.bio || '';
+        document.getElementById('edit-status').value = data.status || 'pending';
+        document.getElementById('edit-judge-score').value = data.judgeScore || 0;
+        document.getElementById('edit-audition-link').value = data.auditionLink || '';
+        if (editPhotoFile) editPhotoFile.value = '';
+        if (editPhotoPreview) {
+            if (data.photoBase64) {
+                editPhotoPreview.src = data.photoBase64;
+                editPhotoPreview.style.display = 'block';
+            } else {
+                editPhotoPreview.style.display = 'none';
+            }
+        }
+        document.getElementById('edit-modal').style.display = 'flex';
+    };
 
+    window.closeEditModal = () => { document.getElementById('edit-modal').style.display = 'none'; };
+
+    // ---- Save (works for both Add and Edit) ----
     window.saveParticipantChanges = async () => {
-        const id = getEl('edit-id').value;
+        const id = document.getElementById('edit-id').value;
+        const isNew = !id;
+
+        const name = document.getElementById('edit-name').value.trim();
+        const email = document.getElementById('edit-email').value.trim().toLowerCase();
+        if (!name || !email) { alert('Name and Email are required.'); return; }
+
         const updates = {
-            name: getEl('edit-name').value,
-            phone: getEl('edit-phone').value,
-            city: getEl('edit-city').value,
-            address: getEl('edit-address').value,
-            bio: getEl('edit-bio').value
+            name,
+            email,
+            phone: document.getElementById('edit-phone').value.trim(),
+            city: document.getElementById('edit-city').value.trim(),
+            address: document.getElementById('edit-address').value.trim(),
+            bio: document.getElementById('edit-bio').value.trim(),
+            status: document.getElementById('edit-status').value,
+            judgeScore: parseFloat(document.getElementById('edit-judge-score').value) || 0,
+            auditionLink: document.getElementById('edit-audition-link').value.trim(),
         };
-        await db.collection("participants").doc(id).update(updates);
-        alert("Updated successfully!");
-        closeEditModal();
-        fetchAdminData();
+
+        if (editPhotoBase64) updates.photoBase64 = editPhotoBase64;
+
+        const saveBtn = document.getElementById('modal-save-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            if (isNew) {
+                updates.registeredAt = firebase.firestore.FieldValue.serverTimestamp();
+                updates.isRevealed = false;
+                updates.votes = 0;
+                if (!updates.photoBase64) updates.photoBase64 = '';
+                await db.collection("participants").add(updates);
+                alert('Participant added successfully!');
+            } else {
+                await db.collection("participants").doc(id).update(updates);
+                alert('Changes saved!');
+            }
+            closeEditModal();
+            fetchAdminData();
+        } catch (e) {
+            console.error(e);
+            alert('Error saving: ' + e.message);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = isNew ? 'Add Participant' : 'Save Changes';
+        }
     };
 
     window.previewAudio = (url, name) => {

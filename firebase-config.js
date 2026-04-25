@@ -8,7 +8,9 @@ const firebaseConfig = {
   measurementId: "G-2PH33CYFHY"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase (guard against duplicate init)
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.firestore();
 const auth = firebase.auth();

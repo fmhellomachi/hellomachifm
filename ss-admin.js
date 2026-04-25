@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Panels to toggle
         const panels = {
-            'participants': getEl('participants-panel'),
+            'participants': getEl('view-participants'),
             'cms': getEl('view-cms'),
             'admins': getEl('master-admin-section'),
             'live-control': getEl('live-control-panel'),

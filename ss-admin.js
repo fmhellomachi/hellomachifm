@@ -440,6 +440,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <option value="Round 2" ${data.status==='Round 2'?'selected':''}>Round 2</option>
                                 <option value="Round 3" ${data.status==='Round 3'?'selected':''}>Round 3</option>
                                 <option value="Final" ${data.status==='Final'?'selected':''}>Final</option>
+                                <option value="Winner" ${data.status==='Winner'?'selected':''}>Winner</option>
+                                <option value="Runner Up 1" ${data.status==='Runner Up 1'?'selected':''}>Runner Up 1</option>
+                                <option value="Runner Up 2" ${data.status==='Runner Up 2'?'selected':''}>Runner Up 2</option>
                                 <option value="waitlisted" ${data.status==='waitlisted'?'selected':''}>Waitlist</option>
                                 <option value="Eliminated" ${data.status==='Eliminated'?'selected':''}>Eliminated</option>
                             </select>
@@ -466,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const updates = { status: s };
             
             // If advancing to a selection status and no ID exists, generate one
-            const selectionStatuses = ['approved', 'Round 1', 'Round 2', 'Round 3', 'Final', 'waitlisted'];
+            const selectionStatuses = ['approved', 'Round 1', 'Round 2', 'Round 3', 'Final', 'Winner', 'Runner Up 1', 'Runner Up 2', 'waitlisted'];
             if (selectionStatuses.includes(s) && !data.participantId) {
                 updates.participantId = await generateUniqueId();
             }

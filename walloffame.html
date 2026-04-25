@@ -33,8 +33,12 @@
 
         /* Grids */
         .wall-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:14px; overflow-y:auto; padding:6px; flex-grow:1; align-content:start; }
-        .split-container { display:none; grid-template-columns:1fr 1fr 1fr; flex-grow:1; gap:16px; overflow:hidden; }
-        .split-zone { display:flex; flex-direction:column; border:2px dashed rgba(255,255,255,0.08); border-radius:20px; padding:14px; background:rgba(255,255,255,0.02); overflow:hidden; }
+        .split-container { display:none; flex-direction:column; flex-grow:1; gap:20px; overflow-y:auto; padding-bottom:30px; }
+        .split-zone { display:flex; flex-direction:column; border:2px dashed rgba(255,255,255,0.08); border-radius:20px; padding:14px; background:rgba(255,255,255,0.02); }
+        .zone-header { padding:8px 15px; border-radius:12px; font-weight:900; letter-spacing:2px; margin-bottom:12px; align-self:flex-start; }
+        .zone-selected .zone-header { background:rgba(255,215,0,0.1); color:var(--gold); border:1px solid rgba(255,215,0,0.3); }
+        .zone-waitlisted .zone-header { background:rgba(0,191,255,0.1); color:#00BFFF; border:1px solid rgba(0,191,255,0.3); }
+        .zone-eliminated .zone-header { background:rgba(255,20,147,0.1); color:var(--primary); border:1px solid rgba(255,20,147,0.3); }
         .zone-header { text-align:center; padding:8px 12px; border-radius:10px; font-weight:900; font-size:1.1rem; text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }
         .zone-selected { border-color:rgba(255,215,0,0.35); }
         .zone-selected .zone-header { background:rgba(255,215,0,0.12); color:var(--gold); }
@@ -123,16 +127,16 @@
     <div id="main-grid" class="wall-grid"></div>
     <div id="split-view" class="split-container">
         <div class="split-zone zone-selected">
-            <div class="zone-header"><i class="fa-solid fa-star"></i> SELECTED</div>
-            <div class="zone-scroll"><div id="selected-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div></div>
+            <div class="zone-header"><i class="fa-solid fa-star"></i> SELECTED / ADVANCED</div>
+            <div id="selected-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div>
         </div>
         <div class="split-zone zone-waitlisted">
             <div class="zone-header"><i class="fa-solid fa-hourglass-half"></i> WAITLISTED</div>
-            <div class="zone-scroll"><div id="waitlisted-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div></div>
+            <div id="waitlisted-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div>
         </div>
         <div class="split-zone zone-eliminated">
             <div class="zone-header"><i class="fa-solid fa-xmark"></i> ELIMINATED</div>
-            <div class="zone-scroll"><div id="eliminated-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div></div>
+            <div id="eliminated-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div>
         </div>
     </div>
 </div>
@@ -151,6 +155,11 @@
 <audio id="audio-selected" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
 <audio id="audio-eliminated" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3" preload="auto"></audio>
 <audio id="audio-waitlisted" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3" preload="auto"></audio>
+<audio id="audio-round1" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto"></audio>
+<audio id="audio-round2" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+<audio id="audio-round3" src="https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3" preload="auto"></audio>
+<audio id="audio-winner" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
+<audio id="audio-runnerup" src="https://assets.mixkit.co/active_storage/sfx/1434/1434-preview.mp3" preload="auto"></audio>
 
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
@@ -210,12 +219,36 @@
             title.textContent = 'HANG TIGHT!';
             statusText.textContent = 'WAITLISTED';
             audioPromise = document.getElementById('audio-waitlisted').play();
+        } else if (statusLower === 'winner' || statusLower.includes('runner up')) {
+            card.classList.add('card-selected');
+            icon.className = 'fa-solid fa-crown fa-3x';
+            icon.style.color = 'var(--gold)';
+            title.textContent = 'GRAND FINALE';
+            statusText.textContent = (p.status || '').toUpperCase();
+            
+            audioPromise = document.getElementById(statusLower === 'winner' ? 'audio-winner' : 'audio-runnerup').play();
+            
+            // The Great Bang! Massive confetti explosion from both sides
+            const duration = 3000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 15, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFD700','#B8860B','#fff'] });
+                confetti({ particleCount: 15, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FFD700','#B8860B','#fff'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
         } else {
             card.classList.add('card-selected');
             icon.className = 'fa-solid fa-trophy fa-3x';
             title.textContent = 'CONGRATULATIONS!';
             statusText.textContent = `ADVANCED TO ${(p.status || '').toUpperCase()}`;
-            audioPromise = document.getElementById('audio-selected').play();
+            
+            let audioId = 'audio-selected';
+            if (statusLower === 'round 1') audioId = 'audio-round1';
+            else if (statusLower === 'round 2') audioId = 'audio-round2';
+            else if (statusLower === 'round 3') audioId = 'audio-round3';
+            
+            audioPromise = document.getElementById(audioId).play();
             confetti({ particleCount: 220, spread: 85, origin: { y: 0.6 }, colors: ['#FFD700','#B8860B','#fff','#FF1493'] });
         }
 
@@ -286,12 +319,18 @@
         const wait = list.filter(p => (p.status || '').toLowerCase() === 'waitlisted');
         const active = list.filter(p => !['eliminated', 'waitlisted'].includes((p.status || '').toLowerCase()));
 
-        if (elim.length > 0 || wait.length > 0) {
+        if (currentWofFilter === 'all_everyone' || elim.length > 0 || wait.length > 0) {
             mainGrid.style.display = 'none';
-            splitView.style.display = 'grid';
+            splitView.style.display = 'flex'; // changed to flex from grid
+            
             selGrid.innerHTML = ''; active.forEach((p, i) => selGrid.appendChild(makeCard(p, i)));
             waitGrid.innerHTML = ''; wait.forEach((p, i) => waitGrid.appendChild(makeCard(p, i)));
             elGrid.innerHTML = ''; elim.forEach((p, i) => elGrid.appendChild(makeCard(p, i)));
+
+            // Hide empty zones dynamically
+            selGrid.parentElement.style.display = active.length > 0 ? 'flex' : 'none';
+            waitGrid.parentElement.style.display = wait.length > 0 ? 'flex' : 'none';
+            elGrid.parentElement.style.display = elim.length > 0 ? 'flex' : 'none';
         } else {
             splitView.style.display = 'none';
             mainGrid.style.display = 'grid';
@@ -331,7 +370,9 @@
         let visible = currentParticipants.filter(p => p.isRevealed === true && p.status && p.status !== 'pending');
 
         // Apply admin display filter
-        if (currentWofFilter === 'all_active') {
+        if (currentWofFilter === 'all_everyone') {
+            // Keep everyone
+        } else if (currentWofFilter === 'all_active') {
             visible = visible.filter(p => !['eliminated', 'waitlisted'].includes(p.status.toLowerCase()));
         } else if (currentWofFilter) {
             visible = visible.filter(p => p.status === currentWofFilter);

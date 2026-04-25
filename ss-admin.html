@@ -391,11 +391,15 @@
             <h4 style="margin-bottom: 15px;">Display Filter</h4>
             <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">Select which candidates should be visible on the Wall of Fame screen.</p>
             <select id="wof-filter-select" onchange="updateWofFilter(this.value)" style="width: 100%; max-width: 300px; padding: 10px; background: #111; border: 1px solid var(--primary); color: white; border-radius: 8px;">
+                <option value="all_everyone">Show Absolutely Everyone (All Statuses)</option>
                 <option value="all_active">Show All Active (Not Elim/Wait)</option>
                 <option value="Round 1">Round 1 Only</option>
                 <option value="Round 2">Round 2 Only</option>
                 <option value="Round 3">Round 3 Only</option>
                 <option value="Final">Finalists Only</option>
+                <option value="Winner">Winner Only</option>
+                <option value="Runner Up 1">Runner Up 1 Only</option>
+                <option value="Runner Up 2">Runner Up 2 Only</option>
                 <option value="approved">Just Selected (Approved)</option>
                 <option value="waitlisted">Waitlisted</option>
                 <option value="Eliminated">Eliminated</option>
@@ -525,6 +529,9 @@
                         <option value="Round 2">Round 2</option>
                         <option value="Round 3">Round 3</option>
                         <option value="Final">Final</option>
+                        <option value="Winner">Winner</option>
+                        <option value="Runner Up 1">Runner Up 1</option>
+                        <option value="Runner Up 2">Runner Up 2</option>
                         <option value="waitlisted">Waitlisted</option>
                         <option value="Eliminated">Eliminated</option>
                     </select>

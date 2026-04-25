@@ -9,15 +9,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusLabel = document.querySelector('.now-playing-label');
 
     function updateUIState(isPlaying) {
+        console.log("Updating UI State. Playing:", isPlaying);
         const iconClass = isPlaying ? 'fa-pause' : 'fa-play';
-        const diskBtn = document.getElementById('play-pause-btn');
+        const playerElement = document.querySelector('.floating-player');
         const playIcon = document.getElementById('play-icon');
         
         if (playIcon) playIcon.className = `fa-solid ${iconClass}`;
         
-        if (diskBtn) {
-            if (isPlaying) diskBtn.classList.add('spinning');
-            else diskBtn.classList.remove('spinning');
+        if (playerElement) {
+            if (isPlaying) {
+                playerElement.classList.add('spinning');
+                console.log("Added 'spinning' class to player");
+            } else {
+                playerElement.classList.remove('spinning');
+                console.log("Removed 'spinning' class from player");
+            }
         }
         
         if (heroPlayBtn) {

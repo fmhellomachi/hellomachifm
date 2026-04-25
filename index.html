@@ -14,7 +14,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
 </head>
-<body>
+<body data-lightning-trigger="true">
+    <div class="lightning-bg-scene"></div>
     
     <!-- Navigation -->
     <nav class="navbar">
@@ -58,16 +59,17 @@
                     <a href="https://wa.me/919092363433" target="_blank" class="btn btn-secondary"><i class="fa-brands fa-whatsapp"></i> REQUEST</a>
                 </div>
 
-                <!-- Restore Super Singer Promo -->
-                <a href="supersinger.html" class="ss-promo-banner mt-5">
-                    <div class="ss-promo-content">
-                        <div class="ss-badge">EVENT LIVE</div>
-                        <div class="ss-text">
-                            <strong>SUPER SINGER 2026</strong>
-                            <span>Voting & Registration Portal Open &rarr;</span>
-                        </div>
+                <!-- Super Singer Arena Card -->
+                <div class="arena-card-container">
+                    <div class="arena-card">
+                        <div class="arena-halo"></div>
+                        <div class="arena-badge">EVENT LIVE</div>
+                        <h2 class="arena-title">SUPER SINGER <br><span class="gradient-text">2026</span></h2>
+                        <p class="arena-subtitle">The search for Chennai's ultimate voice continues. Cast your vote or join the stage.</p>
+                        <a href="supersinger.html" class="btn btn-primary btn-glow">ENTER THE ARENA &rarr;</a>
+                        <div class="arena-glow-line"></div>
                     </div>
-                </a>
+                </div>
             </div>
         </header>
 
@@ -161,10 +163,10 @@
         <p style="color:rgba(255,255,255,0.6);">Mobile browsers require a tap to start the music</p>
     </div>
 
-    <!-- Luxury Broadcast Player (Frosted Vinyl Design) -->
+    <!-- Retro Block Player -->
     <div class="floating-player-wrapper">
         <div class="floating-player">
-            <!-- Left: Premium Vinyl Disk -->
+            <!-- Left: Disk -->
             <div class="disk-control-wrapper">
                 <button id="play-pause-btn" class="disk-button">
                     <img src="logo.jpg" alt="Disk" id="player-disk-img" class="disk-img">
@@ -172,29 +174,33 @@
                         <i class="fa-solid fa-play" id="play-icon"></i>
                     </div>
                 </button>
+                <!-- Cinematic Tonearm (Needle) -->
+                <div class="tonearm"></div>
             </div>
             
-            <!-- Middle: Live Visualizer & Info -->
-            <div class="player-content-main">
-                <div class="player-title-row">
-                    <h4 id="now-playing-title">HELLO MACHI FM</h4>
-                    <div class="visualizer-container">
-                        <div class="vis-bar"></div>
-                        <div class="vis-bar"></div>
-                        <div class="vis-bar"></div>
-                        <div class="vis-bar"></div>
-                        <div class="vis-bar"></div>
-                    </div>
+            <!-- Middle: Retro Visualizer -->
+            <div class="retro-visualizer">
+                <div class="vis-block-col">
+                    <div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div>
                 </div>
-                <div class="live-status-pill" style="margin-top: -5px;">
-                    <span class="pulse"></span> ON AIR NOW
+                <div class="vis-block-col">
+                    <div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div>
+                </div>
+                <div class="vis-block-col">
+                    <div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div>
+                </div>
+                <div class="vis-block-col">
+                    <div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div><div class="vis-block"></div>
                 </div>
             </div>
 
-            <!-- Right: Premium Volume Slider -->
-            <div class="volume-control-group">
-                <i class="fa-solid fa-volume-high" style="color:rgba(255,255,255,0.4); font-size:0.8rem;"></i>
-                <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="0.8">
+            <!-- Right: Controls -->
+            <div class="player-controls-right">
+                <h4 id="now-playing-title">HELLO MACHI FM</h4>
+                <div class="volume-group">
+                    <i class="fa-solid fa-volume-high" style="color:#666; font-size:0.7rem;"></i>
+                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="0.8">
+                </div>
             </div>
         </div>
     </div>
@@ -258,6 +264,26 @@
             trigger.addEventListener('mousedown', handleSecretClick);
             trigger.addEventListener('touchstart', handleSecretClick, {passive: true});
         }
+
+        // --- GLOBAL RANDOM LIGHTNING SYSTEM ---
+        function triggerLightning() {
+            const body = document.body;
+            
+            // Add flash class (now only affects the background scene)
+            body.classList.add('flash-active');
+            
+            // Remove after animation completes (1.8 seconds)
+            setTimeout(() => {
+                body.classList.remove('flash-active');
+            }, 1800);
+
+            // Schedule next flash (between 3 and 5 minutes)
+            const nextFlash = (Math.random() * (300000 - 180000) + 180000); 
+            setTimeout(triggerLightning, nextFlash);
+        }
+
+        // Start the cycle with an initial delay
+        setTimeout(triggerLightning, 5000); // First flash after 5 seconds for immediate WOW
     </script>
 </body>
 </html>

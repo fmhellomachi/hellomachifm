@@ -1504,6 +1504,10 @@ footer {
 
 
 /* --- RESPONSIVE CHAT WIDGET --- */
+#chat-window {
+    bottom: 65px !important; /* Bring closer to button on desktop */
+}
+
 @media (max-width: 480px) {
     #chat-widget-container {
         bottom: 100px !important;
@@ -1515,12 +1519,13 @@ footer {
         max-width: 350px;
         height: 450px !important;
         right: 0 !important;
-        bottom: 75px !important;
+        bottom: 65px !important; /* Bring closer to button on mobile */
     }
 }
 
 @media (max-width: 360px) {
     #chat-window {
         height: 400px !important;
+        bottom: 65px !important;
     }
 }

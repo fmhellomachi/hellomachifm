@@ -284,6 +284,8 @@
 
     let isInitialLoad = true;
     let revealedState = new Map();
+    let currentWofFilter = 'all_active';
+    let currentParticipants = [];
 
     function initSync() {
         db.collection('live_state').doc('current').onSnapshot(doc => {
@@ -291,30 +293,46 @@
                 const d = doc.data();
                 document.getElementById('round-label').textContent = d.round
                     ? `CURRENT: ${d.round.toUpperCase()}` : 'SELECTION PHASE';
+                
+                if (d.wallOfFameFilter && d.wallOfFameFilter !== currentWofFilter) {
+                    currentWofFilter = d.wallOfFameFilter;
+                    applyFilterAndRender();
+                }
             }
         });
 
         db.collection('participants').onSnapshot(snap => {
-            const all = [];
-            snap.forEach(doc => all.push({ id: doc.id, ...doc.data() }));
-
-            // Show all non-pending participants
-            const visible = all.filter(p => p.status && p.status !== 'pending');
-
-            // Trigger big reveal for newly isRevealed participants
-            visible.forEach(p => {
-                // If it's not the initial page load, and the participant is newly revealed, show it!
-                if (!isInitialLoad && p.isRevealed === true && revealedState.get(p.id) !== true) {
-                    setTimeout(() => showReveal(p), 600);
-                }
-                // Track their current reveal state
-                revealedState.set(p.id, p.isRevealed === true);
-            });
+            currentParticipants = [];
+            snap.forEach(doc => currentParticipants.push({ id: doc.id, ...doc.data() }));
             
-            isInitialLoad = false; // After first load, any changes can trigger a reveal
-
-            renderWall(visible);
+            applyFilterAndRender();
         });
+    }
+
+    function applyFilterAndRender() {
+        // Remove pending
+        let visible = currentParticipants.filter(p => p.status && p.status !== 'pending');
+
+        // Apply admin filter
+        if (currentWofFilter === 'all_active') {
+            visible = visible.filter(p => !['eliminated', 'waitlisted'].includes(p.status.toLowerCase()));
+        } else if (currentWofFilter) {
+            visible = visible.filter(p => p.status === currentWofFilter);
+        }
+
+        // Trigger big reveal for newly isRevealed participants
+        visible.forEach(p => {
+            // If it's not the initial page load, and the participant is newly revealed, show it!
+            if (!isInitialLoad && p.isRevealed === true && revealedState.get(p.id) !== true) {
+                setTimeout(() => showReveal(p), 600);
+            }
+            // Track their current reveal state
+            revealedState.set(p.id, p.isRevealed === true);
+        });
+        
+        isInitialLoad = false; // After first load, any changes can trigger a reveal
+
+        renderWall(visible);
     }
 </script>
 </body>

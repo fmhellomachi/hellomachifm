@@ -98,6 +98,8 @@
                 min-width: 70px;
                 font-weight: bold;
             }
+            .desktop-nav-tabs { flex-wrap: wrap; justify-content: center; margin-top: 15px; }
+            .desktop-nav-tabs .btn { flex: 1; min-width: 120px; font-size: 0.75rem; text-align: center; }
             td[data-label="PHOTO"] { justify-content: flex-start; }
             td[data-label="PHOTO"]::before { display: none; }
             td[data-label="SCORE"] div { flex-direction: row; }
@@ -177,15 +179,15 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <section class="container" id="admin-content" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2>Super Singer Admin</h2>
-            <div class="desktop-nav-tabs" style="display: flex; gap: 10px; list-style: none;">
+            <div class="desktop-nav-tabs" style="display: flex; flex-wrap: wrap; gap: 10px; list-style: none;">
                 <li onclick="switchMainTab('participants')" class="btn btn-secondary"><i class="fa-solid fa-users"></i> Participants</li>
                 <li onclick="switchMainTab('live-control')" class="btn btn-secondary"><i class="fa-solid fa-tower-broadcast"></i> Live Control Room</li>
                 <li onclick="switchMainTab('history')" class="btn btn-secondary"><i class="fa-solid fa-clock-rotate-left"></i> History Logs</li>
-                <a href="walloffame.html" target="_blank" class="btn btn-secondary"><i class="fa-solid fa-tv"></i> Wall of Fame</a>
+                <li onclick="switchMainTab('wall-of-fame')" class="btn btn-secondary"><i class="fa-solid fa-tv"></i> Wall of Fame Controls</li>
+                <a href="walloffame.html" target="_blank" class="btn btn-secondary"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Wall</a>
             </div>
         </div>
 
@@ -381,6 +383,45 @@
         </div>
     </div> <!-- End view-history -->
 
+    <!-- Wall of Fame Controls -->
+    <div id="view-wall-of-fame" style="display:none; padding:20px;">
+        <h3 style="color:var(--primary); margin-bottom:15px;"><i class="fa-solid fa-tv"></i> Wall of Fame Controls</h3>
+        
+        <div class="cozy-card" style="margin-bottom: 20px;">
+            <h4 style="margin-bottom: 15px;">Display Filter</h4>
+            <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">Select which candidates should be visible on the Wall of Fame screen.</p>
+            <select id="wof-filter-select" onchange="updateWofFilter(this.value)" style="width: 100%; max-width: 300px; padding: 10px; background: #111; border: 1px solid var(--primary); color: white; border-radius: 8px;">
+                <option value="all_active">Show All Active (Not Elim/Wait)</option>
+                <option value="Round 1">Round 1 Only</option>
+                <option value="Round 2">Round 2 Only</option>
+                <option value="Round 3">Round 3 Only</option>
+                <option value="Final">Finalists Only</option>
+                <option value="approved">Just Selected (Approved)</option>
+                <option value="waitlisted">Waitlisted</option>
+                <option value="Eliminated">Eliminated</option>
+            </select>
+            <div style="margin-top: 20px;">
+                <button onclick="resetWallOfFame()" class="btn btn-danger"><i class="fa-solid fa-power-off"></i> Reset Wall of Fame</button>
+            </div>
+        </div>
+
+        <h4 style="margin-bottom: 15px; color:#00ffff;">Candidate Reveal Triggers</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Status</th>
+                        <th>Reveal Action</th>
+                    </tr>
+                </thead>
+                <tbody id="wof-candidates-body">
+                    <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div> <!-- End view-wall-of-fame -->
+
         <!-- Leaderboard Panel -->
         <div id="leaderboard-panel" class="main-panel" style="display:none;">
             <div class="panel-header">
@@ -416,7 +457,7 @@
                 <button class="btn btn-primary" onclick="addAdmin()" style="padding: 10px 20px;"><i class="fa-solid fa-plus"></i> Add Admin</button>
             </div>
 
-            <table style="background: rgba(0,0,0,0.3); border-radius: 8px;">
+            <table style="background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 40px;">
                 <thead>
                     <tr>
                         <th>Authorized Email</th>
@@ -427,6 +468,12 @@
                     <!-- Admin list injected via JS -->
                 </tbody>
             </table>
+
+            <div style="border-top: 1px solid var(--secondary); padding-top: 30px; margin-top: 20px;">
+                <h3 style="color: var(--primary); margin-bottom: 10px;"><i class="fa-solid fa-triangle-exclamation"></i> DANGER ZONE</h3>
+                <p style="color: #aaa; font-size: 0.85rem; margin-bottom: 15px;">This will completely wipe all participants, scores, vote logs, and reset the live stage. Use this to start fresh after testing.</p>
+                <button onclick="factoryResetSystem()" class="btn btn-danger" style="background: #ff0000; border: 2px solid darkred; font-weight: bold; width: 100%;"><i class="fa-solid fa-skull-crossbones"></i> HARD FACTORY RESET</button>
+            </div>
         </div>
     </section>
 

@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'admins': getEl('master-admin-section'),
             'live-control': getEl('live-control-panel'),
             'history': getEl('view-history'),
+            'wall-of-fame': getEl('view-wall-of-fame'),
             'leaderboard': getEl('leaderboard-panel')
         };
 
@@ -98,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabId === 'admins') fetchAdminsList();
             if (tabId === 'live-control') { fetchParticipantsForLive(); listenToLiveStats(); }
             if (tabId === 'history') fetchHistory();
+            if (tabId === 'wall-of-fame') fetchWofCandidates();
             if (tabId === 'leaderboard') calculateLeaderboard();
         }
 
@@ -263,6 +265,129 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- Wall of Fame Controls Logic ---
+    window.fetchWofCandidates = async () => {
+        const body = getEl('wof-candidates-body');
+        if (!body) return;
+        body.innerHTML = '<tr><td colspan="3" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
+        
+        try {
+            // Get current filter
+            const stateDoc = await db.collection('live_state').doc('current').get();
+            if (stateDoc.exists && stateDoc.data().wallOfFameFilter) {
+                const select = getEl('wof-filter-select');
+                if (select) select.value = stateDoc.data().wallOfFameFilter;
+            }
+
+            const pSnap = await db.collection('participants').orderBy('name', 'asc').get();
+            let html = '';
+            pSnap.forEach(doc => {
+                const data = doc.data();
+                if (data.status === 'pending') return; // Don't show pending
+                html += `
+                    <tr>
+                        <td>
+                            <strong>${data.name}</strong><br>
+                            <span style="font-size:0.75rem; color:#aaa;">ID: ${data.participantId || '---'}</span>
+                        </td>
+                        <td><span class="badge badge-gold">${(data.status || '').toUpperCase()}</span></td>
+                        <td>
+                            ${data.isRevealed 
+                                ? `<button onclick="toggleReveal('${doc.id}', true); setTimeout(fetchWofCandidates, 500)" class="btn btn-danger" style="width:100%;"><i class="fa-solid fa-eye-slash"></i> Hide from Wall</button>` 
+                                : `<button onclick="toggleReveal('${doc.id}', false); setTimeout(fetchWofCandidates, 500)" class="btn btn-primary" style="width:100%; background:var(--primary); color:black; font-weight:bold;"><i class="fa-solid fa-eye"></i> Trigger Reveal</button>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+            body.innerHTML = html || '<tr><td colspan="3" style="text-align:center;">No active candidates found.</td></tr>';
+        } catch (e) {
+            body.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Error loading candidates</td></tr>';
+        }
+    };
+
+    window.updateWofFilter = async (filterVal) => {
+        try {
+            await db.collection('live_state').doc('current').update({ wallOfFameFilter: filterVal });
+            // Toast notification
+            const toast = document.createElement('div');
+            toast.textContent = "Wall of Fame Filter Updated!";
+            toast.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--primary);color:black;padding:10px 20px;border-radius:8px;z-index:9999;";
+            document.body.appendChild(toast);
+            setTimeout(()=>toast.remove(), 3000);
+        } catch(e) { console.error(e); }
+    };
+
+    window.resetWallOfFame = async () => {
+        if (!confirm("This will clear all reveals from the Wall of Fame. Are you sure?")) return;
+        try {
+            const pSnap = await db.collection('participants').where('isRevealed', '==', true).get();
+            const batch = db.batch();
+            pSnap.forEach(doc => batch.update(doc.ref, { isRevealed: false }));
+            await batch.commit();
+            alert("Wall of Fame has been reset.");
+            fetchWofCandidates();
+        } catch(e) { alert("Error resetting: " + e.message); }
+    };
+
+    // --- Factory Reset ---
+    window.factoryResetSystem = async () => {
+        const pass = prompt("WARNING! Type 'DELETE EVERYTHING' to confirm wiping all data.");
+        if (pass !== 'DELETE EVERYTHING') {
+            alert("Reset cancelled.");
+            return;
+        }
+
+        const btn = document.querySelector('button[onclick="factoryResetSystem()"]');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> WIPING DATA...';
+
+        try {
+            // Delete all participants
+            const pSnap = await db.collection('participants').get();
+            let batch = db.batch();
+            pSnap.forEach(doc => batch.delete(doc.ref));
+            if (pSnap.size > 0) await batch.commit();
+
+            // Delete all judge scores
+            const jSnap = await db.collection('judge_scores').get();
+            batch = db.batch();
+            jSnap.forEach(doc => batch.delete(doc.ref));
+            if (jSnap.size > 0) await batch.commit();
+
+            // Delete all vote history
+            const vSnap = await db.collection('votes_history').get();
+            batch = db.batch();
+            vSnap.forEach(doc => batch.delete(doc.ref));
+            if (vSnap.size > 0) await batch.commit();
+
+            // Delete all live votes
+            const lvSnap = await db.collection('live_votes').get();
+            batch = db.batch();
+            lvSnap.forEach(doc => batch.delete(doc.ref));
+            if (lvSnap.size > 0) await batch.commit();
+
+            // Reset live state
+            await db.collection('live_state').doc('current').set({
+                status: 'idle',
+                round: 'Round 1',
+                singer1: '',
+                singer2: '',
+                votingOpen: false,
+                scoreRevealStep: 0,
+                scoreRevealSingerId: '',
+                wallOfFameFilter: 'all_active',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert("SYSTEM RESET COMPLETE. ALL DATA HAS BEEN WIPED.");
+            window.location.reload();
+        } catch (e) {
+            console.error(e);
+            alert("An error occurred during reset: " + e.message);
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-skull-crossbones"></i> HARD FACTORY RESET';
+        }
+    };
+
     // --- Participants Logic ---
     async function fetchAdminData() {
         if (!tableBody) return;
@@ -369,10 +494,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     async function generateUniqueId() {
-        // Simple counter based on existing IDs
-        const snap = await db.collection("participants").where("participantId", "!=", "").get();
-        const count = snap.size + 1;
-        return `HMSS-S1-${count.toString().padStart(3, '0')}`;
+        let isUnique = false;
+        let newId = '';
+        while (!isUnique) {
+            newId = 'HM' + Math.floor(10000 + Math.random() * 90000);
+            const check = await db.collection("participants").where("participantId", "==", newId).get();
+            if (check.empty) isUnique = true;
+        }
+        return newId;
     }
 
     // ---- Photo preview inside modal ----

@@ -282,7 +282,53 @@
                 </div>
             </div>
         </div>
+
+        <!-- Judge Scoring Card (full width below the 2-col grid) -->
+        <div class="registration-box cozy-card" style="margin-top:20px; text-align:left;">
+            <h3 style="color:var(--gold,#FFD700); margin-bottom:5px;"><i class="fa-solid fa-gavel"></i> Judge Scoreboard</h3>
+            <p style="color:#888; font-size:0.82rem; margin-bottom:16px;">Enter judge scores manually as they announce from their seats. No email required.</p>
+
+            <div id="judge-singer-label" style="background:rgba(255,20,147,0.1); border:1px solid var(--primary); padding:10px 16px; border-radius:10px; margin-bottom:16px; font-weight:bold; font-size:0.9rem;">
+                🎤 No singer on stage yet
+            </div>
+
+            <div id="judge-rows" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+                <!-- 5 judge slots -->
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                <input type="text" id="new-judge-name" placeholder="Add judge name..." style="flex:1; background:#1a1a24; border:1px solid #444; color:white; padding:9px 12px; border-radius:8px; font-size:0.85rem;">
+                <button onclick="addJudgeRow()" class="btn btn-secondary" style="padding:9px 16px;"><i class="fa-solid fa-plus"></i> Add Judge</button>
+            </div>
+
+            <button onclick="submitJudgeScores()" class="btn btn-primary" style="width:100%; background:linear-gradient(135deg,#FFD700,#B8860B); color:black; font-weight:900; padding:12px;">
+                <i class="fa-solid fa-paper-plane"></i> Submit All Judge Scores
+            </button>
+
+            <!-- Saved judge scores for this singer -->
+            <div id="saved-judge-scores" style="margin-top:16px; display:none;">
+                <h4 style="color:#888; font-size:0.8rem; margin-bottom:8px; text-transform:uppercase;">Saved Scores for Current Singer</h4>
+                <div id="saved-scores-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+                <div style="margin-top:10px; padding:10px; background:#111; border-radius:8px; font-size:0.85rem;">
+                    Judge Avg: <strong id="judge-avg-display" style="color:#FFD700;">—</strong> &nbsp;|&nbsp;
+                    Audience Avg: <strong id="audience-avg-display" style="color:var(--primary);">—</strong> &nbsp;|&nbsp;
+                    <strong>Combined (60/40): <span id="combined-score-display" style="color:white;">—</span></strong>
+                </div>
+
+                <!-- Score Reveal Controls -->
+                <div style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
+                    <h4 style="color:#00f2ff; margin-bottom:10px; font-size:0.9rem;"><i class="fa-solid fa-desktop"></i> Stage Reveal Controls</h4>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button onclick="revealScoreStep('next-judge')" class="btn btn-secondary" style="flex:1; min-width:140px; font-size:0.8rem;"><i class="fa-solid fa-arrow-right"></i> Next Judge</button>
+                        <button onclick="revealScoreStep('audience')" class="btn btn-secondary" style="flex:1; min-width:140px; font-size:0.8rem;"><i class="fa-solid fa-users"></i> Audience</button>
+                        <button onclick="revealScoreStep('final')" class="btn btn-primary" style="flex:1; min-width:140px; font-size:0.8rem; background:linear-gradient(135deg,#FF1493,#800080);"><i class="fa-solid fa-crown"></i> Final Score</button>
+                        <button onclick="revealScoreStep('hide')" class="btn btn-danger" style="flex:1; min-width:140px; font-size:0.8rem;"><i class="fa-solid fa-eye-slash"></i> Hide</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
         <!-- Leaderboard Panel -->
         <div id="leaderboard-panel" class="main-panel" style="display:none;">

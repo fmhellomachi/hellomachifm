@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await db.collection('live_state').doc('current').set({
                 status: status, round: round, singer1: s1, singer2: s2,
-                votingOpen: false, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                votingOpen: false, scoreRevealStep: 0, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             
             // Clear current live votes
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
             vSnap.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
 
-            alert("Stage Updated!");
+            alert("Stage Updated! Scores reset.");
             updateVotingUI(false);
         } catch (err) { console.error(err); }
     };
@@ -209,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentFilter !== 'all' && data.status !== currentFilter) return;
 
                 const tr = document.createElement('tr');
+                tr.setAttribute('data-id', id); // for in-place updates
                 const ph = data.phone ? data.phone.replace(/\D/g,'') : '';
                 const encodedMsg = encodeURIComponent(`Hello ${data.name}, greetings from Hello Machi FM!`);
                 const bClass = data.status === 'approved' ? 'badge-approved' : 'badge-pending';
@@ -282,7 +283,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (s !== 'pending') updates.isRevealed = false;
             
             await docRef.update(updates); 
-            fetchAdminData(); 
+            // ---- NO full reload — update the single row in-place ----
+            const tr = document.querySelector(`tr[data-id="${id}"]`);
+            if (tr) {
+                const statusCell = tr.querySelector('td[data-label="STATUS"] span.badge');
+                if (statusCell) { 
+                    statusCell.textContent = s.toUpperCase();
+                    statusCell.className = `badge ${s === 'approved' ? 'badge-approved' : 'badge-pending'}`;
+                }
+            } else {
+                // Fallback: full refresh but preserve scroll
+                const scroller = document.getElementById('admin-content') || document.scrollingElement;
+                const savedScroll = scroller ? scroller.scrollTop : 0;
+                await fetchAdminData();
+                if (scroller) requestAnimationFrame(() => { scroller.scrollTop = savedScroll; });
+            }
         } catch(e){ console.error(e); }
     };
 
@@ -519,4 +534,149 @@ document.addEventListener('DOMContentLoaded', () => {
         await db.collection("admins").doc(e).delete();
         fetchAdminsList();
     };
+
+    // ====================================================
+    // JUDGE SCORING SYSTEM
+    // ====================================================
+    let currentJudgeSingerId = null;
+    let currentJudgeSingerName = 'Unknown';
+    let judgeScoresUnsub = null;
+    let audienceScoresUnsub = null;
+
+    // Listen to live_state to update singer label in judge panel
+    db.collection('live_state').doc('current').onSnapshot(doc => {
+        if (!doc.exists) return;
+        const d = doc.data();
+        const singerId = d.singer1;
+        if (!singerId) {
+            document.getElementById('judge-singer-label').innerHTML = '🎤 No singer on stage yet';
+            currentJudgeSingerId = null;
+            return;
+        }
+        if (singerId !== currentJudgeSingerId) {
+            currentJudgeSingerId = singerId;
+            // Fetch singer name
+            db.collection('participants').doc(singerId).get().then(pDoc => {
+                if (pDoc.exists) {
+                    currentJudgeSingerName = pDoc.data().name || 'Singer';
+                    document.getElementById('judge-singer-label').innerHTML = 
+                        `🎤 Current: <span style="color:var(--primary)">${currentJudgeSingerName}</span>`;
+                }
+            });
+            loadJudgeScores(singerId);
+            loadAudienceScores(singerId);
+        }
+    });
+
+    // Add a judge row in the panel
+    window.addJudgeRow = () => {
+        const name = (document.getElementById('new-judge-name').value || '').trim();
+        if (!name) { alert('Enter a judge name first'); return; }
+        document.getElementById('new-judge-name').value = '';
+        const container = document.getElementById('judge-rows');
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;';
+        row.innerHTML = `
+            <span style="flex:1;font-size:0.85rem;font-weight:bold;color:#ccc;">${name}</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <input type="number" min="0" max="10" step="0.5" value="5" 
+                    data-judge="${name}"
+                    style="width:70px;background:#1a1a24;border:1px solid #555;color:#FFD700;padding:7px;border-radius:8px;font-size:1rem;font-weight:900;text-align:center;">
+                <span style="font-size:0.7rem;color:#666;">/ 10</span>
+            </div>
+            <button onclick="this.parentElement.remove()" style="background:transparent;border:1px solid #444;color:#888;padding:5px 8px;border-radius:6px;cursor:pointer;">✕</button>
+        `;
+        container.appendChild(row);
+    };
+
+    // Submit all judge scores
+    window.submitJudgeScores = async () => {
+        if (!currentJudgeSingerId) { alert('No singer is currently on stage.'); return; }
+        const inputs = document.querySelectorAll('#judge-rows input[data-judge]');
+        if (inputs.length === 0) { alert('Add at least one judge first.'); return; }
+        const scores = {};
+        inputs.forEach(inp => { scores[inp.dataset.judge] = parseFloat(inp.value) || 0; });
+        try {
+            await db.collection('judge_scores').doc(currentJudgeSingerId).set({
+                singerId: currentJudgeSingerId,
+                singerName: currentJudgeSingerName,
+                scores,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            alert('✅ Judge scores saved!');
+        } catch(e) { alert('Error: ' + e.message); }
+    };
+
+    // Score Reveal Step Logic
+    window.revealScoreStep = async (action) => {
+        try {
+            const stateDoc = await db.collection('live_state').doc('current').get();
+            let currentStep = stateDoc.exists ? (stateDoc.data().scoreRevealStep || 0) : 0;
+            
+            if (action === 'hide') {
+                currentStep = 0;
+            } else if (action === 'next-judge') {
+                if (typeof currentStep === 'number') currentStep += 1;
+                else currentStep = 1;
+            } else if (action === 'audience') {
+                currentStep = 'audience';
+            } else if (action === 'final') {
+                currentStep = 'final';
+            }
+
+            await db.collection('live_state').doc('current').update({ 
+                scoreRevealStep: currentStep,
+                scoreRevealTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (e) {
+            console.error(e);
+            alert("Error updating reveal state");
+        }
+    };
+
+    // Real-time listener for saved judge scores
+    function loadJudgeScores(singerId) {
+        if (judgeScoresUnsub) judgeScoresUnsub();
+        judgeScoresUnsub = db.collection('judge_scores').doc(singerId).onSnapshot(doc => {
+            const saved = document.getElementById('saved-judge-scores');
+            const list = document.getElementById('saved-scores-list');
+            if (!doc.exists || !doc.data().scores) { saved.style.display = 'none'; return; }
+            saved.style.display = 'block';
+            const scores = doc.data().scores;
+            const names = Object.keys(scores);
+            list.innerHTML = names.map(n => `
+                <div style="background:#1a1a24;border:1px solid #333;padding:8px 14px;border-radius:10px;font-size:0.8rem;">
+                    <span style="color:#888;">${n}</span><br>
+                    <strong style="color:#FFD700;font-size:1.2rem;">${scores[n]}</strong><small style="color:#555;">/10</small>
+                </div>
+            `).join('');
+            const avg = names.reduce((a, n) => a + scores[n], 0) / names.length;
+            document.getElementById('judge-avg-display').textContent = avg.toFixed(1);
+            updateCombined();
+        });
+    }
+
+    // Real-time audience average
+    function loadAudienceScores(singerId) {
+        if (audienceScoresUnsub) audienceScoresUnsub();
+        audienceScoresUnsub = db.collection('live_votes').onSnapshot(snap => {
+            const votes = [];
+            snap.forEach(doc => { if (doc.data().score) votes.push(doc.data().score); });
+            const avg = votes.length ? (votes.reduce((a, b) => a + b, 0) / votes.length) : 0;
+            const el = document.getElementById('audience-avg-display');
+            if (el) el.textContent = avg.toFixed(1);
+            updateCombined();
+        });
+    }
+
+    function updateCombined() {
+        const jEl = document.getElementById('judge-avg-display');
+        const aEl = document.getElementById('audience-avg-display');
+        const cEl = document.getElementById('combined-score-display');
+        if (!jEl || !aEl || !cEl) return;
+        const j = parseFloat(jEl.textContent) || 0;
+        const a = parseFloat(aEl.textContent) || 0;
+        if (j === 0 && a === 0) { cEl.textContent = '—'; return; }
+        cEl.textContent = (j * 0.6 + a * 0.4).toFixed(2);
+    }
 });

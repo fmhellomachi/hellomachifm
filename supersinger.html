@@ -20,9 +20,14 @@
             margin-bottom: 20px;
         }
         .ss-logo span {
-            background: linear-gradient(45deg, #ff0055, #7000ff);
+            background: linear-gradient(45deg, #FFD700, #ff0055, #7000ff);
+            background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+        }
+        @keyframes shine {
+            to { background-position: 200% center; }
         }
         .rounds-container {
             display: flex;
@@ -38,8 +43,27 @@
             border-radius: 16px;
             text-align: center;
             min-width: 150px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            animation: float 6s infinite ease-in-out;
         }
-        .round-box i { font-size: 2rem; color: var(--secondary); margin-bottom: 10px; }
+        .round-box:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(255, 20, 147, 0.3);
+            border-color: var(--primary);
+        }
+        .round-box:nth-child(2) { animation-delay: 0.2s; }
+        .round-box:nth-child(3) { animation-delay: 0.4s; }
+        .round-box:nth-child(4) { animation-delay: 0.6s; }
+        .round-box:nth-child(5) { animation-delay: 0.8s; }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .round-box i { font-size: 2rem; color: var(--secondary); margin-bottom: 10px; transition: color 0.3s, transform 0.3s; }
+        .round-box:hover i { color: var(--primary); transform: scale(1.2) rotate(5deg); }
         .registration-box {
             max-width: 850px;
             margin: 40px auto 100px;
@@ -52,6 +76,11 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.6);
             position: relative;
             z-index: 10;
+            animation: slideUpFade 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .form-grid {
             display: grid;

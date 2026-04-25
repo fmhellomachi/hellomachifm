@@ -291,6 +291,41 @@
         @keyframes flashEffect { 0% { opacity: 1; } 100% { opacity: 0; } }
 
         #stage-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* --- SCORE REVEAL OVERLAY --- */
+        #score-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 15000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            animation: fadeIn 0.5s ease;
+        }
+        .score-row {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 80%; max-width: 800px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 15px; padding: 15px 30px; border-radius: 15px;
+            opacity: 0; transform: scale(0.8); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .score-row.visible { opacity: 1; transform: scale(1); }
+        .score-name { font-size: 1.5rem; color: #aaa; font-weight: 700; text-transform: uppercase; }
+        .score-val { font-size: 2.5rem; color: var(--gold, #FFD700); font-weight: 900; }
+        
+        .final-score-box {
+            margin-top: 40px; text-align: center;
+            opacity: 0; transform: translateY(50px) scale(0.5);
+            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .final-score-box.visible { opacity: 1; transform: translateY(0) scale(1); }
+        .final-score-label { font-size: 1.5rem; color: var(--primary); letter-spacing: 5px; margin-bottom: 10px; }
+        .final-score-val {
+            font-size: 7rem; font-weight: 900;
+            background: linear-gradient(135deg, #FFD700, #B8860B);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.6));
+            line-height: 1;
+        }
+        
         /* --- TICKER CSS --- */
         .shoutout-ticker {
             position: fixed;
@@ -391,6 +426,20 @@
     <div id="stage-overlay">
         <h1 style="margin-bottom: 30px; letter-spacing: 10px;">HELLO MACHI STAGE</h1>
         <button class="enter-btn" onclick="startStage()">ENTER THE STAGE</button>
+    </div>
+
+    <!-- Full Screen Score Overlay -->
+    <div id="score-overlay">
+        <h2 style="color:white; letter-spacing: 5px; margin-bottom: 30px; font-size: 2rem;">LIVE SCORES</h2>
+        <div id="judge-scores-container" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
+        <div id="audience-score-container" class="score-row" style="border-color:var(--primary); margin-top:20px;">
+            <div class="score-name" style="color:var(--primary);">Audience Vote (40%)</div>
+            <div class="score-val" id="audience-score-val" style="color:white;">0.0</div>
+        </div>
+        <div id="final-score-container" class="final-score-box">
+            <div class="final-score-label"><i class="fa-solid fa-crown"></i> FINAL MARK</div>
+            <div class="final-score-val" id="final-score-val">0.00</div>
+        </div>
     </div>
 
     <div class="stage-world" id="stage-world">
@@ -518,6 +567,18 @@
                         document.getElementById('singer-place').textContent = "NEXT PERFORMER COMING UP";
                         document.getElementById('singer-photo').src = "logo.jpg";
                     }
+
+                    // Score Reveal Logic
+                    const scoreOverlay = document.getElementById('score-overlay');
+                    if (data.scoreRevealStep && data.scoreRevealStep !== 0) {
+                        scoreOverlay.style.display = 'flex';
+                        renderScores(data.scoreRevealStep, data.singer1);
+                    } else {
+                        scoreOverlay.style.display = 'none';
+                        document.getElementById('judge-scores-container').innerHTML = '';
+                        document.getElementById('audience-score-container').classList.remove('visible');
+                        document.getElementById('final-score-container').classList.remove('visible');
+                    }
                 }
             });
             // Listen to Shoutouts
@@ -531,6 +592,57 @@
                     document.getElementById('ticker-content').innerHTML = tickerHtml + " &nbsp; &bull; &nbsp; " + tickerHtml;
                 }
             });
+        }
+
+        async function renderScores(step, singerId) {
+            if (!singerId) return;
+            const jContainer = document.getElementById('judge-scores-container');
+            const aContainer = document.getElementById('audience-score-container');
+            const fContainer = document.getElementById('final-score-container');
+
+            let jScores = {};
+            try {
+                const jDoc = await db.collection('judge_scores').doc(singerId).get();
+                if (jDoc.exists && jDoc.data().scores) jScores = jDoc.data().scores;
+            } catch(e) {}
+
+            let aScore = 0;
+            try {
+                const aSnap = await db.collection('live_votes').where('singerId', '==', singerId).get();
+                let vSum = 0;
+                aSnap.forEach(d => vSum += d.data().score || 0);
+                aScore = aSnap.size > 0 ? (vSum / aSnap.size) : 0;
+            } catch(e) {}
+
+            const judges = Object.keys(jScores);
+            const jAvg = judges.length > 0 ? (judges.reduce((a,b)=>a+jScores[b],0)/judges.length) : 0;
+            const finalScore = (jAvg * 0.6) + (aScore * 0.4);
+
+            if (typeof step === 'number') {
+                // Show judge scores up to the step number
+                let html = '';
+                for (let i = 0; i < step && i < judges.length; i++) {
+                    const name = judges[i];
+                    const val = jScores[name];
+                    html += `
+                        <div class="score-row visible" style="animation: bigPop 0.5s ease;">
+                            <div class="score-name">${name}</div>
+                            <div class="score-val">${val.toFixed(1)} <span style="font-size:1rem;color:#666;">/ 10</span></div>
+                        </div>
+                    `;
+                }
+                jContainer.innerHTML = html;
+                aContainer.classList.remove('visible');
+                fContainer.classList.remove('visible');
+            } else if (step === 'audience') {
+                aContainer.classList.add('visible');
+                document.getElementById('audience-score-val').textContent = aScore.toFixed(1) + ' / 10';
+                fContainer.classList.remove('visible');
+            } else if (step === 'final') {
+                aContainer.classList.add('visible');
+                fContainer.classList.add('visible');
+                document.getElementById('final-score-val').textContent = finalScore.toFixed(2);
+            }
         }
     </script>
 </body>

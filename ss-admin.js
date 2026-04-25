@@ -207,12 +207,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = doc.data();
                 const id = doc.id;
                 if (currentFilter !== 'all' && data.status !== currentFilter) return;
+
+                const tr = document.createElement('tr');
+                const ph = data.phone ? data.phone.replace(/\D/g,'') : '';
+                const encodedMsg = encodeURIComponent(`Hello ${data.name}, greetings from Hello Machi FM!`);
+                const bClass = data.status === 'approved' ? 'badge-approved' : 'badge-pending';
+                
                 tr.innerHTML = `
                     <td data-label="ID" style="color:var(--primary); font-weight:bold; font-family:monospace;">${data.participantId || '---'}</td>
-                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;">${data.name.charAt(0)}</div>`}</td>
+                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;">${data.name ? data.name.charAt(0) : '?'}</div>`}</td>
                     <td data-label="NAME">
-                        <strong>${data.name}</strong><br>
-                        <a href="https://wa.me/${ph}?text=${encodedMsg}" target="_blank" style="color:#25D366;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> Notify WhatsApp</a>
+                        <strong>${data.name || 'Unknown'}</strong><br>
+                        ${ph ? `<a href="https://wa.me/${ph}?text=${encodedMsg}" target="_blank" style="color:#25D366;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> Notify WhatsApp</a>` : ''}
                     </td>
                     <td data-label="LOCATION" style="font-size:0.85rem;color:var(--text-muted);">
                         <i class="fa-solid fa-city"></i> ${data.city || 'N/A'}<br>
@@ -227,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </td>
                     <td data-label="SCORE"><div style="display:flex;gap:5px;"><input type="number" value="${data.judgeScore||0}" id="sc-${id}" style="width:45px;background:#222;color:white;border:1px solid #444;"><button onclick="saveScore('${id}')" style="background:var(--primary);border:none;padding:2px 5px;"><i class="fa-solid fa-save"></i></button></div></td>
                     <td data-label="STATUS">
-                        <span class="badge ${bClass}">${data.status.toUpperCase()}</span><br>
+                        <span class="badge ${bClass}">${(data.status || 'pending').toUpperCase()}</span><br>
                         <button onclick="toggleReveal('${id}', ${data.isRevealed})" style="margin-top:5px; font-size:0.7rem; background:${data.isRevealed?'#28a745':'#444'}; border:none; color:white; border-radius:4px; padding:2px 5px;">
                             ${data.isRevealed ? '<i class="fa-solid fa-eye"></i> Revealed' : '<i class="fa-solid fa-eye-slash"></i> Hidden'}
                         </button>

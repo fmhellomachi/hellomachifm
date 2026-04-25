@@ -422,8 +422,13 @@
         } else if (currentWofFilter === 'all_active') {
             visible = visible.filter(p => !['eliminated', 'waitlisted'].includes(p.status.toLowerCase()));
         } else if (currentWofFilter) {
-            // Case-insensitive status matching
-            visible = visible.filter(p => (p.status || '').toLowerCase() === currentWofFilter.toLowerCase());
+            // If filtering by a specific round (e.g. "Round 1"), 
+            // show the people in that round PLUS all waitlisted/eliminated people
+            visible = visible.filter(p => {
+                const s = (p.status || '').toLowerCase();
+                const f = currentWofFilter.toLowerCase();
+                return s === f || s === 'waitlisted' || s === 'eliminated';
+            });
         }
 
         // Trigger big reveal for newly isRevealed participants

@@ -92,23 +92,28 @@
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                if (AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
-                    document.getElementById('admin-user-display').textContent = `Logged in as: ${user.email}`;
+                const email = user.email.toLowerCase();
+                if (AUTHORIZED_EMAILS.includes(email)) {
+                    document.getElementById('admin-user-display').textContent = `Admin: ${email}`;
                     document.getElementById('logout-btn').style.display = 'block';
                     document.getElementById('login-btn').style.display = 'none';
                     loadData();
                 } else {
-                    alert("Access Denied: " + user.email);
+                    alert("Unauthorized access attempt by: " + email);
                     auth.signOut();
                 }
             } else {
-                document.getElementById('admin-user-display').textContent = "Please login to manage the station.";
+                document.getElementById('admin-user-display').textContent = "Unauthorized - Please Login";
                 document.getElementById('login-btn').style.display = 'block';
                 document.getElementById('logout-btn').style.display = 'none';
             }
         });
 
-        document.getElementById('login-btn').onclick = () => auth.signInWithPopup(provider);
+        document.getElementById('login-btn').onclick = async () => {
+            try {
+                await auth.signInWithPopup(provider);
+            } catch (e) { alert("Login failed: " + e.message); }
+        };
         document.getElementById('logout-btn').onclick = () => auth.signOut();
 
         async function loadData() {

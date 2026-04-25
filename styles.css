@@ -393,46 +393,53 @@ h1, h2, h3, h4, .logo span {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    max-width: 900px; /* Compact width */
+    margin: 0 auto;
 }
 
 .schedule-card {
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 12px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: all 0.3s ease;
     position: relative;
 }
 
 .schedule-card.active {
     border-color: var(--primary);
-    background: rgba(255, 20, 147, 0.08);
+    background: rgba(255, 20, 147, 0.05);
+}
+
+.schedule-card .time-area {
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+}
+
+.live-indicator-small {
+    background: var(--primary);
+    color: black;
+    font-size: 0.6rem;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 4px;
+    width: fit-content;
+    margin-bottom: 4px;
 }
 
 .schedule-card .time {
     color: var(--primary);
     font-weight: 800;
     font-size: 0.9rem;
-    min-width: 160px;
 }
 
 .schedule-card h3 {
-    font-size: 1.1rem;
-    margin: 0;
+    font-size: 1.05rem;
     flex: 1;
-}
-
-.schedule-card p { display: none; } /* Remove Enjoy the best music */
-
-.rj-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0;
-    border: none;
+    margin: 0 20px;
 }
 
 .rj-avatar {
@@ -457,85 +464,92 @@ h1, h2, h3, h4, .logo span {
     pointer-events: auto;
 }
 
+/* Premium Protruding Disk Player Bar */
+.floating-player-wrapper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
+    height: 120px; /* More height for protrusion */
+    display: flex;
+    align-items: flex-end;
+}
+
 .floating-player {
     width: 100%;
-    background: rgba(5, 5, 10, 0.95);
+    background: rgba(5, 5, 10, 0.98);
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
-    border-top: 1px solid rgba(255, 20, 147, 0.4);
-    padding: 0 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0 50px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
-    height: 100px; /* Increased height for better centering */
+    height: 70px; /* Bar itself is shorter */
+    position: relative;
 }
 
-.player-left {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    width: 30%;
+.disk-control-wrapper {
+    position: absolute;
+    left: 50%;
+    top: -45px; /* Protrude above the bar */
+    transform: translateX(-50%);
 }
 
-.player-center {
+.disk-button {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #000;
+    border: 5px solid rgba(255, 20, 147, 0.8);
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 -10px 30px rgba(255, 20, 147, 0.3), 0 10px 30px rgba(0,0,0,0.5);
+    padding: 0;
+    overflow: hidden;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 40%;
-    gap: 5px;
 }
 
-.player-right {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 25px; /* More gap */
-    width: 30%;
+.disk-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.6;
+    transition: all 0.5s ease;
 }
 
-.wa-player-link {
-    color: #25D366 !important;
-    font-size: 2rem !important; /* Larger and visible */
-    text-shadow: 0 0 10px rgba(37, 211, 102, 0.5);
-    transition: all 0.3s ease;
+.disk-button.spinning .disk-img {
+    animation: spinDisk 3s linear infinite;
 }
 
-.wa-player-link:hover {
-    transform: scale(1.2);
-    filter: brightness(1.2);
-}
-
-.control-btn {
-    width: 60px;
-    height: 60px;
+.disk-inner-play {
+    position: absolute;
+    width: 40px;
+    height: 40px;
     background: var(--primary);
     border-radius: 50%;
-    border: none;
-    color: black;
-    font-size: 1.5rem;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 20px var(--primary-glow);
-    transition: transform 0.3s ease;
+    color: black;
+    font-size: 1.2rem;
+    box-shadow: 0 0 20px var(--primary);
+    z-index: 5;
 }
 
-.control-btn:hover {
-    transform: scale(1.1);
-}
+.player-info-side { width: 35%; display: flex; flex-direction: column; }
+.player-controls-side { width: 35%; display: flex; justify-content: flex-end; align-items: center; }
+
+.volume-container { display: flex; align-items: center; gap: 10px; width: 150px; }
 
 @media (max-width: 768px) {
-    .floating-player {
-        padding: 0 15px;
-        height: 90px;
-    }
-    .player-left { width: 50%; }
-    .player-center { width: auto; position: absolute; left: 50%; transform: translateX(-50%); }
-    .player-right { display: none; }
-    .track-details { font-size: 0.8rem; }
+    .floating-player { padding: 0 15px; }
+    .player-info-side { display: none; }
+    .player-controls-side { width: auto; flex: 1; }
+    .disk-control-wrapper { left: 30px; transform: none; }
 }
 
 /* Disk Rotation Animation */

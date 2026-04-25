@@ -74,15 +74,13 @@
         </section>
 
         <!-- Footer -->
-        <footer>
-            <div class="container footer-content">
-                <div class="brand">
-                    <h3>HELLO MACHI FM</h3>
-                </div>
-                <div class="socials">
-                    <div class="social-icons">
-                        <a href="https://wa.me/919092363433" target="_blank" class="social-icon"><i class="fa-brands fa-whatsapp"></i></a>
-                    </div>
+        <footer style="margin-top:50px; padding:30px 0; border-top:1px solid rgba(255,255,255,0.05); text-align:center;">
+            <div class="container">
+                <img src="logo.jpg" alt="Logo" style="width:40px; border-radius:50%; margin-bottom:10px;">
+                <p style="font-size:0.8rem; color:#888;">&copy; 2026 HELLO MACHI FM. ALL RIGHTS RESERVED.</p>
+                <div style="margin-top:15px; display:flex; justify-content:center; gap:20px; font-size:1.2rem;">
+                    <a href="https://wa.me/919092363433" target="_blank" style="color:var(--primary);"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="https://instagram.com/hellomachifm" target="_blank" style="color:var(--primary);"><i class="fa-brands fa-instagram"></i></a>
                 </div>
             </div>
         </footer>
@@ -97,31 +95,31 @@
         <p style="color:rgba(255,255,255,0.6);">Mobile browsers require a tap to start the music</p>
     </div>
 
-    <!-- Premium Docked Audio Player Bar -->
+    <!-- Premium Protruding Disk Player Bar -->
     <div class="floating-player-wrapper">
         <div class="floating-player">
-            <div class="player-left">
-                <div class="rotating-disk" id="player-rotating-disk">
-                    <div class="disk-label"><img src="logo.jpg" alt="Logo"></div>
-                    <div class="disk-center"></div>
-                </div>
-                <div class="track-details">
-                    <div class="station-name">HELLO MACHI FM</div>
-                    <div class="show-name" id="current-show">Live Streaming...</div>
-                </div>
+            <!-- LEFT Side of Disk: Info -->
+            <div class="player-info-side">
+                <div class="station-name">HELLO MACHI FM</div>
+                <div class="show-name" id="current-show">Live Streaming...</div>
             </div>
-            <div class="player-center">
-                <button id="play-pause-btn" class="control-btn play-btn">
-                    <i class="fa-solid fa-play"></i>
+
+            <!-- CENTER: Protruding Disk Button -->
+            <div class="disk-control-wrapper">
+                <button id="play-pause-btn" class="disk-button">
+                    <img src="logo.jpg" alt="Disk" id="player-disk-img" class="disk-img">
+                    <div class="disk-inner-play">
+                        <i class="fa-solid fa-play" id="play-icon"></i>
+                    </div>
                 </button>
             </div>
-            <div class="player-right">
-                <div class="volume-wrapper">
+
+            <!-- RIGHT Side of Disk: Controls -->
+            <div class="player-controls-side">
+                <div class="volume-container">
+                    <i class="fa-solid fa-volume-low"></i>
                     <input type="range" id="volume-slider" class="premium-slider" min="0" max="1" step="0.01" value="1">
                 </div>
-                <a href="https://wa.me/919092363433" target="_blank" class="wa-player-link">
-                    <i class="fa-brands fa-whatsapp"></i>
-                </a>
             </div>
         </div>
     </div>

@@ -10,28 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateUIState(isPlaying) {
         const iconClass = isPlaying ? 'fa-pause' : 'fa-play';
-        const labelText = isPlaying ? 'PLAYING LIVE' : 'STREAMING LIVE';
+        const diskBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
         
-        if (playPauseBtn) {
-            playPauseBtn.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
-            if (isPlaying) playPauseBtn.classList.add('playing');
-            else playPauseBtn.classList.remove('playing');
+        if (playIcon) playIcon.className = `fa-solid ${iconClass}`;
+        
+        if (diskBtn) {
+            if (isPlaying) diskBtn.classList.add('spinning');
+            else diskBtn.classList.remove('spinning');
         }
         
         if (heroPlayBtn) {
             heroPlayBtn.innerHTML = `<i class="fa-solid ${iconClass}"></i> ${isPlaying ? 'STOP LISTENING' : 'LISTEN LIVE'}`;
         }
-
-        const rotatingDisk = document.getElementById('player-rotating-disk');
-        if (rotatingDisk) {
-            if (isPlaying) rotatingDisk.classList.add('spinning');
-            else rotatingDisk.classList.remove('spinning');
-        }
-
-        // Animated visualizer bars
-        document.querySelectorAll('.visualizer span').forEach(span => {
-            span.style.animationPlayState = isPlaying ? 'running' : 'paused';
-        });
     }
 
     async function togglePlay() {
@@ -256,7 +247,10 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `schedule-card ${isLive ? 'active' : ''}`;
             
             card.innerHTML = `
-                <div class="time">${block.time || '00:00'} ${block.endTime ? ' - ' + block.endTime : ''}</div>
+                <div class="time-area">
+                    ${isLive ? '<div class="live-indicator-small">LIVE</div>' : ''}
+                    <div class="time">${block.time || '00:00'} ${block.endTime ? ' - ' + block.endTime : ''}</div>
+                </div>
                 <h3>${block.title}</h3>
                 <div class="rj-info">
                     <div class="rj-avatar" style="width:30px; height:30px;">
@@ -264,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <span style="font-size:0.8rem;">${block.rj || 'Hello Machi RJ'}</span>
                 </div>
-                ${isLive ? '<div class="live-indicator" style="position:static; margin-left:15px;">LIVE</div>' : ''}
             `;
             grid.appendChild(card);
         });

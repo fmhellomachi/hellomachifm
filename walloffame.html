@@ -92,8 +92,10 @@
         @media(max-width:768px){
             .page { padding:10px; }
             .logo-img { width:52px; height:52px; }
-            .header h1 { font-size:1.5rem; letter-spacing:2px; }
-            .split-container { grid-template-columns:1fr; }
+            .header { gap:15px; }
+            .header-text { font-size:1.1rem; letter-spacing:1px; }
+            .split-container { flex-direction:column; overflow-y:auto; }
+            .split-zone { min-width:0; flex:none !important; }
             .wall-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
             .p-avatar,.p-placeholder { width:70px; height:70px; font-size:1.6rem; }
             .p-name { font-size:0.8rem; }
@@ -129,15 +131,15 @@
     <div id="split-view" class="split-container">
         <div class="split-zone zone-selected">
             <div class="zone-header"><i class="fa-solid fa-star"></i> SELECTED / ADVANCED</div>
-            <div id="selected-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div>
+            <div id="selected-grid" class="wall-grid" style="padding:0;flex-grow:1;"></div>
         </div>
         <div class="split-zone zone-waitlisted">
             <div class="zone-header"><i class="fa-solid fa-hourglass-half"></i> WAITLISTED</div>
-            <div id="waitlisted-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div>
+            <div id="waitlisted-grid" class="wall-grid" style="padding:0;flex-grow:1;"></div>
         </div>
         <div class="split-zone zone-eliminated">
             <div class="zone-header"><i class="fa-solid fa-xmark"></i> ELIMINATED</div>
-            <div id="eliminated-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div>
+            <div id="eliminated-grid" class="wall-grid" style="padding:0;flex-grow:1;"></div>
         </div>
     </div>
 </div>
@@ -249,6 +251,7 @@
             else if (statusLower === 'round 2') audioId = 'audio-round2';
             else if (statusLower === 'round 3') audioId = 'audio-round3';
             
+            lastPlayedAudio = audioId;
             audioPromise = document.getElementById(audioId).play();
             confetti({ particleCount: 220, spread: 85, origin: { y: 0.6 }, colors: ['#FFD700','#B8860B','#fff','#FF1493'] });
         }
@@ -270,9 +273,14 @@
         }, 7000);
     }
 
+    let lastPlayedAudio = null;
     function unmuteAudio() {
         document.getElementById('unmute-btn').style.display = 'none';
-        document.getElementById('audio-selected').play().catch(e=>console.log(e));
+        if (lastPlayedAudio) {
+            document.getElementById(lastPlayedAudio).play().catch(e=>console.log(e));
+        } else {
+            document.getElementById('audio-selected').play().catch(e=>console.log(e));
+        }
     }
 
     function badgeClass(s) {
@@ -420,7 +428,7 @@
         } else if (currentWofFilter === 'grand_finale') {
             visible = visible.filter(p => ['winner', 'runner up 1', 'runner up 2'].includes((p.status || '').toLowerCase()));
         } else if (currentWofFilter === 'all_active') {
-            visible = visible.filter(p => !['eliminated', 'waitlisted'].includes(p.status.toLowerCase()));
+            visible = visible.filter(p => !['eliminated', 'waitlisted'].includes((p.status || '').toLowerCase()));
         } else if (currentWofFilter) {
             // If filtering by a specific round (e.g. "Round 1"), 
             // show the people in that round PLUS all waitlisted/eliminated people

@@ -410,21 +410,12 @@
     }
 
     function applyFilterAndRender() {
-        let visible = [];
-        
-        // Master override: If "Show Absolutely Everyone" or specific "Waitlisted/Eliminated" filters, show even if hidden
-        const showHidden = ['all_everyone', 'waitlisted', 'eliminated'].includes(currentWofFilter.toLowerCase());
-        
-        if (showHidden) {
-            visible = currentParticipants.filter(p => p.status && p.status !== 'pending');
-        } else {
-            // Otherwise, only show candidates who are strictly revealed
-            visible = currentParticipants.filter(p => p.isRevealed === true && p.status && p.status !== 'pending');
-        }
+        // Only show candidates who are strictly revealed and not pending
+        let visible = currentParticipants.filter(p => p.isRevealed === true && p.status && p.status !== 'pending');
 
         // Apply admin display filter
         if (currentWofFilter === 'all_everyone') {
-            // Keep everyone (already filtered above)
+            // Keep everyone who is revealed (already filtered above)
         } else if (currentWofFilter === 'grand_finale') {
             visible = visible.filter(p => ['winner', 'runner up 1', 'runner up 2'].includes((p.status || '').toLowerCase()));
         } else if (currentWofFilter === 'all_active') {

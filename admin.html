@@ -115,14 +115,16 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
 
     <script>
-        const auth = firebase.auth();
+        // Use auth from firebase-config.js (already initialized)
         const hub = document.getElementById('admin-hub');
         const login = document.getElementById('login-screen');
 
         auth.onAuthStateChanged(user => {
+            console.log("Auth State Changed:", user ? user.email : "No User");
             if (user) {
                 hub.style.display = 'block';
                 login.style.display = 'none';
@@ -133,8 +135,14 @@
         });
 
         document.getElementById('login-btn').onclick = () => {
+            console.log("Login clicked...");
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider);
+            auth.signInWithPopup(provider)
+                .then(result => console.log("Login Success"))
+                .catch(error => {
+                    console.error("Login Error:", error);
+                    alert("Login failed: " + error.message);
+                });
         };
 
         document.getElementById('logout-btn').onclick = () => auth.signOut();

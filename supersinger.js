@@ -241,14 +241,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3 class="participant-name">${data.name}</h3>
                     <div class="participant-bio">${data.bio ? data.bio.substring(0, 60) + '...' : 'Aspiring Singer'}</div>
                 <div style="font-family:monospace; font-size:0.8rem; color:var(--primary); margin-top:5px; font-weight:bold;">${data.participantId || ''}</div>
+                
+                ${data.auditionLink ? `
+                    <div class="audio-player-container" style="margin-top:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:12px;">
+                        <audio id="audio-${id}" src="${data.auditionLink}" preload="none"></audio>
+                        <button onclick="toggleCardAudio('${id}')" class="btn btn-secondary" style="width:100%; font-size:0.8rem; padding:8px; border:1px solid rgba(255,255,255,0.1);">
+                            <i class="fa-solid fa-play" id="icon-${id}"></i> LISTEN SONG
+                        </button>
+                    </div>
+                ` : ''}
+
                 <div class="vote-stats"><i class="fa-solid fa-heart"></i> <span id="vote-count-${id}">${votes}</span></div>
                     <button class="vote-btn ${hasVoted ? 'voted' : ''}" data-id="${id}" ${(!currentUser || hasVoted) ? 'disabled' : ''}>
                         ${!currentUser ? 'Login to Vote' : (hasVoted ? 'Voted' : 'Vote Now')}
                     </button>
-                    ${data.auditionLink ? `<a href="${data.auditionLink}" target="_blank" style="display:block; margin-top:15px; color:var(--primary); font-size:0.9rem; text-decoration:none;">Watch Audition <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : ''}
                 `;
                 participantsGrid.appendChild(card);
             });
+    // --- AUDIO CONTROL ---
+    let currentPlayingId = null;
+    window.toggleCardAudio = (id) => {
+        const audio = document.getElementById(`audio-${id}`);
+        const icon = document.getElementById(`icon-${id}`);
+
+        if (currentPlayingId && currentPlayingId !== id) {
+            const prevAudio = document.getElementById(`audio-${currentPlayingId}`);
+            const prevIcon = document.getElementById(`icon-${currentPlayingId}`);
+            if (prevAudio) { prevAudio.pause(); prevIcon.className = 'fa-solid fa-play'; }
+        }
+
+        if (audio.paused) {
+            audio.play();
+            icon.className = 'fa-solid fa-pause';
+            currentPlayingId = id;
+        } else {
+            audio.pause();
+            icon.className = 'fa-solid fa-play';
+        }
+        
+        audio.onended = () => { icon.className = 'fa-solid fa-play'; currentPlayingId = null; };
+    };
+
     // --- SHOUTOUTS LOGIC ---
     window.sendShoutout = async () => {
         const to = getEl('shoutout-to').value;

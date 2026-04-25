@@ -7,407 +7,257 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --gold: #FFD700;
-            --gold-dark: #B8860B;
-            --bg-dark: #000000;
-            --primary: #FF1493;
-        }
+        :root { --gold: #FFD700; --gold-dark: #B8860B; --bg-dark: #050508; --primary: #FF1493; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Outfit',sans-serif; background:var(--bg-dark); color:white; overflow:hidden; height:100vh; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg-dark);
-            color: white;
-            overflow: hidden;
-            height: 100vh;
-        }
+        /* Stage */
+        .stage-bg { position:fixed; inset:0; background:radial-gradient(circle at 50% 30%, #1a0830 0%, #050508 70%); z-index:0; }
+        .spotlight { position:absolute; width:22vw; height:100vh; background:linear-gradient(to top,rgba(255,215,0,0.07),transparent); top:0; transform-origin:top center; animation:sweep 12s infinite alternate ease-in-out; clip-path:polygon(50% 0%,0% 100%,100% 100%); }
+        .spotlight:nth-child(2) { animation-delay:-6s; }
+        .spotlight:nth-child(3) { animation-delay:-3s; }
+        @keyframes sweep { from{transform:rotate(-25deg)} to{transform:rotate(25deg)} }
+        .star { position:absolute; border-radius:50%; background:var(--gold); opacity:0; animation:twinkle var(--d,4s) infinite var(--delay,0s); }
+        @keyframes twinkle { 0%,100%{opacity:0;transform:scale(0.4)} 50%{opacity:0.9;transform:scale(1)} }
 
-        /* --- STAGE BACKGROUND --- */
-        .stage-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
-            z-index: 1;
-        }
+        /* Layout */
+        .page { position:relative; z-index:10; height:100vh; display:flex; flex-direction:column; padding:20px 28px; }
 
-        .spotlight {
-            position: absolute;
-            width: 30vw;
-            height: 100vh;
-            background: linear-gradient(to top, rgba(255, 215, 0, 0.1), transparent);
-            top: 0;
-            transform-origin: top center;
-            animation: sweep 10s infinite alternate ease-in-out;
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-            opacity: 0.5;
-        }
+        /* Header */
+        .header { text-align:center; margin-bottom:14px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+        .logo-img { width:72px; height:72px; border-radius:50%; border:3px solid var(--gold); object-fit:cover; box-shadow:0 0 20px var(--gold),0 0 50px rgba(255,215,0,0.3); animation:logoPulse 3s ease-in-out infinite; }
+        @keyframes logoPulse { 0%,100%{box-shadow:0 0 18px var(--gold),0 0 40px rgba(255,215,0,0.2)} 50%{box-shadow:0 0 35px var(--gold),0 0 80px rgba(255,215,0,0.5)} }
+        .header h1 { font-size:clamp(1.6rem,5vw,3.2rem); font-weight:900; letter-spacing:5px; background:linear-gradient(to bottom,#FFD700,#FFFACD,#B8860B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .round-badge { display:inline-block; background:var(--primary); padding:4px 22px; border-radius:50px; font-weight:900; font-size:0.95rem; box-shadow:0 0 16px var(--primary); animation:bPulse 2s infinite; }
+        @keyframes bPulse { 0%,100%{box-shadow:0 0 14px var(--primary)} 50%{box-shadow:0 0 32px var(--primary),0 0 60px rgba(255,20,147,0.4)} }
 
-        @keyframes sweep { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
+        /* Grids */
+        .wall-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:14px; overflow-y:auto; padding:6px; flex-grow:1; align-content:start; }
+        .split-container { display:none; grid-template-columns:1fr 1fr; flex-grow:1; gap:16px; overflow:hidden; }
+        .split-zone { display:flex; flex-direction:column; border:2px dashed rgba(255,255,255,0.08); border-radius:20px; padding:14px; background:rgba(255,255,255,0.02); overflow:hidden; }
+        .zone-header { text-align:center; padding:8px 12px; border-radius:10px; font-weight:900; font-size:1.1rem; text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; }
+        .zone-selected { border-color:rgba(255,215,0,0.35); }
+        .zone-selected .zone-header { background:rgba(255,215,0,0.12); color:var(--gold); }
+        .zone-eliminated { border-color:rgba(255,255,255,0.06); }
+        .zone-eliminated .zone-header { background:rgba(255,255,255,0.03); color:#555; }
+        .zone-scroll { overflow-y:auto; flex:1; }
 
-        /* --- MAIN LAYOUT --- */
-        .container {
-            position: relative;
-            z-index: 10;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 40px;
-        }
+        /* Cards */
+        .p-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:14px; text-align:center; backdrop-filter:blur(8px); animation:cardPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both; position:relative; transition:transform 0.2s,box-shadow 0.2s; }
+        .p-card:hover { transform:translateY(-4px); box-shadow:0 14px 32px rgba(0,0,0,0.5); }
+        @keyframes cardPop { 0%{transform:scale(0.4);opacity:0} 100%{transform:scale(1);opacity:1} }
+        .p-card.selected { border-color:rgba(255,215,0,0.45); box-shadow:0 0 18px rgba(255,215,0,0.15); background:linear-gradient(135deg,rgba(255,215,0,0.07),rgba(0,0,0,0.5)); }
+        .p-card.finalist { border-color:var(--primary); box-shadow:0 0 22px rgba(255,20,147,0.3); background:linear-gradient(135deg,rgba(255,20,147,0.09),rgba(0,0,0,0.5)); animation:cardPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both,pglow 2s infinite alternate; }
+        @keyframes pglow { from{box-shadow:0 0 14px rgba(255,20,147,0.3)} to{box-shadow:0 0 38px rgba(255,20,147,0.7)} }
+        .p-card.eliminated { opacity:0.42; filter:grayscale(1); }
+        .p-avatar { width:95px; height:95px; border-radius:50%; border:3px solid var(--gold); margin:0 auto 10px; object-fit:cover; display:block; box-shadow:0 0 10px rgba(255,215,0,0.35); }
+        .p-placeholder { width:95px; height:95px; border-radius:50%; border:3px solid var(--gold); margin:0 auto 10px; background:linear-gradient(135deg,#2a1a3a,#1a0830); display:flex; align-items:center; justify-content:center; font-size:2.2rem; color:var(--gold); box-shadow:0 0 10px rgba(255,215,0,0.35); }
+        .p-name { font-weight:900; font-size:0.95rem; color:var(--gold); margin-bottom:3px; }
+        .p-id { font-family:monospace; font-size:0.6rem; color:rgba(255,215,0,0.6); margin-bottom:4px; }
+        .p-city { font-size:0.7rem; opacity:0.55; letter-spacing:0.5px; }
+        .p-badge { position:absolute; top:8px; right:8px; font-size:0.52rem; font-weight:900; padding:3px 7px; border-radius:7px; letter-spacing:0.5px; }
+        .badge-gold { background:var(--gold); color:#000; }
+        .badge-pink { background:var(--primary); color:#000; }
+        .badge-grey { background:#333; color:#888; }
+        .badge-blue { background:rgba(0,210,255,0.15); color:#00d2ff; border:1px solid #00d2ff; }
 
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        /* Reveal overlay */
+        #reveal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:2000; display:none; align-items:center; justify-content:center; }
+        .reveal-card { width:min(420px,90vw); padding:45px 35px; background:linear-gradient(135deg,#FFD700,#FFA500,#B8860B); border-radius:28px; text-align:center; color:#000; box-shadow:0 0 80px var(--gold),0 0 160px rgba(255,215,0,0.4); animation:bigPop 0.7s cubic-bezier(0.175,0.885,0.32,1.275); }
+        @keyframes bigPop { 0%{transform:scale(0.3) rotate(-6deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
+        .reveal-card img { width:150px; height:150px; border-radius:50%; border:6px solid #fff; display:block; margin:16px auto; object-fit:cover; box-shadow:0 8px 25px rgba(0,0,0,0.4); }
 
-        .header .logo-img {
-            height: 60px;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 0 10px var(--gold));
-        }
+        /* Flash */
+        .flash { position:fixed; inset:0; background:#fff; z-index:3000; opacity:0; pointer-events:none; }
+        .flash.on { animation:flashfx 0.4s ease-out forwards; }
+        @keyframes flashfx { 0%{opacity:1} 100%{opacity:0} }
 
-        .header h1 {
-            font-size: 3.5rem;
-            font-weight: 900;
-            letter-spacing: 5px;
-            background: linear-gradient(to bottom, #FFD700, #FFFACD, #B8860B);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-transform: uppercase;
-        }
+        /* Setup */
+        #setup-overlay { position:fixed; inset:0; background:linear-gradient(135deg,#050508,#1a0830); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; }
+        .btn-start { background:linear-gradient(135deg,#FFD700,#B8860B); color:#000; border:none; padding:18px 56px; font-size:1.3rem; font-weight:900; border-radius:50px; cursor:pointer; box-shadow:0 0 28px rgba(255,215,0,0.5); transition:transform 0.2s; font-family:'Outfit',sans-serif; }
+        .btn-start:hover { transform:scale(1.05); }
 
-        .round-badge {
-            display: inline-block;
-            background: var(--primary);
-            padding: 5px 20px;
-            border-radius: 50px;
-            font-weight: 900;
-            font-size: 1.2rem;
-            margin-top: 10px;
-            box-shadow: 0 0 20px var(--primary);
-        }
-
-        /* --- GRID LAYOUT --- */
-        .wall-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
-            overflow-y: auto;
-            padding: 20px;
-            flex-grow: 1;
-            align-content: start;
-        }
-
-        /* --- SPLIT SCREEN (FOR ROUND 2+) --- */
-        .split-container {
-            display: none; /* Controlled by JS */
-            grid-template-columns: 1fr 1fr;
-            height: 100%;
-            gap: 40px;
-        }
-
-        .split-zone {
-            display: flex;
-            flex-direction: column;
-            border: 2px dashed rgba(255,255,255,0.1);
-            border-radius: 30px;
-            padding: 20px;
-            background: rgba(255,255,255,0.02);
-        }
-
-        .zone-header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 15px;
-            font-weight: 900;
-            font-size: 1.5rem;
-            text-transform: uppercase;
-        }
-
-        .zone-selected { border-color: var(--gold); }
-        .zone-selected .zone-header { background: rgba(255, 215, 0, 0.2); color: var(--gold); }
-
-        .zone-eliminated { border-color: #444; }
-        .zone-eliminated .zone-header { background: rgba(255, 255, 255, 0.05); color: #666; }
-
-        /* --- PARTICIPANT CARD --- */
-        .p-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 15px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            animation: revealPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            transition: 0.3s;
-        }
-
-        @keyframes revealPop {
-            0% { transform: scale(0); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .p-card.selected {
-            border-color: var(--gold);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-            background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0.5) 100%);
-        }
-
-        .p-card.eliminated {
-            opacity: 0.5;
-            filter: grayscale(1);
-        }
-
-        .p-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 4px solid var(--gold);
-            margin: 0 auto 10px;
-            object-fit: cover;
-            box-shadow: 0 0 15px var(--gold);
-        }
-
-        .p-name { font-weight: 900; font-size: 1.1rem; margin-bottom: 5px; color: var(--gold); }
-        .p-city { font-size: 0.8rem; opacity: 0.7; letter-spacing: 1px; }
-
-        .p-badge {
-            position: absolute;
-            top: 10px; right: 10px;
-            background: var(--gold);
-            color: black;
-            font-size: 0.6rem;
-            font-weight: 900;
-            padding: 2px 8px;
-            border-radius: 10px;
-        }
-
-        /* --- GOLDEN TICKET OVERLAY (For one-by-one reveal) --- */
-        #reveal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 1000;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .reveal-big-card {
-            width: 400px;
-            padding: 50px;
-            background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
-            border-radius: 30px;
-            text-align: center;
-            color: black;
-            box-shadow: 0 0 100px var(--gold);
-            animation: bigPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes bigPop { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
-
-        .flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; opacity: 0; pointer-events: none; }
-        .flash.active { animation: flashEffect 0.5s ease-out; }
-        @keyframes flashEffect { 0% { opacity: 1; } 100% { opacity: 0; } }
-
-        #setup-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        .btn-start { background: var(--gold); color: black; border:none; padding: 20px 60px; font-size: 1.5rem; font-weight:900; border-radius:50px; cursor:pointer; }
-        /* --- MOBILE OVERRIDES --- */
-        @media (max-width: 768px) {
-            .header h1 { font-size: 2rem; }
-            .wall-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                gap: 10px;
-                padding: 10px;
-            }
-            .split-container {
-                grid-template-columns: 1fr;
-                overflow-y: auto;
-            }
-            .p-avatar {
-                width: 80px;
-                height: 80px;
-            }
-            .p-name { font-size: 0.9rem; }
-            .reveal-big-card {
-                width: 90%;
-                padding: 30px;
-            }
-            .reveal-big-card h2 { font-size: 1.8rem; }
+        /* Mobile */
+        @media(max-width:768px){
+            .page { padding:10px; }
+            .logo-img { width:52px; height:52px; }
+            .header h1 { font-size:1.5rem; letter-spacing:2px; }
+            .split-container { grid-template-columns:1fr; }
+            .wall-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
+            .p-avatar,.p-placeholder { width:70px; height:70px; font-size:1.6rem; }
+            .p-name { font-size:0.8rem; }
+            .reveal-card { padding:28px 18px; }
+            .reveal-card img { width:110px; height:110px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="setup-overlay">
-        <h1 style="margin-bottom:30px; letter-spacing:10px;">SELECTION PORTAL</h1>
-        <button class="btn-start" onclick="startPortal()">ENTER SELECTION STAGE</button>
+<div id="setup-overlay">
+    <img src="logo.jpg" style="width:88px;height:88px;border-radius:50%;border:3px solid var(--gold);box-shadow:0 0 25px var(--gold);object-fit:cover;">
+    <h1 style="font-size:2.2rem;font-weight:900;letter-spacing:6px;background:linear-gradient(to bottom,#FFD700,#B8860B);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">WALL OF FAME</h1>
+    <p style="color:#777;letter-spacing:2px;font-size:0.9rem;">Hello Machi Super Singer 2026</p>
+    <button class="btn-start" onclick="startPortal()"><i class="fa-solid fa-star"></i> ENTER SELECTION STAGE</button>
+</div>
+
+<div class="stage-bg" id="stage-bg">
+    <div class="spotlight" style="left:8%;"></div>
+    <div class="spotlight" style="left:80%;"></div>
+    <div class="spotlight" style="left:44%;"></div>
+</div>
+<div class="flash" id="flash"></div>
+
+<div class="page">
+    <div class="header">
+        <img src="logo.jpg" class="logo-img" alt="Hello Machi FM">
+        <h1>WALL OF FAME</h1>
+        <div id="round-label" class="round-badge">SELECTION PHASE</div>
     </div>
-
-    <div class="stage-bg" id="stage-bg">
-        <div class="spotlight" style="left: 15%; animation-delay: 0s;"></div>
-        <div class="spotlight" style="left: 75%; animation-delay: -5s;"></div>
-    </div>
-
-    <div class="flash" id="flash"></div>
-
-    <div class="container">
-        <div class="header">
-            <img src="logo.jpg" class="logo-img" alt="Hello Machi FM Logo">
-            <h1>WALL OF FAME</h1>
-            <div id="current-round-label" class="round-badge">LOADING...</div>
+    <div id="main-grid" class="wall-grid"></div>
+    <div id="split-view" class="split-container">
+        <div class="split-zone zone-selected">
+            <div class="zone-header"><i class="fa-solid fa-star"></i> SELECTED</div>
+            <div class="zone-scroll"><div id="selected-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div></div>
         </div>
-
-        <!-- Single Grid View -->
-        <div id="main-grid" class="wall-grid"></div>
-
-        <!-- Split View (For Elimination Rounds) -->
-        <div id="split-view" class="split-container">
-            <div class="split-zone zone-selected">
-                <div class="zone-header">SELECTED</div>
-                <div id="selected-grid" class="wall-grid"></div>
-            </div>
-            <div class="split-zone zone-eliminated">
-                <div class="zone-header">ELIMINATED</div>
-                <div id="eliminated-grid" class="wall-grid"></div>
-            </div>
+        <div class="split-zone zone-eliminated">
+            <div class="zone-header"><i class="fa-solid fa-xmark"></i> ELIMINATED</div>
+            <div class="zone-scroll"><div id="eliminated-grid" class="wall-grid" style="padding:0;flex-grow:0;"></div></div>
         </div>
     </div>
+</div>
 
-    <!-- The One-by-One Reveal Overlay -->
-    <div id="reveal-overlay">
-        <div class="reveal-big-card">
-            <i class="fa-solid fa-star fa-4x mb-4"></i>
-            <h3 style="font-size: 1.5rem; letter-spacing: 2px;">CONGRATULATIONS</h3>
-            <img id="reveal-img" src="" style="width: 200px; height: 200px; border-radius: 50%; border: 8px solid white; margin: 20px 0; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <h2 id="reveal-name" style="font-size: 2.5rem; font-weight: 900;">NAME HERE</h2>
-            <div id="reveal-status" style="margin-top: 15px; font-weight: 900; border-top: 1px solid rgba(0,0,0,0.2); padding-top: 15px;">ADVANCED TO ROUND 2</div>
-        </div>
+<div id="reveal-overlay">
+    <div class="reveal-card">
+        <i class="fa-solid fa-trophy fa-3x"></i>
+        <h3 style="font-size:1.1rem;letter-spacing:3px;margin:14px 0 0;">CONGRATULATIONS!</h3>
+        <img id="reveal-img" src="" alt="">
+        <h2 id="reveal-name" style="font-size:1.9rem;font-weight:900;"></h2>
+        <div id="reveal-status" style="margin-top:12px;font-weight:900;font-size:1rem;border-top:2px solid rgba(0,0,0,0.2);padding-top:12px;"></div>
     </div>
+</div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-    <script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+    // Spawn stars
+    const bg = document.getElementById('stage-bg');
+    for (let i = 0; i < 45; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const sz = Math.random() * 3 + 1;
+        s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${3+Math.random()*5}s;--delay:${Math.random()*6}s;`;
+        bg.appendChild(s);
+    }
 
-    <script>
-        let revealedIds = new Set();
-        let lastRevealId = null;
+    let knownIds = new Set();
+    let lastReveal = null;
 
-        function startPortal() {
-            document.getElementById('setup-overlay').style.display = 'none';
-            initLiveSync();
+    function startPortal() {
+        document.getElementById('setup-overlay').style.display = 'none';
+        initSync();
+    }
+
+    function flash() {
+        const f = document.getElementById('flash');
+        f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+    }
+
+    function showReveal(p) {
+        if (lastReveal === p.id) return;
+        lastReveal = p.id;
+        flash();
+        document.getElementById('reveal-img').src = p.photoBase64 || 'logo.jpg';
+        document.getElementById('reveal-name').textContent = (p.name || '').toUpperCase();
+        document.getElementById('reveal-status').textContent = `ADVANCED TO ${(p.status || '').toUpperCase()}`;
+        document.getElementById('reveal-overlay').style.display = 'flex';
+        confetti({ particleCount: 220, spread: 85, origin: { y: 0.6 }, colors: ['#FFD700','#B8860B','#fff','#FF1493'] });
+        setTimeout(() => { document.getElementById('reveal-overlay').style.display = 'none'; }, 7000);
+    }
+
+    function badgeClass(s) {
+        if (!s) return 'badge-blue';
+        const l = s.toLowerCase();
+        if (l === 'final') return 'badge-pink';
+        if (l === 'eliminated') return 'badge-grey';
+        if (['approved','round 1','round 2','round 3'].includes(l)) return 'badge-gold';
+        return 'badge-blue';
+    }
+
+    function cardClass(s) {
+        if (!s) return 'selected';
+        const l = s.toLowerCase();
+        if (l === 'eliminated') return 'eliminated';
+        if (l === 'final') return 'finalist';
+        return 'selected';
+    }
+
+    function makeCard(p, i) {
+        const d = document.createElement('div');
+        d.className = `p-card ${cardClass(p.status)}`;
+        d.style.animationDelay = `${i * 0.055}s`;
+        const photo = p.photoBase64
+            ? `<img src="${p.photoBase64}" class="p-avatar" alt="${p.name || ''}">`
+            : `<div class="p-placeholder">${(p.name || '?').charAt(0)}</div>`;
+        d.innerHTML = `
+            <span class="p-badge ${badgeClass(p.status)}">${(p.status || '').toUpperCase()}</span>
+            ${photo}
+            <div class="p-name">${p.name || 'Unknown'}</div>
+            <div class="p-id">ID: ${p.participantId || '---'}</div>
+            <div class="p-city"><i class="fa-solid fa-location-dot"></i> ${p.city || 'Tamil Nadu'}</div>
+        `;
+        return d;
+    }
+
+    function renderWall(list) {
+        const mainGrid = document.getElementById('main-grid');
+        const splitView = document.getElementById('split-view');
+        const selGrid = document.getElementById('selected-grid');
+        const elGrid = document.getElementById('eliminated-grid');
+
+        const elim = list.filter(p => (p.status || '').toLowerCase() === 'eliminated');
+        const active = list.filter(p => (p.status || '').toLowerCase() !== 'eliminated');
+
+        if (elim.length > 0) {
+            mainGrid.style.display = 'none';
+            splitView.style.display = 'grid';
+            selGrid.innerHTML = ''; active.forEach((p, i) => selGrid.appendChild(makeCard(p, i)));
+            elGrid.innerHTML = ''; elim.forEach((p, i) => elGrid.appendChild(makeCard(p, i)));
+        } else {
+            splitView.style.display = 'none';
+            mainGrid.style.display = 'grid';
+            mainGrid.innerHTML = ''; active.forEach((p, i) => mainGrid.appendChild(makeCard(p, i)));
         }
+    }
 
-        function triggerFlash() {
-            const f = document.getElementById('flash');
-            f.classList.remove('active');
-            void f.offsetWidth;
-            f.classList.add('active');
-        }
-
-        function showBigReveal(participant) {
-            if (lastRevealId === participant.id) return;
-            lastRevealId = participant.id;
-
-            triggerFlash();
-            const overlay = document.getElementById('reveal-overlay');
-            document.getElementById('reveal-img').src = participant.photoBase64 || 'logo.jpg';
-            document.getElementById('reveal-name').textContent = participant.name.toUpperCase();
-            document.getElementById('reveal-status').textContent = `ADVANCED TO ${participant.status.toUpperCase()}`;
-            
-            overlay.style.display = 'flex';
-            
-            // Trigger Confetti
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#FFD700', '#B8860B', '#FFFFFF']
-            });
-
-            setTimeout(() => {
-                overlay.style.display = 'none';
-            }, 6000); // 6 seconds reveal
-        }
-
-        function initLiveSync() {
-            // Listen to Live State for Round Info
-            db.collection('live_state').doc('current').onSnapshot(doc => {
-                if(doc.exists) {
-                    const data = doc.data();
-                    document.getElementById('current-round-label').textContent = data.round ? `CURRENT: ${data.round.toUpperCase()}` : 'SELECTION PHASE';
-                }
-            });
-
-            // Listen to Participants
-            db.collection('participants').onSnapshot(snap => {
-                const participants = [];
-                snap.forEach(doc => participants.push({ id: doc.id, ...doc.data() }));
-
-                // Filter for "Revealed" participants
-                const revealedList = participants.filter(p => p.isRevealed === true);
-                
-                // Check if any NEW reveal happened
-                revealedList.forEach(p => {
-                    if (!revealedIds.has(p.id)) {
-                        revealedIds.add(p.id);
-                        showBigReveal(p);
-                    }
-                });
-
-                renderGrids(revealedList);
-            });
-        }
-
-        function renderGrids(list) {
-            const mainGrid = document.getElementById('main-grid');
-            const splitView = document.getElementById('split-view');
-            const selectedGrid = document.getElementById('selected-grid');
-            const eliminatedGrid = document.getElementById('eliminated-grid');
-
-            // Logic: If there are eliminated people, show split view
-            const eliminated = list.filter(p => p.status === 'rejected' || p.status === 'Eliminated');
-            const selected = list.filter(p => p.status !== 'rejected' && p.status !== 'Eliminated' && p.status !== 'pending');
-
-            if (eliminated.length > 0) {
-                mainGrid.style.display = 'none';
-                splitView.style.display = 'grid';
-                
-                selectedGrid.innerHTML = '';
-                selected.forEach(p => selectedGrid.appendChild(createCard(p, 'selected')));
-                
-                eliminatedGrid.innerHTML = '';
-                eliminated.forEach(p => eliminatedGrid.appendChild(createCard(p, 'eliminated')));
-            } else {
-                mainGrid.style.display = 'grid';
-                splitView.style.display = 'none';
-                
-                mainGrid.innerHTML = '';
-                selected.forEach(p => mainGrid.appendChild(createCard(p, 'selected')));
+    function initSync() {
+        db.collection('live_state').doc('current').onSnapshot(doc => {
+            if (doc.exists) {
+                const d = doc.data();
+                document.getElementById('round-label').textContent = d.round
+                    ? `CURRENT: ${d.round.toUpperCase()}` : 'SELECTION PHASE';
             }
-        }
+        });
 
-        function createCard(p, type) {
-            const div = document.createElement('div');
-            div.className = `p-card ${type}`;
-            div.innerHTML = `
-                ${p.photoBase64 ? `<img src="${p.photoBase64}" class="p-avatar">` : `<div class="p-avatar" style="background:#333; display:flex; align-items:center; justify-content:center; font-size:3rem;">${p.name.charAt(0)}</div>`}
-                <div class="p-badge">${p.status.toUpperCase()}</div>
-                <div class="p-name">${p.name}</div>
-                <div style="font-family:monospace; font-size:0.7rem; color:var(--gold); margin-bottom:5px;">ID: ${p.participantId || '---'}</div>
-                <div class="p-city"><i class="fa-solid fa-location-dot"></i> ${p.city || 'Tamil Nadu'}</div>
-            `;
-            return div;
-        }
-    </script>
+        db.collection('participants').onSnapshot(snap => {
+            const all = [];
+            snap.forEach(doc => all.push({ id: doc.id, ...doc.data() }));
+
+            // Show all non-pending participants
+            const visible = all.filter(p => p.status && p.status !== 'pending');
+
+            // Trigger big reveal for newly isRevealed participants
+            visible.forEach(p => {
+                if (p.isRevealed && !knownIds.has(p.id)) {
+                    setTimeout(() => showReveal(p), 600);
+                }
+                knownIds.add(p.id);
+            });
+
+            renderWall(visible);
+        });
+    }
+</script>
 </body>
 </html>

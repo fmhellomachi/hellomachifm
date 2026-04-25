@@ -1425,68 +1425,60 @@ footer {
 /* ============================================================
    PREMIUM MOBILE PLAYER OPTIMIZATION (FULL WIDTH)
    ============================================================ */
+/* ============================================================
+   PREMIUM MOBILE PLAYER OPTIMIZATION (FULL WIDTH)
+   ============================================================ */
 @media (max-width: 480px) {
     .floating-player-wrapper {
         bottom: 0;
         left: 0;
         width: 100%;
-        transform: none; /* Remove centering transform for full width */
+        transform: none;
     }
 
     .floating-player {
-        height: 90px;
+        height: 110px; /* INCREASED FOR GIANT DISK */
         padding: 0 10px;
-        border-radius: 0; /* Full edge-to-edge */
+        border-radius: 0;
         border-left: none; border-right: none;
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        background: rgba(10, 10, 15, 0.95);
+        background: rgba(10, 10, 15, 0.98);
     }
 
-    /* ENLARGED Disk for Mobile */
+    /* GIANT Disk for Mobile */
     .disk-control-wrapper {
-        width: 100px; height: 100px; /* Maximum Mobile Size */
+        width: 100px; height: 100px;
         margin-right: 10px;
     }
 
-    /* MINIMAL Play/Pause (Icon Only) */
-    .disk-inner-play {
-        background: transparent !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        border: none !important;
-        box-shadow: none !important;
-        width: 100%; height: 100%; /* Fill disk area */
-        font-size: 1.5rem;
-        color: white !important;
-        text-shadow: 0 0 10px rgba(0,0,0,0.5); /* Shadow on icon for legibility */
-    }
-    .disk-inner-play::after { display: none; } /* Remove spindle dot */
-
     /* Tonearm Scaling */
     .tonearm {
-        width: 30px; height: 70px;
-        right: -10px; top: -10px;
+        width: 35px; height: 80px;
+        right: -10px; top: -15px;
     }
 
-    /* Retro Visualizer on Mobile */
+    /* Vibrant Mobile Visualizer */
     .retro-visualizer {
-        margin: 0 10px;
-        gap: 3px;
+        margin: 0 8px;
+        gap: 4px;
         flex: 1;
-        justify-content: center;
+        height: 70px; /* Taller visualizer */
     }
-    .vis-block-col { gap: 1px; }
-    .vis-block { width: 10px; height: 3px; }
+    .vis-block-col { gap: 2px; width: 14px; }
+    .vis-block { 
+        height: 8px; 
+        box-shadow: 0 0 5px rgba(255,255,255,0.1); /* Subtle base glow */
+    }
 
-    /* Volume */
+    /* Volume Slider */
     .player-controls-right {
-        width: 70px;
+        width: 65px;
         padding-left: 5px;
     }
-    .volume-slider { width: 50px; }
+    .volume-slider { width: 45px; }
 }
 
 @media (max-width: 360px) {

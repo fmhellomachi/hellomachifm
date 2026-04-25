@@ -256,17 +256,15 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = `schedule-card ${isLive ? 'active' : ''}`;
             
             card.innerHTML = `
-                ${isLive ? '<div class="live-indicator">LIVE NOW</div>' : ''}
-                <div class="card-glow"></div>
                 <div class="time">${block.time || '00:00'} ${block.endTime ? ' - ' + block.endTime : ''}</div>
                 <h3>${block.title}</h3>
-                <p>Enjoy the best music with our RJs.</p>
                 <div class="rj-info">
-                    <div class="rj-avatar" style="overflow:hidden;">
+                    <div class="rj-avatar" style="width:30px; height:30px;">
                         <img src="${block.rjPhoto || 'logo.jpg'}" alt="RJ" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='logo.jpg'">
                     </div>
-                    <span>${block.rj || 'Hello Machi RJ'}</span>
+                    <span style="font-size:0.8rem;">${block.rj || 'Hello Machi RJ'}</span>
                 </div>
+                ${isLive ? '<div class="live-indicator" style="position:static; margin-left:15px;">LIVE</div>' : ''}
             `;
             grid.appendChild(card);
         });
@@ -296,21 +294,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- General UI ---
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            if(targetId === '#') return;
+    // --- Persistent Navigation (SPA) ---
+    async function navigateTo(url) {
+        try {
+            const response = await fetch(url);
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.querySelector('#app-content');
             
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                window.scrollTo({
-                    top: targetElement.offsetTop - 70,
-                    behavior: 'smooth'
-                });
+            if (newContent) {
+                document.getElementById('app-content').innerHTML = newContent.innerHTML;
+                window.history.pushState({}, '', url);
+                // Re-init specific page logic
+                if (url.includes('supersinger')) {
+                    // Trigger Supersinger JS (assuming it's global or needs re-init)
+                    const script = document.createElement('script');
+                    script.src = 'supersinger.js';
+                    document.body.appendChild(script);
+                }
+                loadCMSData(); // Refresh schedule
+                window.scrollTo(0, 0);
             }
-        });
+        } catch (e) { console.error("Navigation failed:", e); }
+    }
+
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (link && link.href.includes(window.location.origin)) {
+            const path = link.getAttribute('href');
+            if (path && !path.startsWith('#') && !path.includes('admin')) {
+                e.preventDefault();
+                navigateTo(path);
+            }
+        }
     });
 
     window.addEventListener('scroll', () => {

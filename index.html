@@ -45,61 +45,61 @@
         </a>
     </div>
 
-    <!-- Hero Section -->
-    <header id="home" class="hero">
-        <!-- Premium background layer (e.g., soundwaves or studio) -->
-        <div class="hero-bg"></div>
-        <div class="hero-overlay"></div>
-        
-        <div class="hero-content">
-            <div class="live-badge">
-                <span class="pulse"></span> ON AIR NOW
-            </div>
-            <h1 class="hero-title" id="hero-title">THE BEAT OF <br><span class="gradient-text">CHENNAI</span></h1>
-            <p class="hero-subtitle" id="hero-subtitle">Your exclusive destination for the finest Tamil hits, nostalgic classics, and interactive live RJ shows. Turn up the volume.</p>
-            
-            <div class="hero-actions">
-                <button class="btn btn-primary btn-glow" id="play-hero-btn">
-                    <i class="fa-solid fa-play"></i> LISTEN LIVE
-                </button>
-                <a href="https://wa.me/919092363433?text=I'd like to request a song 🎵" target="_blank" class="btn btn-secondary">
-                    <i class="fa-brands fa-whatsapp"></i> REQUEST A SONG
-                </a>
-            </div>
-
-            <!-- Event Promo Card (Links to Super Singer) -->
-            <a href="supersinger.html" class="event-promo-card mt-5">
-                <div class="promo-icon"><i class="fa-solid fa-trophy"></i></div>
-                <div class="promo-text">
-                    <strong>Super Singer 2026</strong>
-                    <span>Registrations & Voting Portal Open Now! &rarr;</span>
-                </div>
-            </a>
-        </div>
-    </header>
-
-    <!-- Schedule Section -->
-    <section id="schedule" class="schedule-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>TODAY'S <span class="gradient-text">LINEUP</span></h2>
-                <p>Never miss a beat with our daily schedule.</p>
-            </div>
-            
-            <div class="schedule-grid" id="schedule-grid" style="opacity:0; transition: opacity 0.5s ease;">
-                <!-- Loading placeholder -->
-                <div style="grid-column:1/-1; text-align:center; padding:50px;">
-                    <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; color:var(--primary);"></i>
-                    <p style="margin-top:10px;">Syncing IST Broadcast...</p>
+    <div id="app-content">
+        <!-- Hero Section -->
+        <header id="home" class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <div class="live-badge"><span class="pulse"></span> ON AIR NOW</div>
+                <h1 class="hero-title" id="hero-title">THE BEAT OF <br><span class="gradient-text">CHENNAI</span></h1>
+                <p class="hero-subtitle" id="hero-subtitle">Your exclusive destination for the finest Tamil hits.</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary btn-glow" id="play-hero-btn"><i class="fa-solid fa-play"></i> LISTEN LIVE</button>
+                    <a href="https://wa.me/919092363433" target="_blank" class="btn btn-secondary"><i class="fa-brands fa-whatsapp"></i> REQUEST</a>
                 </div>
             </div>
+        </header>
+
+        <!-- Schedule Section -->
+        <section id="schedule" class="schedule-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>LIVE <span class="gradient-text">SCHEDULE</span></h2>
+                </div>
+                <div class="schedule-grid" id="schedule-grid" style="opacity:0; transition: opacity 0.5s ease;">
+                    <!-- Sleek cards injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <div class="container footer-content">
+                <div class="brand">
+                    <h3>HELLO MACHI FM</h3>
+                </div>
+                <div class="socials">
+                    <div class="social-icons">
+                        <a href="https://wa.me/919092363433" target="_blank" class="social-icon"><i class="fa-brands fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Tap to Play Overlay (For Mobile Autoplay bypass) -->
+    <div id="tap-to-play-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px); cursor:pointer;">
+        <div style="background:var(--primary); width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px; box-shadow:0 0 30px var(--primary);">
+            <i class="fa-solid fa-play" style="color:black; font-size:2rem;"></i>
         </div>
-    </section>
+        <h2 style="color:white; font-family:'Outfit', sans-serif;">TAP TO LISTEN LIVE</h2>
+        <p style="color:rgba(255,255,255,0.6);">Mobile browsers require a tap to start the music</p>
+    </div>
 
     <!-- Premium Docked Audio Player Bar -->
     <div class="floating-player-wrapper">
         <div class="floating-player">
-            <!-- LEFT: Station Info -->
             <div class="player-left">
                 <div class="rotating-disk" id="player-rotating-disk">
                     <div class="disk-label"><img src="logo.jpg" alt="Logo"></div>
@@ -110,70 +110,25 @@
                     <div class="show-name" id="current-show">Live Streaming...</div>
                 </div>
             </div>
-
-            <!-- CENTER: Controls -->
             <div class="player-center">
                 <button id="play-pause-btn" class="control-btn play-btn">
                     <i class="fa-solid fa-play"></i>
                 </button>
-                <div class="visualizer">
-                    <span></span><span></span><span></span><span></span><span></span><span></span>
-                </div>
             </div>
-
-            <!-- RIGHT: Volume & Socials -->
             <div class="player-right">
                 <div class="volume-wrapper">
-                    <i class="fa-solid fa-volume-low"></i>
                     <input type="range" id="volume-slider" class="premium-slider" min="0" max="1" step="0.01" value="1">
                 </div>
-                <div class="player-socials">
-                    <a href="https://wa.me/919092363433" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
-                </div>
+                <a href="https://wa.me/919092363433" target="_blank" class="wa-player-link">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container footer-content">
-            <div class="brand">
-                <img src="logo.jpg" alt="Logo" style="width: 40px; border-radius: 50%; margin-bottom: 10px;">
-                <h3>HELLO MACHI FM</h3>
-                <p>Premium Tamil Radio Broadcasting worldwide.</p>
-            </div>
-            <div class="footer-links">
-                <h4>Quick Links</h4>
-                <a href="#home">Home</a>
-                <a href="#schedule">Schedule</a>
-                <a href="supersinger.html">Super Singer</a>
-                <a href="admin.html"><i class="fa-solid fa-lock"></i> Admin Hub</a>
-            </div>
-            <div class="socials">
-                <h4>Connect With Us</h4>
-                <div class="social-icons">
-                    <a href="https://www.facebook.com/hellomachifm" target="_blank" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="https://www.instagram.com/hellomachifm" target="_blank" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="https://www.youtube.com/@hellomachifm" target="_blank" class="social-icon"><i class="fa-brands fa-youtube"></i></a>
-                    <a href="https://wa.me/919092363433" target="_blank" class="social-icon"><i class="fa-brands fa-whatsapp"></i></a>
-                </div>
-            </div>
-        </div>
-        <div class="copyright">
-            <div class="container">
-                &copy; 2026 Hello Machi FM. All rights reserved.
-            </div>
-        </div>
-    </footer>
-
-    <!-- Tap to Play Overlay (For Mobile Autoplay bypass) -->
-    <div id="tap-to-play-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px); cursor:pointer;">
-        <div style="background:var(--primary); width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px; box-shadow:0 0 30px var(--primary);">
-            <i class="fa-solid fa-play" style="color:black; font-size:2rem;"></i>
-        </div>
-        <h2 style="color:white; font-family:'Outfit', sans-serif;">TAP TO LISTEN LIVE</h2>
-        <p style="color:rgba(255,255,255,0.6);">Mobile browsers require a tap to start the music</p>
-    </div>
+    <audio id="azuracast-player" preload="none">
+        <source src="https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3" type="audio/mpeg">
+    </audio>
 
     <!-- Live Chat Widget -->
     <div id="chat-widget-container" style="position:fixed; bottom:110px; right:20px; z-index:10001;">

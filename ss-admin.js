@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tableBody) return;
         tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading participants...</td></tr>';
         try {
-            const snap = await db.collection("participants").orderBy("registeredAt", "desc").get();
+            const snap = await db.collection("participants").get();
             tableBody.innerHTML = '';
             snap.forEach((doc) => {
                 const data = doc.data();

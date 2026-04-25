@@ -128,7 +128,7 @@
     <script src="firebase-config.js"></script>
 
     <script>
-        const auth = firebase.auth();
+        // auth and db are already declared in firebase-config.js
         const hub = document.getElementById('admin-hub');
         const login = document.getElementById('login-screen');
         const notice = document.getElementById('restriction-notice');
@@ -136,7 +136,7 @@
 
         // AUTHORIZED EMAILS LIST
         const AUTHORIZED_EMAILS = [
-            'bowtharinivijay@gmail.com', // Added based on your context
+            'fmhellomachi@gmail.com',
             'admin@hellomachi.com'
         ];
 
@@ -163,12 +163,13 @@
         document.getElementById('login-btn').onclick = () => {
             console.log("Login clicked...");
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider)
-                .then(result => console.log("Login Success"))
-                .catch(error => {
-                    console.error("Login Error:", error);
-                    alert("Login failed: " + error.message);
-                });
+            auth.signInWithPopup(provider).catch(error => {
+                if (error.code === 'auth/popup-blocked') {
+                    return auth.signInWithRedirect(provider);
+                }
+                console.error("Login Error:", error);
+                alert("Login failed: " + error.message);
+            });
         };
 
         document.getElementById('logout-btn').onclick = () => auth.signOut();

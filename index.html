@@ -133,7 +133,6 @@
                         <li><a href="#home">Home</a></li>
                         <li><a href="#schedule">Schedule</a></li>
                         <li><a href="supersinger.html">Super Singer</a></li>
-                        <li><a href="admin.html">Admin Hub</a></li>
                     </ul>
                 </div>
                 <div class="footer-social-group">
@@ -234,5 +233,28 @@
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Secret Long-Press for Admin Access
+        const trigger = document.getElementById('secret-admin-trigger');
+        let pressTimer;
+
+        if (trigger) {
+            // Desktop
+            trigger.addEventListener('mousedown', () => {
+                pressTimer = window.setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 5000); // 5 seconds
+            });
+            trigger.addEventListener('mouseup', () => clearTimeout(pressTimer));
+
+            // Mobile
+            trigger.addEventListener('touchstart', () => {
+                pressTimer = window.setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 5000);
+            });
+            trigger.addEventListener('touchend', () => clearTimeout(pressTimer));
+        }
+    </script>
 </body>
 </html>

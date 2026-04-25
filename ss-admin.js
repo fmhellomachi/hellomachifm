@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFilter = 'all';
 
     const AUTHORIZED_EMAILS = [
-        'bowtharinivijay@gmail.com',
+        'fmhellomachi@gmail.com',
         'admin@hellomachi.com'
     ];
 
@@ -61,7 +61,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    if (loginBtn) loginBtn.addEventListener('click', () => auth.signInWithPopup(provider));
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            auth.signInWithPopup(provider).catch(error => {
+                if (error.code === 'auth/popup-blocked') {
+                    return auth.signInWithRedirect(provider);
+                }
+                console.error("Login Error:", error);
+                alert("Login failed: " + error.message);
+            });
+        });
+    }
     if (logoutBtn) logoutBtn.addEventListener('click', () => auth.signOut());
 
     window.switchMainTab = (tabId) => {

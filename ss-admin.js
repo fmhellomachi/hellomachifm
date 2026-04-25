@@ -324,8 +324,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const pSnap = await db.collection('participants').where('isRevealed', '==', true).get();
             const batch = db.batch();
             pSnap.forEach(doc => batch.update(doc.ref, { isRevealed: false }));
+            
+            // Also reset the display filter to 'all_active' so the wall clears
+            batch.update(db.collection('live_state').doc('current'), { wallOfFameFilter: 'all_active' });
+            
             await batch.commit();
             alert("Wall of Fame has been reset.");
+            
+            // Update local dropdown if it exists
+            const select = getEl('wof-filter-select');
+            if (select) select.value = 'all_active';
+            
             fetchWofCandidates();
         } catch(e) { alert("Error resetting: " + e.message); }
     };

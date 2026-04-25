@@ -102,8 +102,24 @@
             border-radius: 50%; border: 8px solid white; box-shadow: 0 0 60px var(--primary);
             overflow: hidden; background: #222; z-index: 10;
         }
-        .singer-img { width: 100%; height: 100%; object-fit: cover; animation: kenburns 20s infinite alternate ease-in-out; }
-        @keyframes kenburns { from{transform:scale(1)} to{transform:scale(1.3)} }
+        .singer-img { width: 100%; height: 100%; object-fit: cover; transition: all 0.5s ease; }
+        
+        .stage-center {
+            display: flex; gap: 60px; align-items: center; justify-content: center;
+            width: 100%; z-index: 10;
+        }
+
+        /* --- HEART REACTIONS --- */
+        .reaction-heart {
+            position: absolute; bottom: 100px; font-size: 2.5rem;
+            color: #FF1493; text-shadow: 0 0 15px rgba(255,20,147,0.8);
+            pointer-events: none; z-index: 1000;
+            animation: heartFloat 3s ease-out forwards;
+        }
+        @keyframes heartFloat {
+            0% { transform: translateY(0) scale(0.5); opacity: 1; }
+            100% { transform: translateY(-500px) scale(2) rotate(20deg); opacity: 0; }
+        }
 
         .lower-thirds {
             position: absolute; bottom: 8%; width: 90%; max-width: 900px;
@@ -118,6 +134,19 @@
             filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6)); font-weight: 900;
         }
         .round-text { font-size: 1.1rem; color: var(--primary); letter-spacing: 6px; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+        .p-id-tag { font-family: monospace; background: rgba(255,255,255,0.15); padding: 4px 15px; border-radius: 6px; font-size: 0.9rem; color: #fff; margin-bottom: 10px; }
+
+        /* --- STAGE HEADER --- */
+        .stage-header {
+            position: absolute; top: 30px; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            gap: 40px; z-index: 100;
+        }
+        .stage-header h1 {
+            font-size: clamp(1.5rem, 4vw, 2.8rem); font-weight: 900;
+            letter-spacing: 8px; color: #fff; text-shadow: 0 0 20px rgba(255,215,0,0.3);
+        }
+        .header-logo { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #FFD700; box-shadow: 0 0 20px #FFD700; }
 
         .shoutout-ticker {
             position: fixed; bottom: 0; left: 0; width: 100%;
@@ -187,27 +216,43 @@
         <div class="spotlight" style="left: 80%; animation-delay: -2s;"></div>
     </div>
 
+    <div class="stage-header">
+        <h1>HELLO MACHI</h1>
+        <img src="logo.jpg" class="header-logo">
+        <h1>SUPER SINGER</h1>
+    </div>
+
     <div class="stage-main" id="stage-ui" style="display: none;">
         <div class="trophy-container">
             <div class="oscar-momento">
-                <img src="premium_oscar_trophy_1777125697325.png" class="oscar-img">
+                <img src="premium_oscar_trophy.png" class="oscar-img">
                 <div class="oscar-logo-overlay"><img src="logo.jpg"></div>
             </div>
             <div class="oscar-momento" style="transform: scaleX(-1);">
-                <img src="premium_oscar_trophy_1777125697325.png" class="oscar-img">
+                <img src="premium_oscar_trophy.png" class="oscar-img">
                 <!-- Inner logo un-mirrored -->
                 <div class="oscar-logo-overlay" style="transform: scaleX(-1);"><img src="logo.jpg"></div>
             </div>
         </div>
 
-        <div class="singer-frame">
-            <img src="logo.jpg" class="singer-img" id="singer-photo">
+        <div class="stage-center" id="singer-container">
+            <!-- Singer 1 -->
+            <div class="singer-frame" id="frame-1">
+                <img src="logo.jpg" class="singer-img" id="singer-photo">
+            </div>
+            <!-- Singer 2 (Hidden by default) -->
+            <div class="singer-frame" id="frame-2" style="display:none;">
+                <img src="logo.jpg" class="singer-img" id="singer-photo-2">
+            </div>
         </div>
+
+        <div id="reaction-container" style="position:fixed; inset:0; pointer-events:none; z-index:1000;"></div>
 
         <div class="lower-thirds">
             <div id="current-round" class="round-text">LIVE PERFORMANCE</div>
+            <div id="p-id-display" class="p-id-tag">ID: ---</div>
             <h2 id="singer-name">HELLO MACHI FM</h2>
-            <div id="singer-place" style="color:#00f2ff; font-weight:700; letter-spacing:2px;">SUPER SINGER SEASON 1</div>
+            <div id="singer-place" style="color:#00f2ff; font-weight:700; letter-spacing:2px; font-size: 1.1rem;">SUPER SINGER SEASON 1</div>
         </div>
     </div>
 
@@ -255,24 +300,41 @@
                     if (data.singer1 !== currentSinger1Id) { currentSinger1Id = data.singer1; }
                     
                     document.getElementById('current-round').textContent = data.round || 'LIVE PERFORMANCE';
-                    
-                    // Vote Overlay Logic
-                    const voteOverlay = document.getElementById('qr-overlay');
-                    if (data.votingOpen) {
-                        voteOverlay.style.display = 'flex';
-                    } else {
-                        voteOverlay.style.display = 'none';
-                    }
+                    updateSpotlights(data.round);
 
+                    // Singer 1 Data
                     if (data.singer1) {
                         const sSnap = await db.collection('participants').doc(data.singer1).get();
                         if (sSnap.exists) {
                             const s = sSnap.data();
                             document.getElementById('singer-name').textContent = s.name.toUpperCase();
+                            document.getElementById('p-id-display').textContent = `ID: ${s.participantId || '---'}`;
                             document.getElementById('qr-singer-name').textContent = `FOR ${s.name.toUpperCase()}`;
                             document.getElementById('singer-place').textContent = s.place ? `FROM ${s.place.toUpperCase()}` : "LIVE PARTICIPANT";
                             if (s.photoBase64) document.getElementById('singer-photo').src = s.photoBase64;
                         }
+                    }
+
+                    // Singer 2 Data (Duet Mode)
+                    const frame2 = document.getElementById('frame-2');
+                    if (data.singer2) {
+                        frame2.style.display = 'block';
+                        // Scale both frames down slightly to fit
+                        document.getElementById('frame-1').style.width = 'clamp(200px, 45vh, 400px)';
+                        document.getElementById('frame-1').style.height = 'clamp(200px, 45vh, 400px)';
+                        frame2.style.width = 'clamp(200px, 45vh, 400px)';
+                        frame2.style.height = 'clamp(200px, 45vh, 400px)';
+
+                        const s2Snap = await db.collection('participants').doc(data.singer2).get();
+                        if (s2Snap.exists) {
+                            const s2 = s2Snap.data();
+                            if (s2.photoBase64) document.getElementById('singer-photo-2').src = s2.photoBase64;
+                            document.getElementById('singer-name').textContent += ` & ${s2.name.toUpperCase()}`;
+                        }
+                    } else {
+                        frame2.style.display = 'none';
+                        document.getElementById('frame-1').style.width = 'clamp(250px, 60vh, 500px)';
+                        document.getElementById('frame-1').style.height = 'clamp(250px, 60vh, 500px)';
                     }
 
                     // Score Logic
@@ -286,6 +348,15 @@
                 }
             });
 
+            // Listen to Votes for Heart Reactions
+            db.collection('live_votes').onSnapshot(snap => {
+                if (!snap.empty) {
+                    snap.docChanges().forEach(change => {
+                        if (change.type === "added") spawnHeart();
+                    });
+                }
+            });
+
             db.collection('shoutouts').orderBy('timestamp', 'desc').limit(8).onSnapshot(snap => {
                 let tickerHtml = '';
                 snap.forEach(doc => {
@@ -294,6 +365,26 @@
                 });
                 if (tickerHtml) document.getElementById('ticker-content').innerHTML = tickerHtml;
             });
+        }
+
+        function spawnHeart() {
+            const container = document.getElementById('reaction-container');
+            const heart = document.createElement('div');
+            heart.className = 'reaction-heart fa-solid fa-heart';
+            heart.style.left = Math.random() * 80 + 10 + 'vw';
+            heart.style.animationDuration = Math.random() * 2 + 2 + 's';
+            container.appendChild(heart);
+            setTimeout(() => heart.remove(), 3000);
+        }
+
+        function updateSpotlights(round) {
+            const lights = document.querySelectorAll('.spotlight');
+            let color = 'rgba(255, 20, 147, 0.15)'; // Default Pink
+            if (round && round.includes('Selection')) color = 'rgba(0, 242, 255, 0.15)'; // Blue
+            if (round && round.includes('Round 2')) color = 'rgba(255, 215, 0, 0.15)'; // Gold
+            if (round && round.includes('Final')) color = 'rgba(255, 215, 0, 0.3)'; // Intense Gold
+            
+            lights.forEach(l => l.style.background = `linear-gradient(to top, ${color}, transparent)`);
         }
 
         async function renderScores(step, singerId) {

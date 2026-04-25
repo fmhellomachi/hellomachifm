@@ -234,23 +234,26 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="script.js"></script>
     <script>
-        // Secret Triple-Tap for Admin Access
+        // Secret Triple-Tap for Admin Access (More robust)
         const trigger = document.getElementById('secret-admin-trigger');
-        let clickCount = 0;
-        let clickTimer;
+        let clicks = 0;
+        let lastClick = 0;
 
         if (trigger) {
-            trigger.addEventListener('click', () => {
-                clickCount++;
-                
-                // Reset counter if not 3 clicks in 1 second
-                clearTimeout(clickTimer);
-                clickTimer = setTimeout(() => {
-                    clickCount = 0;
-                }, 1000);
+            trigger.style.cursor = 'pointer'; // Visual hint
+            trigger.addEventListener('click', (e) => {
+                const now = Date.now();
+                if (now - lastClick < 600) { // Clicks must be within 600ms of each other
+                    clicks++;
+                } else {
+                    clicks = 1;
+                }
+                lastClick = now;
 
-                if (clickCount === 3) {
+                if (clicks === 3) {
+                    console.log("Admin Handshake Verified. Redirecting...");
                     window.location.href = 'admin.html';
+                    clicks = 0;
                 }
             });
         }

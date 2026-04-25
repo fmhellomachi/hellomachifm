@@ -55,9 +55,30 @@
             position: fixed; inset: 0;
             background: radial-gradient(circle at center, rgba(15,0,35,0.99), #000);
             z-index: 50000; display: none;
-            flex-direction: column; align-items: center; justify-content: center;
+            flex-direction: row; align-items: center; justify-content: center;
+            gap: 100px; padding: 50px;
             animation: fadeIn 0.6s ease;
         }
+        .qr-singer-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--primary);
+            padding: 40px; border-radius: 40px;
+            display: flex; flex-direction: column; align-items: center;
+            width: 400px; box-shadow: 0 0 50px rgba(255, 20, 147, 0.3);
+            animation: slideInLeft 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes slideInLeft { from{transform:translateX(-100px); opacity:0} to{transform:translateX(0); opacity:1} }
+        .qr-singer-photo {
+            width: 250px; height: 250px; border-radius: 50%;
+            border: 6px solid #fff; box-shadow: 0 0 30px var(--primary);
+            object-fit: cover; margin-bottom: 25px;
+        }
+        .qr-singer-info { text-align: center; }
+        .qr-singer-info h3 { font-size: 2.2rem; color: #FFD700; margin-bottom: 5px; text-transform: uppercase; }
+        .qr-singer-info p { font-size: 1.1rem; color: #aaa; letter-spacing: 2px; }
+        
+        .qr-right-side { display: flex; flex-direction: column; align-items: center; }
         .vote-header {
             font-size: clamp(3rem, 8vw, 6.5rem); font-weight: 900; letter-spacing: 12px;
             background: linear-gradient(to bottom, #FFD700, #fff, #B8860B);
@@ -185,12 +206,25 @@
 
     <div id="qr-overlay">
         <div style="position:absolute; top:0; left:0; width:100%; background:var(--primary); color:white; padding:15px; text-align:center; font-weight:900; letter-spacing:10px; font-size:1.5rem; animation: pulse 1s infinite;">VOTING IS NOW LIVE</div>
-        <div class="vote-header">VOTE FOR ME</div>
-        <div class="qr-frame">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https://hello-machi-fm-6ebe4.web.app/vote.html" alt="Vote QR">
+        
+        <!-- Left Side: Singer Info -->
+        <div class="qr-singer-card">
+            <img id="qr-singer-photo" src="logo.jpg" class="qr-singer-photo">
+            <div class="qr-singer-info">
+                <p id="qr-p-id" style="color:var(--primary); font-weight:bold; font-family:monospace; margin-bottom:10px;">ID: ---</p>
+                <h3 id="qr-name-display">SINGER NAME</h3>
+                <p id="qr-place-display">LOCATION</p>
+            </div>
         </div>
-        <div id="qr-singer-name" class="vote-instruction">FOR THE CURRENT PERFORMER</div>
-        <p style="margin-top:20px; color:#aaa; font-size:1.2rem; letter-spacing:1px;">OPEN CAMERA TO SCAN & VOTE</p>
+
+        <!-- Right Side: QR Code -->
+        <div class="qr-right-side">
+            <div class="vote-header">VOTE FOR ME</div>
+            <div class="qr-frame">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https://hello-machi-fm-6ebe4.web.app/vote.html" alt="Vote QR">
+            </div>
+            <p style="margin-top:30px; color:#aaa; font-size:1.3rem; letter-spacing:1px; font-weight:700;">SCAN CAMERA TO VOTE NOW</p>
+        </div>
     </div>
 
     <div id="stage-overlay" style="position:fixed; inset:0; background:#000; z-index:30000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
@@ -199,14 +233,22 @@
     </div>
 
     <div id="score-overlay">
-        <h2 id="score-overlay-title" style="color:#FFD700; font-size:3rem; margin-bottom:40px;">LIVE SCORING</h2>
+        <div id="score-singer-info" style="display:flex; align-items:center; gap:30px; margin-bottom:40px; background:rgba(255,255,255,0.05); padding:20px 40px; border-radius:50px; border:1px solid var(--primary);">
+            <img id="score-singer-photo" src="logo.jpg" style="width:100px; height:100px; border-radius:50%; border:3px solid #fff; object-fit:cover;">
+            <div style="text-align:left;">
+                <p id="score-p-id" style="color:var(--primary); font-family:monospace; font-weight:bold; margin-bottom:5px;">ID: ---</p>
+                <h3 id="score-name-display" style="font-size:2.2rem; color:#FFD700; line-height:1;">SINGER NAME</h3>
+                <p id="score-place-display" style="color:#aaa; letter-spacing:2px;">LOCATION</p>
+            </div>
+        </div>
+        <h2 id="score-overlay-title" style="color:#FFD700; font-size:1.8rem; margin-bottom:30px; opacity:0.7;">LIVE JUDGE SCORES</h2>
         <div id="judge-scores-container" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
         <div id="audience-score-container" class="score-row" style="border-color:var(--primary); margin-top:30px;">
             <div style="font-size:1.8rem; color:var(--primary);">Audience Vote</div>
             <div id="audience-score-val" style="font-size:3rem; font-weight:900;">0.0</div>
         </div>
         <div id="final-score-container" style="text-align:center; margin-top:40px;">
-            <div style="font-size:1.5rem; color:#888; letter-spacing:5px;">FINAL SCORE</div>
+            <div style="font-size:1.5rem; color:#888; letter-spacing:5px;">FINAL PERFORMANCE SCORE</div>
             <div id="final-score-val" class="final-score-val">0.00</div>
         </div>
     </div>
@@ -314,7 +356,10 @@
                             const s = sSnap.data();
                             document.getElementById('singer-name').textContent = s.name.toUpperCase();
                             document.getElementById('p-id-display').textContent = `ID: ${s.participantId || '---'}`;
-                            document.getElementById('qr-singer-name').textContent = `FOR ${s.name.toUpperCase()}`;
+                            document.getElementById('qr-singer-photo').src = s.photoBase64 || 'logo.jpg';
+                            document.getElementById('qr-name-display').textContent = s.name.toUpperCase();
+                            document.getElementById('qr-p-id').textContent = `ID: ${s.participantId || '---'}`;
+                            document.getElementById('qr-place-display').textContent = s.place ? `FROM ${s.place.toUpperCase()}` : "LIVE PARTICIPANT";
                             document.getElementById('singer-place').textContent = s.place ? `FROM ${s.place.toUpperCase()}` : "LIVE PARTICIPANT";
                             if (s.photoBase64) document.getElementById('singer-photo').src = s.photoBase64;
                         }
@@ -396,6 +441,18 @@
             const jContainer = document.getElementById('judge-scores-container');
             const aContainer = document.getElementById('audience-score-container');
             const fContainer = document.getElementById('final-score-container');
+
+            // Load Singer Details for Scoreboard
+            try {
+                const sDoc = await db.collection('participants').doc(singerId).get();
+                if (sDoc.exists) {
+                    const s = sDoc.data();
+                    document.getElementById('score-singer-photo').src = s.photoBase64 || 'logo.jpg';
+                    document.getElementById('score-name-display').textContent = s.name.toUpperCase();
+                    document.getElementById('score-p-id').textContent = `ID: ${s.participantId || '---'}`;
+                    document.getElementById('score-place-display').textContent = s.place ? `FROM ${s.place.toUpperCase()}` : "LIVE PARTICIPANT";
+                }
+            } catch(e) {}
 
             let jScores = {};
             try {

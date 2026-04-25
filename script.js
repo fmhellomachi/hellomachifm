@@ -8,6 +8,102 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerThumb = document.querySelector('.player-thumb');
     const statusLabel = document.querySelector('.now-playing-label');
 
+    // --- REAL WEB AUDIO VISUALIZER LOGIC ---
+    let audioCtx, analyser, dataArray, source;
+    const visualizerBlocks = document.querySelectorAll('.vis-block-col');
+
+    function initVisualizer(audioElement) {
+        if (audioCtx) return;
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 64; 
+            
+            // Note: If CORS error occurs, visualization might stay flat.
+            // We use crossOrigin = "anonymous" in the togglePlay function.
+            
+            source = audioCtx.createMediaElementSource(audioElement);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            requestAnimationFrame(animateVisualizer);
+        } catch (e) {
+            console.error("Visualizer Init Failed (CORS?):", e);
+            simulateVisualizer();
+        }
+    }
+
+    // --- LIQUID SYNC VISUALIZER LOGIC ---
+    let prevHeights = [0, 0, 0, 0];
+
+    function animateVisualizer() {
+        if (!analyser || audio.paused) {
+            if (audio.paused) resetBlocks();
+            requestAnimationFrame(animateVisualizer);
+            return;
+        }
+
+        analyser.getByteFrequencyData(dataArray);
+        
+        const ranges = [
+            dataArray.slice(0, 2),   
+            dataArray.slice(2, 6),   
+            dataArray.slice(6, 12),  
+            dataArray.slice(12, 20)  
+        ];
+
+        ranges.forEach((range, colIndex) => {
+            const avg = range.reduce((a, b) => a + b, 0) / range.length;
+            
+            // Per-column sensitivity tuning
+            let sensitivity = 10;
+            if (colIndex === 0) sensitivity = 6;  // Reduce Bass Sensitivity
+            if (colIndex === 1) sensitivity = 7;  // Reduce Mid-Low Sensitivity
+            if (colIndex === 3) sensitivity = 14; // Boost Treble Sensitivity
+            
+            const targetHeight = Math.min(8, Math.round((avg / 255) * sensitivity)); 
+            
+            // REFINED LIQUID SYNC (Faster 0.4 snap)
+            prevHeights[colIndex] = (targetHeight * 0.4) + (prevHeights[colIndex] * 0.6);
+            
+            updateColumn(colIndex, Math.round(prevHeights[colIndex]));
+        });
+
+        requestAnimationFrame(animateVisualizer);
+    }
+
+    function updateColumn(colIndex, activeCount) {
+        const columns = document.querySelectorAll('.vis-block-col');
+        if (!columns[colIndex]) return;
+        const blocks = columns[colIndex].querySelectorAll('.vis-block');
+        blocks.forEach((block, i) => {
+            if (i < activeCount) {
+                block.style.opacity = "1";
+                block.style.boxShadow = "0 0 10px currentColor";
+            } else {
+                block.style.opacity = "0.1";
+                block.style.boxShadow = "none";
+            }
+        });
+    }
+
+    function resetBlocks() {
+        document.querySelectorAll('.vis-block').forEach(b => {
+            b.style.opacity = "0.1";
+            b.style.boxShadow = "none";
+        });
+    }
+
+    function simulateVisualizer() {
+        if (audio.paused) return;
+        document.querySelectorAll('.vis-block-col').forEach((col, idx) => {
+            const randomActive = Math.floor(Math.random() * 5) + 1;
+            updateColumn(idx, randomActive);
+        });
+        setTimeout(simulateVisualizer, 150);
+    }
+
     function updateUIState(isPlaying) {
         console.log("Updating UI State. Playing:", isPlaying);
         const iconClass = isPlaying ? 'fa-pause' : 'fa-play';
@@ -19,10 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playerElement) {
             if (isPlaying) {
                 playerElement.classList.add('spinning');
-                console.log("Added 'spinning' class to player");
+                initVisualizer(audio);
             } else {
                 playerElement.classList.remove('spinning');
-                console.log("Removed 'spinning' class from player");
+                resetBlocks();
             }
         }
         
@@ -34,8 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function togglePlay() {
         if (audio.paused) {
             try {
-                // Force reload the source to ensure fresh buffer
+                // Force reload with CORS support
                 const currentSrc = audio.querySelector('source').src;
+                audio.crossOrigin = "anonymous"; 
                 audio.src = currentSrc + "?t=" + new Date().getTime(); 
                 audio.load();
                 

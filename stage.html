@@ -9,7 +9,7 @@
     <style>
         :root {
             --primary: #FF1493;
-            --secondary: #00f2ff;
+            --gold: #FFD700;
             --bg-dark: #000000;
         }
 
@@ -24,480 +24,206 @@
             position: fixed;
         }
 
-        /* --- METALLIC GOLD AWARD DESIGN --- */
+        /* --- REALISTIC TROPHY --- */
         .trophy-container {
             position: absolute;
-            top: 45%;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 2%;
-            transform: translateY(-50%);
-            z-index: 2;
-            pointer-events: none;
+            top: 50%; width: 100%;
+            display: flex; justify-content: space-between;
+            padding: 0 4%; transform: translateY(-50%);
+            z-index: 10; pointer-events: none;
         }
-
-        .award {
-            position: relative;
-            width: 150px;
-            height: 220px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            animation: rotate3D 8s infinite ease-in-out;
-            perspective: 1200px;
+        .oscar-momento {
+            position: relative; width: 280px; height: 500px;
+            display: flex; flex-direction: column; align-items: center;
         }
-
-        .award-icon {
-            font-size: 6rem;
-            background: linear-gradient(135deg, #FFD700 0%, #FFFACD 50%, #B8860B 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .oscar-img {
+            width: 100%; height: 100%; object-fit: contain;
             filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.4));
-            margin-bottom: 15px;
-            position: relative;
         }
-
-        .award-base {
-            width: 100px;
-            height: 25px;
-            background: linear-gradient(to bottom, #FFD700, #8B4513);
-            border-radius: 5px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.8);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        @keyframes rotate3D {
-            0% { transform: rotateY(-20deg); }
-            50% { transform: rotateY(20deg); }
-            100% { transform: rotateY(-20deg); }
-        }
-
-        /* --- LOGO WATERMARK --- */
-        .logo-watermark {
+        .oscar-logo-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80vw;
-            opacity: 0.05;
-            z-index: 2;
-            pointer-events: none;
-            filter: grayscale(1);
+            top: 65px; /* Adjust based on image frame position */
+            width: 85px; height: 85px;
+            border-radius: 50%; overflow: hidden;
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 15px #FFD700;
         }
+        .oscar-logo-overlay img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* --- FULL SCREEN QR OVERLAY --- */
+        /* --- VOTE OVERLAY --- */
         #qr-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 20000;
-            display: none; /* Controlled by JS */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            animation: fadeIn 0.5s ease;
+            position: fixed; inset: 0;
+            background: radial-gradient(circle at center, rgba(15,0,35,0.99), #000);
+            z-index: 25000; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            animation: fadeIn 0.6s ease;
+        }
+        .vote-header {
+            font-size: clamp(3rem, 8vw, 6.5rem); font-weight: 900; letter-spacing: 12px;
+            background: linear-gradient(to bottom, #FFD700, #fff, #B8860B);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 40px; text-shadow: 0 0 50px rgba(255,215,0,0.6);
+            animation: textPulse 2s infinite alternate;
+        }
+        @keyframes textPulse { from{opacity:0.8} to{opacity:1; transform:scale(1.02)} }
+        .qr-frame {
+            padding: clamp(20px, 4vw, 50px); background: #fff; border-radius: 40px;
+            box-shadow: 0 0 150px rgba(255,215,0,0.6);
+            animation: qrZoom 3s infinite ease-in-out;
+        }
+        @keyframes qrZoom { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+        .qr-frame img { width: clamp(250px, 50vw, 450px); height: clamp(250px, 50vw, 450px); }
+        .vote-instruction {
+            margin-top: 40px; font-size: clamp(1.2rem, 3vw, 2.5rem); color: #FFD700;
+            font-weight: 900; letter-spacing: 3px; text-align: center;
         }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .qr-big-box {
-            background: white;
-            padding: 30px;
-            border-radius: 40px;
-            box-shadow: 0 0 100px var(--primary);
-            margin-bottom: 30px;
-            transform: scale(1.2);
-        }
-
-        .qr-big-box img { width: 350px; height: 350px; }
-
-        .qr-text {
-            font-size: 2.5rem;
-            font-weight: 900;
-            color: white;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-        }
-
-        /* --- STAGE WORLD (Background) --- */
+        /* --- STAGE BACKGROUND --- */
         .stage-world {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1;
-            background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
+            position: fixed; inset: 0; z-index: 1;
+            background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000 100%);
         }
-
         .spotlight {
-            position: absolute;
-            width: 40vw;
-            height: 100vh;
+            position: absolute; width: 40vw; height: 100vh;
             background: linear-gradient(to top, rgba(255, 20, 147, 0.15), transparent);
-            top: 0;
-            transform-origin: top center;
+            top: 0; transform-origin: top center;
             animation: sweep 8s infinite alternate ease-in-out;
             clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
             opacity: 0.6;
         }
+        @keyframes sweep { from{transform:rotate(-25deg)} to{transform:rotate(25deg)} }
+        .particle { position: absolute; background: var(--primary); border-radius: 50%; filter: blur(5px); opacity: 0.3; animation: float-up linear infinite; }
+        @keyframes float-up { 0%{transform:translateY(100vh) scale(1);opacity:0} 50%{opacity:0.4} 100%{transform:translateY(-100px) scale(1.5);opacity:0} }
 
-        @keyframes sweep {
-            from { transform: rotate(-25deg); }
-            to { transform: rotate(25deg); }
-        }
-
-        .particle, .note {
-            position: absolute;
-            animation: float-up linear infinite;
-        }
-
-        .particle { background: var(--primary); border-radius: 50%; filter: blur(5px); opacity: 0.3; }
-        .note { color: rgba(255, 255, 255, 0.4); font-size: 1.5rem; }
-
-        @keyframes float-up {
-            0% { transform: translateY(100vh) scale(1); opacity: 0; }
-            50% { opacity: 0.4; }
-            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
-        }
-
-        /* --- MAIN STAGE LAYOUT --- */
-        .stage-main {
-            position: relative;
-            z-index: 5;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
+        /* --- MAIN CONTENT --- */
+        .stage-main { position: relative; z-index: 5; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .singer-frame {
-            position: relative;
-            width: clamp(250px, 60vh, 500px);
-            height: clamp(250px, 60vh, 500px);
-            border-radius: 50%;
-            border: 8px solid white;
-            box-shadow: 0 0 60px var(--primary);
-            overflow: hidden;
-            background: #222;
-            z-index: 10;
+            position: relative; width: clamp(250px, 60vh, 500px); height: clamp(250px, 60vh, 500px);
+            border-radius: 50%; border: 8px solid white; box-shadow: 0 0 60px var(--primary);
+            overflow: hidden; background: #222; z-index: 10;
         }
+        .singer-img { width: 100%; height: 100%; object-fit: cover; animation: kenburns 20s infinite alternate ease-in-out; }
+        @keyframes kenburns { from{transform:scale(1)} to{transform:scale(1.3)} }
 
-        .singer-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            animation: kenburns 20s infinite alternate ease-in-out;
-        }
-
-        @keyframes kenburns {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.3); }
-        }
-
-        /* --- LOWER THIRDS (CENTERED) --- */
         .lower-thirds {
-            position: absolute;
-            bottom: 5%;
-            width: 90%;
-            max-width: 900px;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(25px);
-            border: 1px solid var(--primary);
-            padding: 20px 40px;
-            border-radius: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            z-index: 100;
+            position: absolute; bottom: 8%; width: 90%; max-width: 900px;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(25px);
+            border: 2px solid var(--primary); padding: 20px 40px; border-radius: 30px;
+            display: flex; flex-direction: column; align-items: center; text-align: center; z-index: 100;
         }
-
         .singer-info h2 { 
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            margin-bottom: 5px; 
-            text-transform: uppercase;
+            font-size: clamp(2rem, 5vw, 3.8rem); margin-bottom: 5px; text-transform: uppercase;
             background: linear-gradient(to bottom, #FFD700 0%, #FFFACD 50%, #B8860B 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
-            font-weight: 900;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6)); font-weight: 900;
         }
+        .round-text { font-size: 1.1rem; color: var(--primary); letter-spacing: 6px; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
 
-        .singer-info p { font-size: 1rem; color: var(--primary); letter-spacing: 5px; font-weight: 700; text-transform: uppercase; }
-        .singer-place { font-size: 1rem; color: var(--secondary); letter-spacing: 3px; font-weight: 700; }
-
-        .voting-badge {
-            position: absolute;
-            top: -20px;
-            background: var(--primary);
-            padding: 10px 30px;
-            border-radius: 35px;
-            font-weight: 900;
-            color: white;
-            font-size: 1rem;
-            z-index: 101;
-            animation: pulse 1.5s infinite;
-            display: none;
+        .shoutout-ticker {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(0, 0, 0, 0.9); border-top: 3px solid var(--primary);
+            padding: 12px 0; white-space: nowrap; overflow: hidden; z-index: 1000;
         }
+        .ticker-content { display: inline-block; padding-left: 100%; animation: ticker 40s linear infinite; font-size: 1.3rem; font-weight: 700; color: var(--primary); }
+        @keyframes ticker { 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-100%,0,0)} }
+        .shoutout-item { display: inline-block; margin-right: 60px; }
+        .shoutout-item span { color: white; margin-left: 12px; font-weight: 400; text-transform: none; }
 
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 20, 147, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 25px rgba(255, 20, 147, 0); }
-            100% { transform: scale(1); }
-        }
-
-        /* --- QR HUD (TOP RIGHT) --- */
-        .qr-hud {
-            position: absolute;
-            right: 2%;
-            top: 15%;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 15px;
-            border-radius: 20px;
-            border: 2px solid var(--primary);
-            backdrop-filter: blur(15px);
-            z-index: 100;
-            display: none;
-        }
-
-        .qr-hud img { width: 100px; height: 100px; border-radius: 8px; margin-bottom: 8px; border: 2px solid white; }
-        .qr-hud p { font-size: 0.7rem; font-weight: 900; letter-spacing: 1px; color: white; }
-
-        /* --- AURA PULSE --- */
-        .aura-pulse {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: clamp(250px, 60vh, 500px);
-            height: clamp(250px, 60vh, 500px);
-            border: 2px solid var(--primary);
-            border-radius: 50%;
-            z-index: 3;
-            animation: auraExpand 3s infinite;
-            opacity: 0;
-        }
-
-        @keyframes auraExpand {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
-        }
-
-        .flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; opacity: 0; pointer-events: none; }
-        .flash.active { animation: flashEffect 0.8s ease-out; }
-        @keyframes flashEffect { 0% { opacity: 1; } 100% { opacity: 0; } }
-
-        #stage-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        /* --- SCORE REVEAL OVERLAY --- */
+        /* --- SCORE OVERLAY --- */
         #score-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 15000;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 20000;
             display: none; flex-direction: column; align-items: center; justify-content: center;
-            animation: fadeIn 0.5s ease;
         }
         .score-row {
             display: flex; justify-content: space-between; align-items: center;
-            width: 80%; max-width: 800px;
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 15px; padding: 15px 30px; border-radius: 15px;
-            opacity: 0; transform: scale(0.8); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 85%; max-width: 800px; background: rgba(255,255,255,0.04);
+            margin-bottom: 18px; padding: 18px 35px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .score-row.visible { opacity: 1; transform: scale(1); }
-        .score-name { font-size: 1.5rem; color: #aaa; font-weight: 700; text-transform: uppercase; }
-        .score-val { font-size: 2.5rem; color: var(--gold, #FFD700); font-weight: 900; }
-        
-        .final-score-box {
-            margin-top: 40px; text-align: center;
-            opacity: 0; transform: translateY(50px) scale(0.5);
-            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .final-score-box.visible { opacity: 1; transform: translateY(0) scale(1); }
-        .final-score-label { font-size: 1.5rem; color: var(--primary); letter-spacing: 5px; margin-bottom: 10px; }
-        .final-score-val {
-            font-size: 7rem; font-weight: 900;
-            background: linear-gradient(135deg, #FFD700, #B8860B);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.6));
-            line-height: 1;
-        }
-        
-        /* --- TICKER CSS --- */
-        .shoutout-ticker {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            border-top: 2px solid var(--primary);
-            padding: 10px 0;
-            white-space: nowrap;
-            overflow: hidden;
-            z-index: 100;
-        }
+        .final-score-val { font-size: 7.5rem; font-weight: 900; background: linear-gradient(to bottom, #FFD700, #B8860B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .ticker-content {
-            display: inline-block;
-            padding-left: 100%;
-            animation: ticker 30s linear infinite;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-transform: uppercase;
-        }
-
-        @keyframes ticker {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-100%, 0, 0); }
-        }
-
-        .shoutout-item {
-            display: inline-block;
-            margin-right: 50px;
-        }
-
-        .shoutout-item span { color: white; margin-left: 10px; text-transform: none; font-weight: 400; }
-
-        .enter-btn { background: var(--primary); color: white; border: none; padding: 20px 50px; font-size: 1.5rem; font-weight: 900; border-radius: 50px; cursor: pointer; box-shadow: 0 0 30px var(--primary); }
-
-        /* --- MOBILE OVERRIDES --- */
         @media (max-width: 768px) {
-            .singer-frame {
-                width: 65vw;
-                height: 65vw;
-                margin-top: -15vh;
-            }
-            .lower-thirds {
-                width: 92%;
-                padding: 12px;
-                bottom: 3%;
-                border-radius: 20px;
-            }
-            .singer-info h2 {
-                font-size: 1.6rem;
-                line-height: 1.2;
-            }
-            .singer-info p {
-                font-size: 0.7rem;
-                letter-spacing: 1px;
-            }
-            .singer-place {
-                font-size: 0.8rem;
-            }
-            .qr-hud {
-                top: 10px;
-                right: 10px;
-                padding: 8px;
-                transform: scale(0.8);
-                transform-origin: top right;
-            }
-            .trophy-container {
-                display: none;
-            }
-            .qr-big-box img {
-                width: 80vw;
-                height: 80vw;
-            }
-            .qr-text {
-                font-size: 1.5rem;
-            }
-            #stage-overlay h1 {
-                font-size: 1.5rem;
-                letter-spacing: 5px;
-            }
+            .trophy-container { display: none; }
+            .singer-frame { width: 60vw; height: 60vw; margin-top: -10vh; }
+            .lower-thirds { padding: 15px; border-radius: 20px; }
+            .vote-header { font-size: 2.5rem; letter-spacing: 4px; }
+            .qr-frame img { width: 70vw; height: 70vw; }
         }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
     </style>
 </head>
 <body>
 
-    <!-- Full Screen QR Overlay -->
     <div id="qr-overlay">
-        <div class="qr-big-box">
+        <div class="vote-header">VOTE FOR ME</div>
+        <div class="qr-frame">
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https://hello-machi-fm-6ebe4.web.app/vote.html" alt="Vote QR">
         </div>
-        <div class="qr-text">SCAN NOW TO VOTE</div>
-        <div id="qr-singer-name" style="color:var(--secondary); font-size: 1.5rem; margin-top: 10px;">FOR THE CURRENT PERFORMER</div>
+        <div id="qr-singer-name" class="vote-instruction">FOR THE CURRENT PERFORMER</div>
+        <p style="margin-top:20px; color:#aaa; font-size:1.2rem; letter-spacing:1px;">OPEN CAMERA TO SCAN & VOTE</p>
     </div>
 
-    <div id="stage-overlay">
-        <h1 style="margin-bottom: 30px; letter-spacing: 10px;">HELLO MACHI STAGE</h1>
-        <button class="enter-btn" onclick="startStage()">ENTER THE STAGE</button>
+    <div id="stage-overlay" style="position:fixed; inset:0; background:#000; z-index:30000; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <h1 style="color:#FFD700; margin-bottom:40px; letter-spacing:8px; font-size:3rem;">HELLO MACHI STAGE</h1>
+        <button onclick="startStage()" style="background:var(--primary); color:white; border:none; padding:20px 60px; font-size:1.8rem; font-weight:900; border-radius:50px; cursor:pointer; box-shadow:0 0 30px var(--primary);">ENTER THE STAGE</button>
     </div>
 
-    <!-- Full Screen Score Overlay -->
     <div id="score-overlay">
-        <div style="display:flex; align-items:center; gap:20px; background:rgba(0,0,0,0.6); padding:15px 30px; border-radius:20px; border:1px solid var(--primary); margin-bottom: 30px;">
-            <img id="score-overlay-avatar" src="logo.jpg" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--gold); box-shadow:0 0 20px var(--gold); display:none;">
-            <h2 id="score-overlay-title" style="color:white; letter-spacing: 5px; font-size: 2rem; text-align:left; margin:0;">LIVE SCORES</h2>
-        </div>
+        <h2 id="score-overlay-title" style="color:#FFD700; font-size:3rem; margin-bottom:40px;">LIVE SCORING</h2>
         <div id="judge-scores-container" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
-        <div id="audience-score-container" class="score-row" style="border-color:var(--primary); margin-top:20px;">
-            <div class="score-name" style="color:var(--primary);">Audience Vote (40%)</div>
-            <div class="score-val" id="audience-score-val" style="color:white;">0.0</div>
+        <div id="audience-score-container" class="score-row" style="border-color:var(--primary); margin-top:30px;">
+            <div style="font-size:1.8rem; color:var(--primary);">Audience Vote</div>
+            <div id="audience-score-val" style="font-size:3rem; font-weight:900;">0.0</div>
         </div>
-        <div id="final-score-container" class="final-score-box">
-            <div class="final-score-label"><i class="fa-solid fa-crown"></i> FINAL MARK</div>
-            <div class="final-score-val" id="final-score-val">0.00</div>
+        <div id="final-score-container" style="text-align:center; margin-top:40px;">
+            <div style="font-size:1.5rem; color:#888; letter-spacing:5px;">FINAL SCORE</div>
+            <div id="final-score-val" class="final-score-val">0.00</div>
         </div>
     </div>
 
-    <div class="stage-world" id="stage-world">
-        <img src="logo.jpg" class="logo-watermark">
+    <div class="stage-world">
         <div class="spotlight" style="left: 10%; animation-delay: 0s;"></div>
         <div class="spotlight" style="left: 45%; animation-delay: -4s; opacity: 0.4;"></div>
         <div class="spotlight" style="left: 80%; animation-delay: -2s;"></div>
     </div>
 
-    <div class="flash" id="flash-screen"></div>
-
     <div class="stage-main" id="stage-ui" style="display: none;">
         <div class="trophy-container">
-            <div class="award"><div class="award-icon"><i class="fa-solid fa-star"></i></div><div class="award-base"></div></div>
-            <div class="award"><div class="award-icon"><i class="fa-solid fa-star"></i></div><div class="award-base"></div></div>
+            <div class="oscar-momento">
+                <img src="premium_oscar_trophy_1777125697325.png" class="oscar-img">
+                <div class="oscar-logo-overlay"><img src="logo.jpg"></div>
+            </div>
+            <div class="oscar-momento" style="transform: scaleX(-1);">
+                <img src="premium_oscar_trophy_1777125697325.png" class="oscar-img">
+                <!-- Inner logo un-mirrored -->
+                <div class="oscar-logo-overlay" style="transform: scaleX(-1);"><img src="logo.jpg"></div>
+            </div>
         </div>
-
-        <div class="aura-pulse"></div>
-        <div class="aura-pulse" style="animation-delay: 1.5s;"></div>
 
         <div class="singer-frame">
             <img src="logo.jpg" class="singer-img" id="singer-photo">
         </div>
 
         <div class="lower-thirds">
-            <div class="voting-badge" id="voting-badge">VOTING OPEN</div>
-            <div class="singer-info">
-                <p id="current-round">LIVE PERFORMANCE</p>
-                <div id="participant-id-display" style="color: white; background: rgba(255,255,255,0.1); display: inline-block; padding: 2px 10px; border-radius: 5px; font-size: 0.8rem; margin-bottom: 5px; font-family: monospace;">---</div>
-                <h2 id="singer-name">HELLO MACHI FM</h2>
-                <div id="singer-place" class="singer-place">SUPER SINGER SEASON 1</div>
-            </div>
+            <div id="current-round" class="round-text">LIVE PERFORMANCE</div>
+            <h2 id="singer-name">HELLO MACHI FM</h2>
+            <div id="singer-place" style="color:#00f2ff; font-weight:700; letter-spacing:2px;">SUPER SINGER SEASON 1</div>
         </div>
-
-        <div class="qr-hud" id="qr-hud">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://hello-machi-fm-6ebe4.web.app/vote.html" alt="Vote QR">
-            <p>SCAN TO VOTE</p>
     </div>
 
-    <!-- Live Shoutout Ticker -->
     <div class="shoutout-ticker">
-        <div id="ticker-content" class="ticker-content">
-            WELCOME TO HELLO MACHI SUPER SINGER 2026! 🎤 SEND YOUR SHOUTOUTS LIVE FROM THE PORTAL!
-        </div>
+        <div id="ticker-content" class="ticker-content">WELCOME TO HELLO MACHI SUPER SINGER 2026!</div>
     </div>
 
     <audio id="live-audio" src="https://azuracast.hellomachi.com/listen/hello_machi_fm/radio.mp3" preload="auto"></audio>
 
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
 
     <script>
         let currentSinger1Id = null;
+        let votingWasOpen = false;
 
         function startStage() {
             document.getElementById('stage-overlay').style.display = 'none';
@@ -508,18 +234,13 @@
         }
 
         function createParticles() {
-            const world = document.getElementById('stage-world');
-            const notes = ['fa-music', 'fa-microphone'];
-            for(let i=0; i<60; i++) {
-                const isNote = Math.random() > 0.8;
+            const world = document.querySelector('.stage-world');
+            for(let i=0; i<40; i++) {
                 const p = document.createElement('div');
-                if (isNote) {
-                    p.className = 'note fa-solid ' + notes[Math.floor(Math.random() * notes.length)];
-                } else {
-                    p.className = 'particle';
-                    p.style.width = Math.random() * 30 + 10 + 'px';
-                    p.style.height = p.style.width;
-                }
+                p.className = 'particle';
+                const size = Math.random() * 20 + 5;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
                 p.style.left = Math.random() * 100 + 'vw';
                 p.style.animationDuration = Math.random() * 5 + 5 + 's';
                 p.style.animationDelay = Math.random() * 5 + 's';
@@ -527,104 +248,63 @@
             }
         }
 
-        function triggerFlash() {
-            const f = document.getElementById('flash-screen');
-            f.classList.remove('active');
-            void f.offsetWidth;
-            f.classList.add('active');
-        }
-
-        let votingWasOpen = false;
-
         function initLiveSync() {
             db.collection('live_state').doc('current').onSnapshot(async (doc) => {
                 if (doc.exists) {
                     const data = doc.data();
-                    if (data.singer1 !== currentSinger1Id) { triggerFlash(); currentSinger1Id = data.singer1; }
+                    if (data.singer1 !== currentSinger1Id) { currentSinger1Id = data.singer1; }
                     
                     document.getElementById('current-round').textContent = data.round || 'LIVE PERFORMANCE';
-                    document.getElementById('voting-badge').style.display = data.votingOpen ? 'block' : 'none';
-                    document.getElementById('qr-hud').style.display = data.votingOpen ? 'block' : 'none';
-
-                    // Full Screen QR Logic
-                    if (data.votingOpen && !votingWasOpen) {
-                        const overlay = document.getElementById('qr-overlay');
-                        overlay.style.display = 'flex';
-                        setTimeout(() => { overlay.style.display = 'none'; }, 7000); // Hide after 7 seconds
+                    
+                    // Vote Overlay Logic
+                    const voteOverlay = document.getElementById('qr-overlay');
+                    if (data.votingOpen) {
+                        voteOverlay.style.display = 'flex';
+                    } else {
+                        voteOverlay.style.display = 'none';
                     }
-                    votingWasOpen = data.votingOpen;
 
                     if (data.singer1) {
                         const sSnap = await db.collection('participants').doc(data.singer1).get();
                         if (sSnap.exists) {
                             const s = sSnap.data();
-                            const name = s.name.toUpperCase();
-                            document.getElementById('singer-name').textContent = name;
-                            document.getElementById('qr-singer-name').textContent = `FOR ${name}`;
+                            document.getElementById('singer-name').textContent = s.name.toUpperCase();
+                            document.getElementById('qr-singer-name').textContent = `FOR ${s.name.toUpperCase()}`;
                             document.getElementById('singer-place').textContent = s.place ? `FROM ${s.place.toUpperCase()}` : "LIVE PARTICIPANT";
-                            document.getElementById('participant-id-display').textContent = s.participantId || '---';
                             if (s.photoBase64) document.getElementById('singer-photo').src = s.photoBase64;
                         }
-                    } else {
-                        document.getElementById('singer-name').textContent = "STAY TUNED";
-                        document.getElementById('singer-place').textContent = "NEXT PERFORMER COMING UP";
-                        document.getElementById('singer-photo').src = "logo.jpg";
                     }
 
-                    // Score Reveal Logic
+                    // Score Logic
                     const scoreOverlay = document.getElementById('score-overlay');
                     if (data.scoreRevealStep && data.scoreRevealStep !== 0) {
                         scoreOverlay.style.display = 'flex';
                         renderScores(data.scoreRevealStep, data.scoreRevealSingerId || data.singer1);
                     } else {
                         scoreOverlay.style.display = 'none';
-                        document.getElementById('judge-scores-container').innerHTML = '';
-                        document.getElementById('audience-score-container').classList.remove('visible');
-                        document.getElementById('final-score-container').classList.remove('visible');
                     }
                 }
             });
-            // Listen to Shoutouts
-            db.collection('shoutouts').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
+
+            db.collection('shoutouts').orderBy('timestamp', 'desc').limit(8).onSnapshot(snap => {
                 let tickerHtml = '';
                 snap.forEach(doc => {
-                    const data = doc.data();
-                    tickerHtml += `<div class="shoutout-item">TO ${data.to}: <span>${data.message}</span></div>`;
+                    const d = doc.data();
+                    tickerHtml += `<div class="shoutout-item">TO ${d.to}: <span>${d.message}</span></div>`;
                 });
-                if (tickerHtml) {
-                    document.getElementById('ticker-content').innerHTML = tickerHtml + " &nbsp; &bull; &nbsp; " + tickerHtml;
-                }
+                if (tickerHtml) document.getElementById('ticker-content').innerHTML = tickerHtml;
             });
         }
 
         async function renderScores(step, singerId) {
-            if (!singerId) return;
             const jContainer = document.getElementById('judge-scores-container');
             const aContainer = document.getElementById('audience-score-container');
             const fContainer = document.getElementById('final-score-container');
 
-            // Fetch singer info for overlay background and title
-            try {
-                const sDoc = await db.collection('participants').doc(singerId).get();
-                if (sDoc.exists) {
-                    const sData = sDoc.data();
-                    const title = document.getElementById('score-overlay-title');
-                    title.innerHTML = `SCORES FOR <span style="color:var(--gold);">${(sData.name||'').toUpperCase()}</span> <br><span style="font-size:1rem; color:#aaa; font-family:monospace;">ID: ${sData.participantId||''}</span>`;
-                    
-                    const avatar = document.getElementById('score-overlay-avatar');
-                    if (sData.photoBase64) {
-                        avatar.src = sData.photoBase64;
-                        avatar.style.display = 'block';
-                    } else {
-                        avatar.style.display = 'none';
-                    }
-                }
-            } catch(e) {}
-
             let jScores = {};
             try {
                 const jDoc = await db.collection('judge_scores').doc(singerId).get();
-                if (jDoc.exists && jDoc.data().scores) jScores = jDoc.data().scores;
+                if (jDoc.exists) jScores = jDoc.data().scores || {};
             } catch(e) {}
 
             let aScore = 0;
@@ -636,34 +316,23 @@
             } catch(e) {}
 
             const judges = Object.keys(jScores);
-            const jAvg = judges.length > 0 ? (judges.reduce((a,b)=>a+jScores[b],0)/judges.length) : 0;
-            const finalScore = (jAvg * 0.6) + (aScore * 0.4);
-
-            if (typeof step === 'number') {
-                // Show judge scores up to the step number
-                let html = '';
-                for (let i = 0; i < step && i < judges.length; i++) {
-                    const name = judges[i];
-                    const val = jScores[name];
-                    html += `
-                        <div class="score-row visible" style="animation: bigPop 0.5s ease;">
-                            <div class="score-name">${name}</div>
-                            <div class="score-val">${val.toFixed(1)} <span style="font-size:1rem;color:#666;">/ 10</span></div>
-                        </div>
-                    `;
-                }
-                jContainer.innerHTML = html;
-                aContainer.classList.remove('visible');
-                fContainer.classList.remove('visible');
-            } else if (step === 'audience') {
-                aContainer.classList.add('visible');
-                document.getElementById('audience-score-val').textContent = aScore.toFixed(1) + ' / 10';
-                fContainer.classList.remove('visible');
-            } else if (step === 'final') {
-                aContainer.classList.add('visible');
-                fContainer.classList.add('visible');
-                document.getElementById('final-score-val').textContent = finalScore.toFixed(2);
+            let html = '';
+            for (let i = 0; i < step && i < judges.length; i++) {
+                html += `<div class="score-row" style="opacity:1; transform:scale(1);"><div class="score-name">${judges[i]}</div><div class="score-val">${jScores[judges[i]].toFixed(1)}</div></div>`;
             }
+            jContainer.innerHTML = html;
+
+            if (step === 'audience' || step === 'final') {
+                aContainer.style.display = 'flex';
+                document.getElementById('audience-score-val').textContent = aScore.toFixed(1);
+            } else { aContainer.style.display = 'none'; }
+
+            if (step === 'final') {
+                fContainer.style.display = 'block';
+                const jAvg = judges.length > 0 ? (judges.reduce((a,b)=>a+jScores[b],0)/judges.length) : 0;
+                const final = (jAvg * 0.6) + (aScore * 0.4);
+                document.getElementById('final-score-val').textContent = final.toFixed(2);
+            } else { fContainer.style.display = 'none'; }
         }
     </script>
 </body>

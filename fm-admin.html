@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Admin | Hello Machi FM</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #0a0a0f; color: white; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 1px solid #333; padding-bottom: 20px; }
+        .cms-card { background: #1a1a24; border: 1px solid #333; border-radius: 20px; padding: 30px; margin-bottom: 30px; }
+        .cms-card h3 { color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #888; }
+        input, textarea { width: 100%; background: #0a0a0f; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; font-size: 1rem; }
+        .btn-save { background: var(--primary); color: black; border: none; padding: 12px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; }
+        .schedule-item { background: #0a0a0f; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
+        .btn-delete { background: none; border: none; color: #ff4d4d; cursor: pointer; }
+        .add-row { display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>General FM Admin</h1>
+                <p style="color:#888;">Manage Homepage & Schedule</p>
+            </div>
+            <a href="admin.html" class="btn btn-secondary" style="text-decoration:none; color:white;"><i class="fa-solid fa-arrow-left"></i> Back to Hub</a>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="cms-card">
+            <h3><i class="fa-solid fa-desktop"></i> Homepage Hero Content</h3>
+            <div class="form-group">
+                <label>Hero Main Title (HTML allowed)</label>
+                <input type="text" id="hero-title" placeholder="THE BEAT OF CHENNAI">
+            </div>
+            <div class="form-group">
+                <label>Hero Subtitle</label>
+                <textarea id="hero-subtitle" rows="3" placeholder="Your exclusive destination..."></textarea>
+            </div>
+            <button class="btn-save" onclick="saveHero()">PUBLISH HOMEPAGE CHANGES</button>
+        </div>
+
+        <!-- Schedule Section -->
+        <div class="cms-card">
+            <h3><i class="fa-solid fa-calendar-alt"></i> Radio Program Schedule</h3>
+            <p style="color:#888; margin-bottom:20px;">The first item in the list will be marked as "LIVE" on the homepage.</p>
+            
+            <div id="schedule-list">
+                <!-- Injected via JS -->
+            </div>
+
+            <div class="add-row">
+                <input type="text" id="new-time" placeholder="08:00 AM">
+                <input type="text" id="new-title" placeholder="Show Name">
+                <input type="text" id="new-rj" placeholder="RJ Name">
+                <button onclick="addBlock()" style="background:var(--secondary); color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer;">+ Add</button>
+            </div>
+            <button class="btn-save" style="margin-top:30px; background:var(--secondary);" onclick="saveSchedule()">PUBLISH NEW SCHEDULE</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const db = firebase.firestore();
+        let scheduleBlocks = [];
+
+        // Security Check
+        firebase.auth().onAuthStateChanged(user => {
+            if (!user) window.location.href = 'admin.html';
+            loadData();
+        });
+
+        async function loadData() {
+            const doc = await db.collection('cms').doc('homepage').get();
+            if (doc.exists) {
+                const data = doc.data();
+                document.getElementById('hero-title').value = data.heroTitle || '';
+                document.getElementById('hero-subtitle').value = data.heroSubtitle || '';
+                scheduleBlocks = data.scheduleBlocks || [];
+                renderSchedule();
+            }
+        }
+
+        async function saveHero() {
+            try {
+                await db.collection('cms').doc('homepage').set({
+                    heroTitle: document.getElementById('hero-title').value,
+                    heroSubtitle: document.getElementById('hero-subtitle').value
+                }, { merge: true });
+                alert("Homepage updated!");
+            } catch (e) { alert(e.message); }
+        }
+
+        function renderSchedule() {
+            const list = document.getElementById('schedule-list');
+            list.innerHTML = '';
+            scheduleBlocks.forEach((b, i) => {
+                const div = document.createElement('div');
+                div.className = 'schedule-item';
+                div.innerHTML = `
+                    <div>
+                        <strong style="color:var(--primary);">${b.time}</strong> &nbsp; | &nbsp; 
+                        <span>${b.title}</span> &nbsp; 
+                        <small style="opacity:0.6;">(RJ: ${b.rj})</small>
+                    </div>
+                    <button class="btn-delete" onclick="removeBlock(${i})"><i class="fa-solid fa-trash"></i></button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addBlock() {
+            const time = document.getElementById('new-time').value;
+            const title = document.getElementById('new-title').value;
+            const rj = document.getElementById('new-rj').value;
+            if(!time || !title) return;
+            scheduleBlocks.push({ time, title, rj });
+            renderSchedule();
+            document.getElementById('new-time').value = '';
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-rj').value = '';
+        }
+
+        function removeBlock(i) {
+            scheduleBlocks.splice(i, 1);
+            renderSchedule();
+        }
+
+        async function saveSchedule() {
+            try {
+                await db.collection('cms').doc('homepage').update({ scheduleBlocks });
+                alert("Schedule published!");
+            } catch (e) { alert(e.message); }
+        }
+    </script>
+</body>
+</html>

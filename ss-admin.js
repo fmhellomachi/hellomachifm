@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     let currentFilter = 'all';
 
+    const AUTHORIZED_EMAILS = [
+        'bowtharinivijay@gmail.com',
+        'admin@hellomachi.com'
+    ];
+
     // Ensure Firebase is ready
     if (!firebase || !auth || !db) {
         console.error("Firebase not initialized correctly.");
@@ -27,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let isAuthorized = false;
             let isMaster = (user.email === 'fmhellomachi@gmail.com');
 
-            if (isMaster) {
+            if (isMaster || AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
                 isAuthorized = true;
             } else {
                 try {
@@ -377,39 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e){}
     }
 
-    // --- CMS ---
-    let scheduleData = [];
-    async function fetchCMS() {
-        const doc = await db.collection('cms').doc('homepage').get();
-        if(doc.exists) {
-            getEl('cms-hero-title').value = doc.data().heroTitle || '';
-            getEl('cms-hero-subtitle').value = doc.data().heroSubtitle || '';
-            scheduleData = doc.data().scheduleBlocks || [];
-            renderSchedule();
-        }
-    }
-    window.saveCMS = async () => {
-        await db.collection('cms').doc('homepage').set({
-            heroTitle: getEl('cms-hero-title').value,
-            heroSubtitle: getEl('cms-hero-subtitle').value,
-            scheduleBlocks: scheduleData
-        }, {merge:true});
-        alert("Saved!");
-    };
-    window.addScheduleBlock = () => {
-        scheduleData.push({ time: getEl('new-schedule-time').value, title: getEl('new-schedule-title').value, rj: getEl('new-schedule-rj').value });
-        renderSchedule();
-    };
-    window.removeScheduleBlock = (i) => { scheduleData.splice(i,1); renderSchedule(); };
-    function renderSchedule() {
-        const list = getEl('cms-schedule-list');
-        list.innerHTML = '';
-        scheduleData.forEach((s, i) => {
-            const d = document.createElement('div');
-            d.innerHTML = `${s.time} - ${s.title} <button onclick="removeScheduleBlock(${i})">X</button>`;
-            list.appendChild(d);
-        });
-    }
+    // --- Admins ---
 
     // --- Admins ---
     async function fetchAdminsList() {

@@ -60,6 +60,8 @@
         .hub-card p { font-size: 0.9rem; opacity: 0.7; }
 
         .btn-logout { margin-top: 40px; background: #222; color: white; border: none; padding: 10px 30px; border-radius: 50px; cursor: pointer; }
+        .btn-back { margin-top: 10px; background: transparent; color: #888; border: 1px solid #444; padding: 10px 30px; border-radius: 50px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 0.8rem; }
+        .btn-back:hover { color: white; border-color: white; }
 
         @media (max-width: 600px) {
             .hub-grid { grid-template-columns: 1fr; }
@@ -86,7 +88,7 @@
             </a>
 
             <!-- General FM Tasks -->
-            <a href="#" class="hub-card" onclick="alert('General CMS loading soon...')">
+            <a href="fm-admin.html" class="hub-card">
                 <i class="fa-solid fa-calendar-days"></i>
                 <h3>Radio Schedule</h3>
                 <p>Manage RJ shifts and daily programs.</p>
@@ -99,7 +101,14 @@
             </a>
         </div>
 
-        <button class="btn-logout" id="logout-btn">LOGOUT</button>
+        <div id="restriction-notice" style="display:none; color:#ff4d4d; margin-top:20px; font-weight:bold; background:rgba(255,0,0,0.1); padding:15px; border-radius:10px; border:1px solid #ff4d4d;">
+            <i class="fa-solid fa-circle-exclamation"></i> ACCESS DENIED: Your email is not authorized to access this panel.
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <button class="btn-logout" id="logout-btn">LOGOUT</button>
+            <a href="index.html" class="btn-back">RETURN TO MAIN WEBSITE</a>
+        </div>
     </div>
 
     <!-- Login Screen -->
@@ -119,15 +128,32 @@
     <script src="firebase-config.js"></script>
 
     <script>
-        // Use auth from firebase-config.js (already initialized)
+        const auth = firebase.auth();
         const hub = document.getElementById('admin-hub');
         const login = document.getElementById('login-screen');
+        const notice = document.getElementById('restriction-notice');
+        const hubGrid = document.querySelector('.hub-grid');
+
+        // AUTHORIZED EMAILS LIST
+        const AUTHORIZED_EMAILS = [
+            'bowtharinivijay@gmail.com', // Added based on your context
+            'admin@hellomachi.com'
+        ];
 
         auth.onAuthStateChanged(user => {
-            console.log("Auth State Changed:", user ? user.email : "No User");
             if (user) {
                 hub.style.display = 'block';
                 login.style.display = 'none';
+                
+                if (AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
+                    notice.style.display = 'none';
+                    hubGrid.style.opacity = '1';
+                    hubGrid.style.pointerEvents = 'auto';
+                } else {
+                    notice.style.display = 'block';
+                    hubGrid.style.opacity = '0.2';
+                    hubGrid.style.pointerEvents = 'none';
+                }
             } else {
                 hub.style.display = 'none';
                 login.style.display = 'flex';

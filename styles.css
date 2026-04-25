@@ -1452,33 +1452,41 @@ footer {
     /* 3D OVERFLOWING Disk */
     .disk-control-wrapper {
         width: 100px; height: 100px;
-        margin-top: -25px; /* POPS OUT THE TOP */
-        margin-right: 15px;
+        margin-top: -25px;
+        margin-right: 5px; /* TIGHTENED SPACE */
         z-index: 100;
     }
 
-    /* Minimal Tonearm */
+    /* Longer Needle (Reaching deeper) */
     .tonearm {
-        width: 20px; height: 40px;
-        right: -5px; top: -10px;
+        width: 25px; height: 65px; /* LONGER */
+        right: -5px; top: -15px;
     }
 
-    /* Tiny Pro Visualizer */
+    /* Tightened Pro Visualizer */
     .retro-visualizer {
         margin: 0 5px;
-        gap: 3px;
+        gap: 2px;
         flex: 1;
         height: 25px;
     }
     .vis-block-col { gap: 1px; width: 10px; }
     .vis-block { height: 3px; }
 
-    /* Volume Slider */
+    /* USABLE Volume Slider */
     .player-controls-right {
-        width: 60px;
+        width: 85px; /* WIDER FOR USABILITY */
         padding-left: 5px;
+        display: flex;
+        align-items: center;
     }
-    .volume-slider { width: 40px; }
+    .volume-slider { 
+        width: 70px; 
+        height: 8px; /* Thicker track */
+    }
+    .volume-slider::-webkit-slider-thumb {
+        width: 20px; height: 20px; /* GIANT THUMB FOR TOUCH */
+    }
 }
 
     /* Volume Slider */

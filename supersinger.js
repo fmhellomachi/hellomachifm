@@ -431,6 +431,18 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.textContent = 'Voted';
             btn.classList.add('voted');
 
+            // Log detailed vote history
+            try {
+                await db.collection('votes_history').add({
+                    participantId: participantId,
+                    voterEmail: currentUser.email || 'Unknown',
+                    voterName: currentUser.displayName || 'Anonymous',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {
+                console.error("Failed to log vote history", e);
+            }
+
         } catch (error) {
             console.error("Transaction failed: ", error);
             alert("Failed to register vote. Please try again.");

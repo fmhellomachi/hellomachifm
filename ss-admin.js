@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'cms': getEl('view-cms'),
             'admins': getEl('master-admin-section'),
             'live-control': getEl('live-control-panel'),
+            'history': getEl('view-history'),
             'leaderboard': getEl('leaderboard-panel')
         };
 
@@ -96,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabId === 'cms') fetchCMS();
             if (tabId === 'admins') fetchAdminsList();
             if (tabId === 'live-control') { fetchParticipantsForLive(); listenToLiveStats(); }
+            if (tabId === 'history') fetchHistory();
             if (tabId === 'leaderboard') calculateLeaderboard();
         }
 
@@ -195,6 +197,71 @@ document.addEventListener('DOMContentLoaded', () => {
             if(getEl('stat-avg-score')) getEl('stat-avg-score').textContent = count > 0 ? (total/count).toFixed(1) : "0.0";
         });
     }
+
+    // --- History Logic ---
+    window.fetchHistory = async () => {
+        const histBody = getEl('history-table-body');
+        const logsBody = getEl('vote-logs-body');
+        histBody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
+        logsBody.innerHTML = '<tr><td colspan="3" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading logs...</td></tr>';
+
+        try {
+            // 1. Participant Score History
+            const pSnap = await db.collection('participants').orderBy('name', 'asc').get();
+            let histHtml = '';
+            pSnap.forEach(doc => {
+                const data = doc.data();
+                histHtml += `
+                    <tr>
+                        <td style="font-family:monospace;">${doc.id}</td>
+                        <td style="font-weight:bold;">${data.name}</td>
+                        <td><span class="badge badge-pending" style="color:#FFD700;border-color:#FFD700;background:rgba(255,215,0,0.1)">${(data.judgeScore || 0).toFixed(1)} / 10</span></td>
+                        <td><span class="badge badge-approved">${data.votes || 0} Votes</span></td>
+                        <td>${data.status}</td>
+                        <td>
+                            <button onclick="pushToStage('${doc.id}')" class="action-btn" style="background:var(--primary); color:black; font-weight:bold; font-size:0.7rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Push to Stage</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            histBody.innerHTML = histHtml || '<tr><td colspan="6" style="text-align:center;">No history found.</td></tr>';
+
+            // 2. Vote Logs
+            const vSnap = await db.collection('votes_history').orderBy('timestamp', 'desc').limit(100).get();
+            let logsHtml = '';
+            vSnap.forEach(doc => {
+                const data = doc.data();
+                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+                logsHtml += `
+                    <tr>
+                        <td style="font-size:0.8rem; color:#aaa;">${timeStr}</td>
+                        <td>${data.voterName} <br><span style="font-size:0.75rem; color:var(--primary);">${data.voterEmail}</span></td>
+                        <td style="font-family:monospace; color:#00ffff;">${data.participantId}</td>
+                    </tr>
+                `;
+            });
+            logsBody.innerHTML = logsHtml || '<tr><td colspan="3" style="text-align:center;">No vote logs found.</td></tr>';
+        } catch (e) {
+            console.error(e);
+            histBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Error loading history</td></tr>';
+        }
+    };
+
+    window.pushToStage = async (id) => {
+        if (!confirm("Are you sure you want to push this participant to the Live Stage immediately?")) return;
+        try {
+            await db.collection('live_state').doc('current').update({
+                singer1: id,
+                singer2: "",
+                status: "on-air",
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("Participant pushed to stage successfully.");
+            switchMainTab('live-control');
+        } catch (e) {
+            alert("Error: " + e.message);
+        }
+    };
 
     // --- Participants Logic ---
     async function fetchAdminData() {
@@ -543,29 +610,43 @@ document.addEventListener('DOMContentLoaded', () => {
     let judgeScoresUnsub = null;
     let audienceScoresUnsub = null;
 
-    // Listen to live_state to update singer label in judge panel
-    db.collection('live_state').doc('current').onSnapshot(doc => {
-        if (!doc.exists) return;
-        const d = doc.data();
-        const singerId = d.singer1;
+    let latestLiveState = null;
+
+    window.switchJudgeSingerToggle = () => {
+        if (!latestLiveState) return;
+        const toggleVal = document.querySelector('input[name="judge_singer_toggle"]:checked').value;
+        const singerId = toggleVal === 'singer2' ? latestLiveState.singer2 : latestLiveState.singer1;
+        updateJudgePanelTarget(singerId);
+    };
+
+    function updateJudgePanelTarget(singerId) {
         if (!singerId) {
-            document.getElementById('judge-singer-label').innerHTML = '🎤 No singer on stage yet';
+            document.getElementById('judge-singer-label').innerHTML = '🎤 No singer assigned to this slot';
             currentJudgeSingerId = null;
+            if (judgeScoresUnsub) { judgeScoresUnsub(); judgeScoresUnsub = null; }
+            if (audienceScoresUnsub) { audienceScoresUnsub(); audienceScoresUnsub = null; }
+            document.getElementById('saved-judge-scores').style.display = 'none';
             return;
         }
         if (singerId !== currentJudgeSingerId) {
             currentJudgeSingerId = singerId;
-            // Fetch singer name
             db.collection('participants').doc(singerId).get().then(pDoc => {
                 if (pDoc.exists) {
                     currentJudgeSingerName = pDoc.data().name || 'Singer';
                     document.getElementById('judge-singer-label').innerHTML = 
-                        `🎤 Current: <span style="color:var(--primary)">${currentJudgeSingerName}</span>`;
+                        `🎤 Current Target: <span style="color:var(--primary)">${currentJudgeSingerName}</span>`;
                 }
             });
             loadJudgeScores(singerId);
             loadAudienceScores(singerId);
         }
+    }
+
+    // Listen to live_state to update singer label in judge panel
+    db.collection('live_state').doc('current').onSnapshot(doc => {
+        if (!doc.exists) return;
+        latestLiveState = doc.data();
+        switchJudgeSingerToggle(); // Re-eval based on current radio selection
     });
 
     // Add a judge row in the panel
@@ -626,6 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await db.collection('live_state').doc('current').update({ 
                 scoreRevealStep: currentStep,
+                scoreRevealSingerId: currentJudgeSingerId,
                 scoreRevealTimestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         } catch (e) {

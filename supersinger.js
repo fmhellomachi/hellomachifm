@@ -240,7 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${data.photoBase64 ? `<img src="${data.photoBase64}" class="participant-avatar-img" alt="${data.name}">` : `<div class="participant-avatar">${data.name.charAt(0).toUpperCase()}</div>`}
                     <h3 class="participant-name">${data.name}</h3>
                     <div class="participant-bio">${data.bio ? data.bio.substring(0, 60) + '...' : 'Aspiring Singer'}</div>
-                    <div class="vote-stats"><i class="fa-solid fa-heart"></i> <span id="vote-count-${id}">${votes}</span></div>
+                <div style="font-family:monospace; font-size:0.8rem; color:var(--primary); margin-top:5px; font-weight:bold;">${data.participantId || ''}</div>
+                <div class="vote-stats"><i class="fa-solid fa-heart"></i> <span id="vote-count-${id}">${votes}</span></div>
                     <button class="vote-btn ${hasVoted ? 'voted' : ''}" data-id="${id}" ${(!currentUser || hasVoted) ? 'disabled' : ''}>
                         ${!currentUser ? 'Login to Vote' : (hasVoted ? 'Voted' : 'Vote Now')}
                     </button>
@@ -248,6 +249,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 participantsGrid.appendChild(card);
             });
+    // --- SHOUTOUTS LOGIC ---
+    window.sendShoutout = async () => {
+        const to = getEl('shoutout-to').value;
+        const msg = getEl('shoutout-msg').value;
+        if(!to || !msg) return alert("Please fill both fields");
+        
+        try {
+            await db.collection('shoutouts').add({
+                to: to,
+                message: msg,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            getEl('shoutout-to').value = '';
+            getEl('shoutout-msg').value = '';
+            getEl('shoutout-feedback').style.display = 'block';
+            setTimeout(() => getEl('shoutout-feedback').style.display = 'none', 3000);
+        } catch(e) { console.error(e); }
+    };
 
             // Attach vote listeners
             document.querySelectorAll('.vote-btn').forEach(btn => {
@@ -370,6 +389,7 @@ async function checkStatus() {
                     <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(15deg);"><i class="fa-solid fa-trophy"></i></div>
                     <i class="fa-solid fa-star fa-3x" style="color: white; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));"></i>
                     <h2 style="font-size: 2.5rem; margin: 15px 0; font-family: 'Outfit', sans-serif;">CONGRATULATIONS!</h2>
+                    <div style="font-family: monospace; font-weight: bold; background: black; color: var(--gold); display: inline-block; padding: 5px 15px; border-radius: 5px; margin-bottom: 10px;">ID: ${data.participantId || '---'}</div>
                     <p style="font-size: 1.2rem; font-weight: bold;">${data.name.toUpperCase()}</p>
                     <div style="margin: 20px 0; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 10px; display: inline-block;">
                         <span style="letter-spacing: 2px; font-weight: 900;">SELECTED FOR: ${status.toUpperCase()}</span>
@@ -383,6 +403,14 @@ async function checkStatus() {
                     @keyframes goldenPop {
                         0% { transform: scale(0.5); opacity: 0; }
                         100% { transform: scale(1); opacity: 1; }
+                    }
+                    @media (max-width: 600px) {
+                        #status-result > div {
+                            padding: 20px !important;
+                        }
+                        #status-result h2 {
+                            font-size: 1.5rem !important;
+                        }
                     }
                 </style>
             `;

@@ -203,7 +203,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="fa-solid fa-city"></i> ${data.city || 'N/A'}<br>
                         <small>${data.address || ''}</small>
                     </td>
-                    <td data-label="LINK">${data.auditionLink ? `<a href="${data.auditionLink}" target="_blank" style="color:var(--primary);"><i class="fa-solid fa-play"></i> Audition</a>` : 'None'}</td>
+                    <td data-label="LINK">
+                        ${data.auditionLink ? `
+                            <button onclick="previewAudio('${data.auditionLink}', '${data.name}')" style="background:var(--secondary); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">
+                                <i class="fa-solid fa-play"></i> Listen
+                            </button>
+                        ` : 'None'}
+                    </td>
                     <td data-label="SCORE"><div style="display:flex;gap:5px;"><input type="number" value="${data.judgeScore||0}" id="sc-${id}" style="width:45px;background:#222;color:white;border:1px solid #444;"><button onclick="saveScore('${id}')" style="background:var(--primary);border:none;padding:2px 5px;"><i class="fa-solid fa-save"></i></button></div></td>
                     <td data-label="STATUS">
                         <span class="badge ${bClass}">${data.status.toUpperCase()}</span><br>
@@ -294,6 +300,31 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("Updated successfully!");
         closeEditModal();
         fetchAdminData();
+    };
+
+    window.previewAudio = (url, name) => {
+        const modal = document.createElement('div');
+        modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:20000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;";
+        modal.id = 'audio-preview-modal';
+        modal.innerHTML = `
+            <div style="background:#111; padding:40px; border-radius:20px; text-align:center; border:1px solid var(--primary); max-width:400px; width:100%;">
+                <h3 style="color:var(--primary); margin-bottom:10px;">${name}'s Audition</h3>
+                <audio controls autoplay style="width:100%; margin-bottom:20px;">
+                    <source src="${url}" type="audio/mpeg">
+                </audio>
+                <div style="height:50px; display:flex; align-items:flex-end; gap:3px; justify-content:center; margin-bottom:20px;">
+                    ${Array.from({length: 20}).map(() => `<div class="wave-bar" style="width:5px; background:var(--primary); height:10px;"></div>`).join('')}
+                </div>
+                <button onclick="document.getElementById('audio-preview-modal').remove()" class="btn btn-secondary" style="width:100%;">Close Preview</button>
+            </div>
+            <style>
+                .wave-bar { animation: barDance 1s ease-in-out infinite alternate; }
+                @keyframes barDance { 0% { height: 10px; } 100% { height: 40px; } }
+                .wave-bar:nth-child(2n) { animation-delay: 0.2s; }
+                .wave-bar:nth-child(3n) { animation-delay: 0.4s; }
+            </style>
+        `;
+        document.body.appendChild(modal);
     };
 
     window.toggleReveal = async (id, currentVal) => {

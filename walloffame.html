@@ -57,7 +57,16 @@
 
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header .logo-img {
+            height: 60px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 10px var(--gold));
         }
 
         .header h1 {
@@ -210,6 +219,29 @@
 
         #setup-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .btn-start { background: var(--gold); color: black; border:none; padding: 20px 60px; font-size: 1.5rem; font-weight:900; border-radius:50px; cursor:pointer; }
+        /* --- MOBILE OVERRIDES --- */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .wall-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+                padding: 10px;
+            }
+            .split-container {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+            .p-avatar {
+                width: 80px;
+                height: 80px;
+            }
+            .p-name { font-size: 0.9rem; }
+            .reveal-big-card {
+                width: 90%;
+                padding: 30px;
+            }
+            .reveal-big-card h2 { font-size: 1.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -228,6 +260,7 @@
 
     <div class="container">
         <div class="header">
+            <img src="logo.jpg" class="logo-img" alt="Hello Machi FM Logo">
             <h1>WALL OF FAME</h1>
             <div id="current-round-label" class="round-badge">LOADING...</div>
         </div>
@@ -261,6 +294,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script src="firebase-config.js"></script>
 
     <script>
@@ -290,6 +324,15 @@
             document.getElementById('reveal-status').textContent = `ADVANCED TO ${participant.status.toUpperCase()}`;
             
             overlay.style.display = 'flex';
+            
+            // Trigger Confetti
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FFD700', '#B8860B', '#FFFFFF']
+            });
+
             setTimeout(() => {
                 overlay.style.display = 'none';
             }, 6000); // 6 seconds reveal
@@ -359,6 +402,7 @@
                 ${p.photoBase64 ? `<img src="${p.photoBase64}" class="p-avatar">` : `<div class="p-avatar" style="background:#333; display:flex; align-items:center; justify-content:center; font-size:3rem;">${p.name.charAt(0)}</div>`}
                 <div class="p-badge">${p.status.toUpperCase()}</div>
                 <div class="p-name">${p.name}</div>
+                <div style="font-family:monospace; font-size:0.7rem; color:var(--gold); margin-bottom:5px;">ID: ${p.participantId || '---'}</div>
                 <div class="p-city"><i class="fa-solid fa-location-dot"></i> ${p.city || 'Tamil Nadu'}</div>
             `;
             return div;

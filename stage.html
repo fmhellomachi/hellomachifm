@@ -20,6 +20,8 @@
             color: white;
             overflow: hidden;
             height: 100vh;
+            width: 100vw;
+            position: fixed;
         }
 
         /* --- METALLIC GOLD AWARD DESIGN --- */
@@ -289,7 +291,90 @@
         @keyframes flashEffect { 0% { opacity: 1; } 100% { opacity: 0; } }
 
         #stage-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        /* --- TICKER CSS --- */
+        .shoutout-ticker {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border-top: 2px solid var(--primary);
+            padding: 10px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        .ticker-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker 30s linear infinite;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
+        .shoutout-item {
+            display: inline-block;
+            margin-right: 50px;
+        }
+
+        .shoutout-item span { color: white; margin-left: 10px; text-transform: none; font-weight: 400; }
+
         .enter-btn { background: var(--primary); color: white; border: none; padding: 20px 50px; font-size: 1.5rem; font-weight: 900; border-radius: 50px; cursor: pointer; box-shadow: 0 0 30px var(--primary); }
+
+        /* --- MOBILE OVERRIDES --- */
+        @media (max-width: 768px) {
+            .singer-frame {
+                width: 65vw;
+                height: 65vw;
+                margin-top: -15vh;
+            }
+            .lower-thirds {
+                width: 92%;
+                padding: 12px;
+                bottom: 3%;
+                border-radius: 20px;
+            }
+            .singer-info h2 {
+                font-size: 1.6rem;
+                line-height: 1.2;
+            }
+            .singer-info p {
+                font-size: 0.7rem;
+                letter-spacing: 1px;
+            }
+            .singer-place {
+                font-size: 0.8rem;
+            }
+            .qr-hud {
+                top: 10px;
+                right: 10px;
+                padding: 8px;
+                transform: scale(0.8);
+                transform-origin: top right;
+            }
+            .trophy-container {
+                display: none;
+            }
+            .qr-big-box img {
+                width: 80vw;
+                height: 80vw;
+            }
+            .qr-text {
+                font-size: 1.5rem;
+            }
+            #stage-overlay h1 {
+                font-size: 1.5rem;
+                letter-spacing: 5px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -334,6 +419,7 @@
             <div class="voting-badge" id="voting-badge">VOTING OPEN</div>
             <div class="singer-info">
                 <p id="current-round">LIVE PERFORMANCE</p>
+                <div id="participant-id-display" style="color: white; background: rgba(255,255,255,0.1); display: inline-block; padding: 2px 10px; border-radius: 5px; font-size: 0.8rem; margin-bottom: 5px; font-family: monospace;">---</div>
                 <h2 id="singer-name">HELLO MACHI FM</h2>
                 <div id="singer-place" class="singer-place">SUPER SINGER SEASON 1</div>
             </div>
@@ -342,6 +428,12 @@
         <div class="qr-hud" id="qr-hud">
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://hello-machi-fm-6ebe4.web.app/vote.html" alt="Vote QR">
             <p>SCAN TO VOTE</p>
+    </div>
+
+    <!-- Live Shoutout Ticker -->
+    <div class="shoutout-ticker">
+        <div id="ticker-content" class="ticker-content">
+            WELCOME TO HELLO MACHI SUPER SINGER 2026! 🎤 SEND YOUR SHOUTOUTS LIVE FROM THE PORTAL!
         </div>
     </div>
 
@@ -417,6 +509,7 @@
                             document.getElementById('singer-name').textContent = name;
                             document.getElementById('qr-singer-name').textContent = `FOR ${name}`;
                             document.getElementById('singer-place').textContent = s.place ? `FROM ${s.place.toUpperCase()}` : "LIVE PARTICIPANT";
+                            document.getElementById('participant-id-display').textContent = s.participantId || '---';
                             if (s.photoBase64) document.getElementById('singer-photo').src = s.photoBase64;
                         }
                     } else {
@@ -424,6 +517,17 @@
                         document.getElementById('singer-place').textContent = "NEXT PERFORMER COMING UP";
                         document.getElementById('singer-photo').src = "logo.jpg";
                     }
+                }
+            });
+            // Listen to Shoutouts
+            db.collection('shoutouts').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
+                let tickerHtml = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    tickerHtml += `<div class="shoutout-item">TO ${data.to}: <span>${data.message}</span></div>`;
+                });
+                if (tickerHtml) {
+                    document.getElementById('ticker-content').innerHTML = tickerHtml + " &nbsp; &bull; &nbsp; " + tickerHtml;
                 }
             });
         }

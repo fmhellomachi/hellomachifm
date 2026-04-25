@@ -1437,7 +1437,7 @@ footer {
     }
 
     .floating-player {
-        height: 110px; /* INCREASED FOR GIANT DISK */
+        height: 130px; /* INCREASED TO FIT 120PX DISK */
         padding: 0 10px;
         border-radius: 0;
         border-left: none; border-right: none;
@@ -1448,29 +1448,29 @@ footer {
         background: rgba(10, 10, 15, 0.98);
     }
 
-    /* GIANT Disk for Mobile */
+    /* EPIC Disk for Mobile */
     .disk-control-wrapper {
-        width: 100px; height: 100px;
-        margin-right: 10px;
+        width: 120px; height: 120px;
+        margin-right: 15px;
     }
 
-    /* Tonearm Scaling */
+    /* Tonearm Scaling for Huge Disk */
     .tonearm {
-        width: 35px; height: 80px;
-        right: -10px; top: -15px;
+        width: 40px; height: 100px;
+        right: -12px; top: -15px;
     }
 
-    /* Vibrant Mobile Visualizer */
+    /* Compact Mobile Visualizer */
     .retro-visualizer {
         margin: 0 8px;
-        gap: 4px;
+        gap: 3px;
         flex: 1;
-        height: 70px; /* Taller visualizer */
+        height: 45px; /* SHRUNK AS REQUESTED */
     }
     .vis-block-col { gap: 2px; width: 14px; }
     .vis-block { 
-        height: 8px; 
-        box-shadow: 0 0 5px rgba(255,255,255,0.1); /* Subtle base glow */
+        height: 5px; 
+        box-shadow: 0 0 5px rgba(255,255,255,0.1);
     }
 
     /* Volume Slider */

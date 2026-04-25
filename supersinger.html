@@ -61,12 +61,21 @@
         }
         .form-group.full { grid-column: span 2; }
         @media (max-width: 768px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .ss-logo { font-size: 2.5rem; }
-            .registration-box { padding: 30px 20px; border-radius: 0; margin-top: -20px; width: 100%; }
-            .round-box { min-width: 120px; padding: 15px; font-size: 0.8rem; }
+            .form-grid { grid-template-columns: 1fr; gap: 15px; }
+            .ss-logo { font-size: 2.2rem; }
+            .registration-box { 
+                padding: 25px 15px; 
+                border-radius: 20px; 
+                margin: 0 10px 50px; 
+                width: auto; 
+            }
+            .round-box { min-width: 100px; padding: 10px; font-size: 0.7rem; }
             .navbar .logo span { display: none; }
+            .btn-accent { padding: 12px; font-size: 0.9rem; }
         }
+        html { scroll-behavior: smooth; }
+        * { -webkit-tap-highlight-color: transparent; } /* Remove the tap square on mobile */
+        button:focus, a:focus { outline: none; }
     </style>
 </head>
 <body>

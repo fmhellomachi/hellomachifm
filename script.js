@@ -14,20 +14,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (playPauseBtn) {
             playPauseBtn.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
-            playPauseBtn.className = `control-btn ${isPlaying ? 'pause-btn' : 'play-btn'}`;
+            if (isPlaying) playPauseBtn.classList.add('playing');
+            else playPauseBtn.classList.remove('playing');
         }
         
         if (heroPlayBtn) {
             heroPlayBtn.innerHTML = `<i class="fa-solid ${iconClass}"></i> ${isPlaying ? 'STOP LISTENING' : 'LISTEN LIVE'}`;
         }
 
-        if (statusLabel) {
-            statusLabel.textContent = labelText;
-        }
-
-        if (playerThumb) {
-            if (isPlaying) playerThumb.classList.add('playing');
-            else playerThumb.classList.remove('playing');
+        const rotatingDisk = document.getElementById('player-rotating-disk');
+        if (rotatingDisk) {
+            if (isPlaying) rotatingDisk.classList.add('spinning');
+            else rotatingDisk.classList.remove('spinning');
         }
 
         // Animated visualizer bars
@@ -84,6 +82,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatSend = document.getElementById('chat-send-btn');
     
     let chatUsername = localStorage.getItem('chat_username') || ('Listener_' + Math.floor(Math.random() * 9000 + 1000));
+
+    // Update Listener Counter (Sync with Firestore)
+    function syncListeners() {
+        const statsRef = db.collection('stats').doc('presence');
+        // Increment on load
+        statsRef.set({ count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+        
+        // Listen for updates
+        statsRef.onSnapshot(doc => {
+            if (doc.exists) {
+                const count = Math.max(124, doc.data().count || 0); // Premium padding
+                const counterEl = document.getElementById('online-counter');
+                if (counterEl) counterEl.innerHTML = `<span class="pulse"></span> ${count} Listeners Online`;
+            }
+        });
+
+        // Decrement on close (best effort)
+        window.addEventListener('beforeunload', () => {
+            statsRef.update({ count: firebase.firestore.FieldValue.increment(-1) });
+        });
+    }
+    syncListeners();
+
+    window.setChatName = () => {
+        const name = prompt("Choose a unique nickname:", chatUsername);
+        if (name && name.trim().length > 2) {
+            chatUsername = name.trim();
+            localStorage.setItem('chat_username', chatUsername);
+            alert("Name updated to: " + chatUsername);
+        }
+    };
 
     window.toggleChat = () => {
         const isOpen = chatWindow.style.display === 'flex';
@@ -148,20 +177,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Website CMS Logic ---
     async function loadCMSData() {
+        const grid = document.getElementById('schedule-grid');
         try {
-            const doc = await db.collection('cms').doc('homepage').get();
-            if (doc.exists) {
-                const data = doc.data();
-                if (data.heroTitle) document.getElementById('hero-title').innerHTML = data.heroTitle;
-                if (data.heroSubtitle) document.getElementById('hero-subtitle').textContent = data.heroSubtitle;
-                
-                if (data.scheduleBlocks && data.scheduleBlocks.length > 0) {
-                    renderScheduleGrid(data.scheduleBlocks);
+            db.collection('cms').doc('homepage').onSnapshot(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.heroTitle) document.getElementById('hero-title').innerHTML = data.heroTitle;
+                    if (data.heroSubtitle) document.getElementById('hero-subtitle').textContent = data.heroSubtitle;
+                    
+                    if (data.scheduleBlocks && data.scheduleBlocks.length > 0) {
+                        renderScheduleGrid(data.scheduleBlocks);
+                    } else {
+                        useDefaultSchedule();
+                    }
+                } else {
+                    useDefaultSchedule();
                 }
-            }
+                if (grid) grid.style.opacity = '1';
+            });
         } catch (error) {
             console.error("Error loading CMS data:", error);
+            useDefaultSchedule();
+            if (grid) grid.style.opacity = '1';
         }
+    }
+
+    function useDefaultSchedule() {
+        const defaults = [
+            { time: "06:00 AM", title: "Morning Vibes", rj: "RJ Malar" },
+            { time: "09:00 AM", title: "Retro Hits", rj: "RJ Uthiran" },
+            { time: "12:00 PM", title: "Midday Melodies", rj: "RJ Malar" },
+            { time: "04:00 PM", title: "Evening Express", rj: "RJ Vijay" }
+        ];
+        renderScheduleGrid(defaults);
     }
 
     function renderScheduleGrid(blocks) {
@@ -169,19 +217,54 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!grid) return;
         grid.innerHTML = '';
         
+        // Get current IST time
+        const nowIST = new Date().toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+        const istDate = new Date(nowIST);
+        const currentHour = istDate.getHours();
+        const currentMin = istDate.getMinutes();
+        const currentTimeVal = currentHour * 60 + currentMin;
+
         blocks.forEach((block, index) => {
-            const card = document.createElement('div');
-            card.className = `schedule-card ${index === 0 ? 'active' : ''}`;
-            if (index === 0) {
-                card.innerHTML = `<div class="live-indicator">LIVE</div>`;
+            let isLive = false;
+            
+            // Helper to parse time string like "06:00 AM" or "18:00"
+            function parseTimeToMinutes(timeStr) {
+                if(!timeStr) return null;
+                const parts = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                if(!parts) return null;
+                let hours = parseInt(parts[1]);
+                let minutes = parseInt(parts[2]);
+                const ampm = parts[3] ? parts[3].toUpperCase() : null;
+
+                if (ampm === "PM" && hours < 12) hours += 12;
+                if (ampm === "AM" && hours === 12) hours = 0;
+                return hours * 60 + minutes;
             }
-            card.innerHTML += `
+
+            const startVal = parseTimeToMinutes(block.time);
+            const endVal = parseTimeToMinutes(block.endTime) || (startVal + 180); // Default 3 hours if missing
+
+            if (startVal !== null) {
+                if (currentTimeVal >= startVal && currentTimeVal < endVal) {
+                    isLive = true;
+                }
+            } else if (index === 0) {
+                isLive = true; // Fallback for first item
+            }
+
+            const card = document.createElement('div');
+            card.className = `schedule-card ${isLive ? 'active' : ''}`;
+            
+            card.innerHTML = `
+                ${isLive ? '<div class="live-indicator">LIVE NOW</div>' : ''}
                 <div class="card-glow"></div>
-                <div class="time">${block.time}</div>
+                <div class="time">${block.time || '00:00'} ${block.endTime ? ' - ' + block.endTime : ''}</div>
                 <h3>${block.title}</h3>
-                <p>Enjoy the best music and conversation with our RJs.</p>
+                <p>Enjoy the best music with our RJs.</p>
                 <div class="rj-info">
-                    <div class="rj-avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="rj-avatar" style="overflow:hidden;">
+                        <img src="${block.rjPhoto || 'logo.jpg'}" alt="RJ" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='logo.jpg'">
+                    </div>
                     <span>${block.rj || 'Hello Machi RJ'}</span>
                 </div>
             `;

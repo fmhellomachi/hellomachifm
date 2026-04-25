@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const getEl = (id) => document.getElementById(id);
     const form = document.getElementById('registration-form');
     const submitBtn = document.getElementById('submit-registration');
     const formMessage = document.getElementById('form-message');

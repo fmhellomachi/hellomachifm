@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background: #0a0a0f; color: white; min-height: 100vh; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 1px solid #333; padding-bottom: 20px; }
         .cms-card { background: #1a1a24; border: 1px solid #333; border-radius: 20px; padding: 30px; margin-bottom: 30px; }
         .cms-card h3 { color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
@@ -16,9 +16,12 @@
         .form-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #888; }
         input, textarea { width: 100%; background: #0a0a0f; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; font-size: 1rem; }
         .btn-save { background: var(--primary); color: black; border: none; padding: 12px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; }
-        .schedule-item { background: #0a0a0f; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
-        .btn-delete { background: none; border: none; color: #ff4d4d; cursor: pointer; }
-        .add-row { display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 10px; margin-top: 20px; }
+        .schedule-item { background: #0a0a0f; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; flex-wrap: wrap; gap: 10px; }
+        .rj-preview { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--primary); background: #222; }
+        .add-row { display: grid; grid-template-columns: 1fr 1fr 2fr 1fr 2fr auto; gap: 10px; margin-top: 20px; }
+        @media (max-width: 768px) {
+            .add-row { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -26,9 +29,13 @@
         <div class="header">
             <div>
                 <h1>General FM Admin</h1>
-                <p style="color:#888;">Manage Homepage & Schedule</p>
+                <p style="color:#888;" id="admin-user-display">Loading...</p>
             </div>
-            <a href="admin.html" class="btn btn-secondary" style="text-decoration:none; color:white;"><i class="fa-solid fa-arrow-left"></i> Back to Hub</a>
+            <div style="display:flex; gap:10px;">
+                <button id="login-btn" class="btn btn-primary" style="display:none; padding:10px 20px;">Login with Google</button>
+                <button id="logout-btn" class="btn btn-secondary" style="display:none; padding:10px 20px;">Logout</button>
+                <a href="admin.html" class="btn btn-secondary" style="text-decoration:none; color:white;"><i class="fa-solid fa-arrow-left"></i> Back to Hub</a>
+            </div>
         </div>
 
         <!-- Hero Section -->
@@ -48,16 +55,18 @@
         <!-- Schedule Section -->
         <div class="cms-card">
             <h3><i class="fa-solid fa-calendar-alt"></i> Radio Program Schedule</h3>
-            <p style="color:#888; margin-bottom:20px;">The first item in the list will be marked as "LIVE" on the homepage.</p>
+            <p style="color:#888; margin-bottom:20px;">Live status is automatically synced with IST based on your times.</p>
             
             <div id="schedule-list">
                 <!-- Injected via JS -->
             </div>
 
             <div class="add-row">
-                <input type="text" id="new-time" placeholder="08:00 AM">
+                <input type="text" id="new-time" placeholder="Start (e.g. 06:00 AM)">
+                <input type="text" id="new-endtime" placeholder="End (e.g. 09:00 AM)">
                 <input type="text" id="new-title" placeholder="Show Name">
                 <input type="text" id="new-rj" placeholder="RJ Name">
+                <input type="text" id="new-rj-photo" placeholder="RJ Photo URL (Optional)">
                 <button onclick="addBlock()" style="background:var(--secondary); color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer;">+ Add</button>
             </div>
             <button class="btn-save" style="margin-top:30px; background:var(--secondary);" onclick="saveSchedule()">PUBLISH NEW SCHEDULE</button>
@@ -72,13 +81,35 @@
 
     <script>
         const db = firebase.firestore();
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
         let scheduleBlocks = [];
 
-        // Security Check
-        firebase.auth().onAuthStateChanged(user => {
-            if (!user) window.location.href = 'admin.html';
-            loadData();
+        const AUTHORIZED_EMAILS = [
+            'bowtharinivijay@gmail.com',
+            'admin@hellomachi.com'
+        ];
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                if (AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
+                    document.getElementById('admin-user-display').textContent = `Logged in as: ${user.email}`;
+                    document.getElementById('logout-btn').style.display = 'block';
+                    document.getElementById('login-btn').style.display = 'none';
+                    loadData();
+                } else {
+                    alert("Access Denied: " + user.email);
+                    auth.signOut();
+                }
+            } else {
+                document.getElementById('admin-user-display').textContent = "Please login to manage the station.";
+                document.getElementById('login-btn').style.display = 'block';
+                document.getElementById('logout-btn').style.display = 'none';
+            }
         });
+
+        document.getElementById('login-btn').onclick = () => auth.signInWithPopup(provider);
+        document.getElementById('logout-btn').onclick = () => auth.signOut();
 
         async function loadData() {
             const doc = await db.collection('cms').doc('homepage').get();
@@ -87,7 +118,7 @@
                 document.getElementById('hero-title').value = data.heroTitle || '';
                 document.getElementById('hero-subtitle').value = data.heroSubtitle || '';
                 scheduleBlocks = data.scheduleBlocks || [];
-                renderSchedule();
+                renderScheduleUI();
             }
         }
 
@@ -101,17 +132,20 @@
             } catch (e) { alert(e.message); }
         }
 
-        function renderSchedule() {
+        function renderScheduleUI() {
             const list = document.getElementById('schedule-list');
             list.innerHTML = '';
             scheduleBlocks.forEach((b, i) => {
                 const div = document.createElement('div');
                 div.className = 'schedule-item';
                 div.innerHTML = `
-                    <div>
-                        <strong style="color:var(--primary);">${b.time}</strong> &nbsp; | &nbsp; 
-                        <span>${b.title}</span> &nbsp; 
-                        <small style="opacity:0.6;">(RJ: ${b.rj})</small>
+                    <div style="display:flex; align-items:center; gap:15px; flex:1;">
+                        <img src="${b.rjPhoto || 'logo.jpg'}" class="rj-preview" onerror="this.src='logo.jpg'">
+                        <div>
+                            <strong style="color:var(--primary); font-size:0.8rem;">${b.time} - ${b.endTime || '??'}</strong><br>
+                            <span style="font-size:1.1rem; font-weight:bold;">${b.title}</span><br>
+                            <small style="opacity:0.7;">Host: ${b.rj}</small>
+                        </div>
                     </div>
                     <button class="btn-delete" onclick="removeBlock(${i})"><i class="fa-solid fa-trash"></i></button>
                 `;
@@ -121,19 +155,26 @@
 
         function addBlock() {
             const time = document.getElementById('new-time').value;
+            const endTime = document.getElementById('new-endtime').value;
             const title = document.getElementById('new-title').value;
             const rj = document.getElementById('new-rj').value;
-            if(!time || !title) return;
-            scheduleBlocks.push({ time, title, rj });
-            renderSchedule();
+            const rjPhoto = document.getElementById('new-rj-photo').value;
+
+            if(!time || !title) return alert("Start time and Title are required");
+            
+            scheduleBlocks.push({ time, endTime, title, rj, rjPhoto });
+            renderScheduleUI();
+            
             document.getElementById('new-time').value = '';
+            document.getElementById('new-endtime').value = '';
             document.getElementById('new-title').value = '';
             document.getElementById('new-rj').value = '';
+            document.getElementById('new-rj-photo').value = '';
         }
 
         function removeBlock(i) {
             scheduleBlocks.splice(i, 1);
-            renderSchedule();
+            renderScheduleUI();
         }
 
         async function saveSchedule() {

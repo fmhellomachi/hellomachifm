@@ -86,78 +86,50 @@
                 <p>Never miss a beat with our daily schedule.</p>
             </div>
             
-            <div class="schedule-grid" id="schedule-grid">
-                <div class="schedule-card">
-                    <div class="card-glow"></div>
-                    <div class="time">08:00 AM - 11:00 AM</div>
-                    <h3>Morning Filter Kaapi</h3>
-                    <p>Start your day with energetic hits and positive vibes.</p>
-                    <div class="rj-info">
-                        <div class="rj-avatar"><i class="fa-solid fa-user"></i></div>
-                        <span>RJ Example</span>
-                    </div>
-                </div>
-                
-                <div class="schedule-card active">
-                    <div class="card-glow"></div>
-                    <div class="live-indicator">LIVE</div>
-                    <div class="time">11:00 AM - 02:00 PM</div>
-                    <h3>Retro Rewind 90s</h3>
-                    <p>Classic melodies and unforgettable memories from the golden era.</p>
-                    <div class="rj-info">
-                        <div class="rj-avatar"><i class="fa-solid fa-user"></i></div>
-                        <span>RJ MusicLover</span>
-                    </div>
-                </div>
-                
-                <div class="schedule-card">
-                    <div class="card-glow"></div>
-                    <div class="time">06:00 PM - 09:00 PM</div>
-                    <h3>Evening Drive</h3>
-                    <p>Beat the traffic with the latest chartbusters and interactive chat.</p>
-                    <div class="rj-info">
-                        <div class="rj-avatar"><i class="fa-solid fa-user"></i></div>
-                        <span>RJ Host</span>
-                    </div>
+            <div class="schedule-grid" id="schedule-grid" style="opacity:0; transition: opacity 0.5s ease;">
+                <!-- Loading placeholder -->
+                <div style="grid-column:1/-1; text-align:center; padding:50px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; color:var(--primary);"></i>
+                    <p style="margin-top:10px;">Syncing IST Broadcast...</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Premium Floating Audio Player -->
+    <!-- Premium Docked Audio Player Bar -->
     <div class="floating-player-wrapper">
         <div class="floating-player">
-            <!-- Visualizer Bars (Decorative) -->
-            <div class="visualizer">
-                <span></span><span></span><span></span><span></span><span></span>
-            </div>
-            
-            <div class="player-info">
-                <div class="player-thumb-container">
-                    <img src="logo.jpg" alt="Station Logo" class="player-thumb">
-                    <div class="thumb-ring"></div>
+            <!-- LEFT: Station Info -->
+            <div class="player-left">
+                <div class="rotating-disk" id="player-rotating-disk">
+                    <div class="disk-label"><img src="logo.jpg" alt="Logo"></div>
+                    <div class="disk-center"></div>
                 </div>
                 <div class="track-details">
-                    <div class="now-playing-label">STREAMING LIVE</div>
-                    <div class="station-name">Hello Machi FM</div>
-                    <div class="show-name">Retro Rewind 90s</div>
+                    <div class="station-name">HELLO MACHI FM</div>
+                    <div class="show-name" id="current-show">Live Streaming...</div>
                 </div>
             </div>
-            
-            <div class="player-controls">
-                <audio id="azuracast-player" preload="none">
-                    <source src="https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3" type="audio/mpeg">
-                </audio>
-                
-                <div class="volume-wrapper">
-                    <i class="fa-solid fa-volume-low"></i>
-                    <input type="range" id="volume-slider" class="premium-slider" min="0" max="1" step="0.01" value="1">
-                    <i class="fa-solid fa-volume-high"></i>
-                </div>
-                
+
+            <!-- CENTER: Controls -->
+            <div class="player-center">
                 <button id="play-pause-btn" class="control-btn play-btn">
                     <i class="fa-solid fa-play"></i>
                 </button>
+                <div class="visualizer">
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+
+            <!-- RIGHT: Volume & Socials -->
+            <div class="player-right">
+                <div class="volume-wrapper">
+                    <i class="fa-solid fa-volume-low"></i>
+                    <input type="range" id="volume-slider" class="premium-slider" min="0" max="1" step="0.01" value="1">
+                </div>
+                <div class="player-socials">
+                    <a href="https://wa.me/919092363433" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+                </div>
             </div>
         </div>
     </div>
@@ -204,14 +176,20 @@
     </div>
 
     <!-- Live Chat Widget -->
-    <div id="chat-widget-container" style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+    <div id="chat-widget-container" style="position:fixed; bottom:110px; right:20px; z-index:10001;">
         <button id="chat-toggle-btn" style="background:var(--secondary); color:white; border:none; width:60px; height:60px; border-radius:50%; cursor:pointer; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-size:1.5rem; display:flex; align-items:center; justify-content:center;">
             <i class="fa-solid fa-comments"></i>
         </button>
         <div id="chat-window" style="display:none; position:absolute; bottom:80px; right:0; width:350px; height:500px; background:var(--bg-card); border:1px solid var(--glass-border); border-radius:20px; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.8);">
             <div style="background:var(--secondary); padding:15px; color:white; display:flex; justify-content:space-between; align-items:center;">
-                <strong><i class="fa-solid fa-tower-broadcast"></i> Live Chat</strong>
-                <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+                <div style="display:flex; flex-direction:column;">
+                    <strong><i class="fa-solid fa-tower-broadcast"></i> Live Chat</strong>
+                    <small id="online-counter" style="font-size:0.6rem; opacity:0.8;"><span class="pulse"></span> 124 Listeners Online</small>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="setChatName()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:5px 10px; border-radius:5px; font-size:0.7rem; cursor:pointer;"><i class="fa-solid fa-user-edit"></i> Name</button>
+                    <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+                </div>
             </div>
             <div id="chat-messages" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
                 <!-- Messages injected here -->

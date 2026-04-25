@@ -234,26 +234,25 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="script.js"></script>
     <script>
-        // Secret Long-Press for Admin Access
+        // Secret Triple-Tap for Admin Access
         const trigger = document.getElementById('secret-admin-trigger');
-        let pressTimer;
+        let clickCount = 0;
+        let clickTimer;
 
         if (trigger) {
-            // Desktop
-            trigger.addEventListener('mousedown', () => {
-                pressTimer = window.setTimeout(() => {
-                    window.location.href = 'admin.html';
-                }, 5000); // 5 seconds
-            });
-            trigger.addEventListener('mouseup', () => clearTimeout(pressTimer));
+            trigger.addEventListener('click', () => {
+                clickCount++;
+                
+                // Reset counter if not 3 clicks in 1 second
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                }, 1000);
 
-            // Mobile
-            trigger.addEventListener('touchstart', () => {
-                pressTimer = window.setTimeout(() => {
+                if (clickCount === 3) {
                     window.location.href = 'admin.html';
-                }, 5000);
+                }
             });
-            trigger.addEventListener('touchend', () => clearTimeout(pressTimer));
         }
     </script>
 </body>

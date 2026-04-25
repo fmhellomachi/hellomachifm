@@ -111,8 +111,18 @@
 
         document.getElementById('login-btn').onclick = async () => {
             try {
-                await auth.signInWithPopup(provider);
-            } catch (e) { alert("Login failed: " + e.message); }
+                // Try popup first, if blocked use redirect
+                await auth.signInWithPopup(provider).catch(async (error) => {
+                    if (error.code === 'auth/popup-blocked') {
+                        await auth.signInWithRedirect(provider);
+                    } else {
+                        throw error;
+                    }
+                });
+            } catch (e) { 
+                console.error(e);
+                alert("Login failed: " + e.message); 
+            }
         };
         document.getElementById('logout-btn').onclick = () => auth.signOut();
 

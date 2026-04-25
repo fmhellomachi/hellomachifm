@@ -58,6 +58,17 @@
                     <button class="btn btn-primary btn-glow" id="play-hero-btn"><i class="fa-solid fa-play"></i> LISTEN LIVE</button>
                     <a href="https://wa.me/919092363433" target="_blank" class="btn btn-secondary"><i class="fa-brands fa-whatsapp"></i> REQUEST</a>
                 </div>
+
+                <!-- Restore Super Singer Promo -->
+                <a href="supersinger.html" class="ss-promo-banner mt-5">
+                    <div class="ss-promo-content">
+                        <div class="ss-badge">EVENT LIVE</div>
+                        <div class="ss-text">
+                            <strong>SUPER SINGER 2026</strong>
+                            <span>Voting & Registration Portal Open &rarr;</span>
+                        </div>
+                    </div>
+                </a>
             </div>
         </header>
 
@@ -66,21 +77,78 @@
             <div class="container">
                 <div class="section-header">
                     <h2>LIVE <span class="gradient-text">SCHEDULE</span></h2>
+                    <p>Track your favorite shows with real-time IST timings.</p>
                 </div>
-                <div class="schedule-grid" id="schedule-grid" style="opacity:0; transition: opacity 0.5s ease;">
-                    <!-- Sleek cards injected here -->
+                <div class="schedule-table" id="schedule-grid">
+                    <!-- Rows will be injected here with strict 3-column alignment -->
+                </div>
+            </div>
+        </section>
+
+        <!-- RJ Introduction Section -->
+        <section id="rjs" class="rj-intro-section" style="padding: 100px 0; background: #050508;">
+            <div class="container">
+                <div class="section-header">
+                    <h2>MEET YOUR <span class="gradient-text">RJS</span></h2>
+                    <p>The voices that keep Chennai vibrant.</p>
+                </div>
+                <div id="rj-intro-grid" class="rj-grid">
+                    <!-- Premium RJ Cards with full images -->
+                    <div class="rj-premium-card">
+                        <img src="logo.jpg" alt="RJ Malar">
+                        <div class="rj-overlay">
+                            <h3>RJ Malar</h3>
+                            <p>Morning Vibes</p>
+                        </div>
+                    </div>
+                    <div class="rj-premium-card">
+                        <img src="logo.jpg" alt="RJ Uthiran">
+                        <div class="rj-overlay">
+                            <h3>RJ Uthiran</h3>
+                            <p>Retro Hits</p>
+                        </div>
+                    </div>
+                    <div class="rj-premium-card">
+                        <img src="logo.jpg" alt="RJ Vijay">
+                        <div class="rj-overlay">
+                            <h3>RJ Vijay</h3>
+                            <p>Evening Express</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Footer -->
-        <footer style="margin-top:50px; padding:30px 0; border-top:1px solid rgba(255,255,255,0.05); text-align:center;">
-            <div class="container">
-                <img src="logo.jpg" alt="Logo" style="width:40px; border-radius:50%; margin-bottom:10px;">
-                <p style="font-size:0.8rem; color:#888;">&copy; 2026 HELLO MACHI FM. ALL RIGHTS RESERVED.</p>
-                <div style="margin-top:15px; display:flex; justify-content:center; gap:20px; font-size:1.2rem;">
-                    <a href="https://wa.me/919092363433" target="_blank" style="color:var(--primary);"><i class="fa-brands fa-whatsapp"></i></a>
-                    <a href="https://instagram.com/hellomachifm" target="_blank" style="color:var(--primary);"><i class="fa-brands fa-instagram"></i></a>
+        <footer class="detailed-footer">
+            <div class="container footer-grid">
+                <div class="footer-brand">
+                    <img src="logo.jpg" alt="Logo" class="footer-logo">
+                    <h3>HELLO MACHI FM</h3>
+                    <p>Premium Tamil Radio broadcasting worldwide. Your exclusive destination for the finest Tamil hits.</p>
+                </div>
+                <div class="footer-links-group">
+                    <h4>QUICK LINKS</h4>
+                    <ul class="footer-links">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#schedule">Schedule</a></li>
+                        <li><a href="supersinger.html">Super Singer</a></li>
+                        <li><a href="admin.html">Admin Hub</a></li>
+                    </ul>
+                </div>
+                <div class="footer-social-group">
+                    <h4>CONNECT WITH US</h4>
+                    <div class="social-icons">
+                        <a href="https://www.facebook.com/hellomachifm" target="_blank" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/hellomachifm" target="_blank" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.youtube.com/@hellomachifm" target="_blank" class="social-icon"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="https://wa.me/919092363433" target="_blank" class="social-icon"><i class="fa-brands fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="container">
+                    <p>&copy; 2026 HELLO MACHI FM. ALL RIGHTS RESERVED.</p>
                 </div>
             </div>
         </footer>
@@ -98,10 +166,20 @@
     <!-- Premium Protruding Disk Player Bar -->
     <div class="floating-player-wrapper">
         <div class="floating-player">
-            <!-- LEFT Side of Disk: Info -->
-            <div class="player-info-side">
-                <div class="station-name">HELLO MACHI FM</div>
-                <div class="show-name" id="current-show">Live Streaming...</div>
+            <!-- LEFT: Info -->
+            <div class="player-left">
+                <div class="live-indicator-player">
+                    <div class="waveform">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                    LIVE STREAMING
+                </div>
+                <div class="player-station-info">
+                    <h4 class="neon-text">HELLO MACHI FM</h4>
+                </div>
             </div>
 
             <!-- CENTER: Protruding Disk Button -->
@@ -114,11 +192,11 @@
                 </button>
             </div>
 
-            <!-- RIGHT Side of Disk: Controls -->
-            <div class="player-controls-side">
-                <div class="volume-container">
-                    <i class="fa-solid fa-volume-low"></i>
-                    <input type="range" id="volume-slider" class="premium-slider" min="0" max="1" step="0.01" value="1">
+            <!-- RIGHT: Controls -->
+            <div class="player-right">
+                <div class="volume-container-new">
+                    <i class="fa-solid fa-volume-high" style="color: white; font-size: 1.2rem;"></i>
+                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="0.8">
                 </div>
             </div>
         </div>

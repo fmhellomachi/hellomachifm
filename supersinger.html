@@ -41,15 +41,15 @@
         }
         .round-box i { font-size: 2rem; color: var(--secondary); margin-bottom: 10px; }
         .registration-box {
-            max-width: 900px;
-            margin: -40px auto 100px;
+            max-width: 850px;
+            margin: 40px auto 100px;
             background: rgba(255,255,255,0.02);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 24px;
-            padding: 40px;
+            padding: 45px;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
             position: relative;
             z-index: 10;
         }
@@ -133,9 +133,13 @@
                         <label for="reg-city"><i class="fa-solid fa-city"></i> City</label>
                         <input type="text" id="reg-city" placeholder="City" required>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group full">
                         <label for="reg-address"><i class="fa-solid fa-location-dot"></i> Address</label>
                         <input type="text" id="reg-address" placeholder="Full Address" required>
+                    </div>
+                    <div class="form-group full">
+                        <label for="reg-bio"><i class="fa-solid fa-pen"></i> Short Bio</label>
+                        <textarea id="reg-bio" rows="2" placeholder="Musical journey..."></textarea>
                     </div>
                     <div class="form-group">
                         <label for="reg-photo"><i class="fa-solid fa-camera"></i> Profile Photo</label>
@@ -144,10 +148,6 @@
                     <div class="form-group">
                         <label for="reg-audio"><i class="fa-solid fa-music"></i> Audition MP3</label>
                         <input type="file" id="reg-audio" accept="audio/*" style="background: rgba(255,255,255,0.05); padding: 5px;">
-                    </div>
-                    <div class="form-group full">
-                        <label for="reg-bio"><i class="fa-solid fa-pen"></i> Short Bio</label>
-                        <textarea id="reg-bio" rows="2" placeholder="Musical journey..."></textarea>
                     </div>
                 </div>
                 

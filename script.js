@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Listen for updates
         statsRef.onSnapshot(doc => {
             if (doc.exists) {
-                const count = Math.max(124, doc.data().count || 0); // Premium padding
+                const count = doc.data().count || 1; // Real count
                 const counterEl = document.getElementById('online-counter');
                 if (counterEl) counterEl.innerHTML = `<span class="pulse"></span> ${count} Listeners Online`;
             }
@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (data.scheduleBlocks && data.scheduleBlocks.length > 0) {
                         renderScheduleGrid(data.scheduleBlocks);
+                        if (window.renderRJs) window.renderRJs(data.scheduleBlocks);
                     } else {
                         useDefaultSchedule();
                     }
@@ -195,10 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function useDefaultSchedule() {
         const defaults = [
-            { time: "06:00 AM", title: "Morning Vibes", rj: "RJ Malar" },
-            { time: "09:00 AM", title: "Retro Hits", rj: "RJ Uthiran" },
-            { time: "12:00 PM", title: "Midday Melodies", rj: "RJ Malar" },
-            { time: "04:00 PM", title: "Evening Express", rj: "RJ Vijay" }
+            { time: "06:00", endTime: "09:00", title: "Morning Vibes", rj: "RJ Malar" },
+            { time: "09:00", endTime: "12:00", title: "Retro Hits", rj: "RJ Uthiran" },
+            { time: "12:00", endTime: "16:00", title: "Midday Melodies", rj: "RJ Malar" },
+            { time: "16:00", endTime: "20:00", title: "Evening Express", rj: "RJ Vijay" },
+            { time: "20:00", endTime: "23:59", title: "Romantic Night", rj: "RJ Uthiran" },
+            { time: "00:00", endTime: "06:00", title: "Iravin Madiyil", rj: "RJ Vijay" }
         ];
         renderScheduleGrid(defaults);
     }
@@ -244,20 +247,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const card = document.createElement('div');
-            card.className = `schedule-card ${isLive ? 'active' : ''}`;
+            card.className = `schedule-row ${isLive ? 'active' : ''}`;
             
             card.innerHTML = `
-                <div class="time-area">
-                    ${isLive ? '<div class="live-indicator-small">LIVE</div>' : ''}
-                    <div class="time">${block.time || '00:00'} ${block.endTime ? ' - ' + block.endTime : ''}</div>
-                </div>
+                ${isLive ? '<div class="live-tag">LIVE NOW</div>' : ''}
+                <div class="time">${block.time || '00:00'} — ${block.endTime || '00:00'}</div>
                 <h3>${block.title}</h3>
-                <div class="rj-info">
-                    <div class="rj-avatar" style="width:30px; height:30px;">
-                        <img src="${block.rjPhoto || 'logo.jpg'}" alt="RJ" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='logo.jpg'">
-                    </div>
-                    <span style="font-size:0.8rem;">${block.rj || 'Hello Machi RJ'}</span>
-                </div>
+                <div class="rj-name">with ${block.rj || 'Hello Machi RJ'}</div>
             `;
             grid.appendChild(card);
         });
@@ -290,7 +286,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Persistent Navigation (SPA) ---
     async function navigateTo(url) {
         try {
-            const response = await fetch(url);
+            // Ensure we use the right URL for fetch
+            const fetchUrl = url.startsWith('http') ? url : window.location.origin + '/' + url;
+            const response = await fetch(fetchUrl);
             const html = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
@@ -299,29 +297,94 @@ document.addEventListener('DOMContentLoaded', () => {
             if (newContent) {
                 document.getElementById('app-content').innerHTML = newContent.innerHTML;
                 window.history.pushState({}, '', url);
-                // Re-init specific page logic
+                
                 if (url.includes('supersinger')) {
-                    // Trigger Supersinger JS (assuming it's global or needs re-init)
                     const script = document.createElement('script');
                     script.src = 'supersinger.js';
                     document.body.appendChild(script);
+                } else {
+                    loadCMSData(); 
                 }
-                loadCMSData(); // Refresh schedule
                 window.scrollTo(0, 0);
+            } else {
+                window.location.href = url;
             }
-        } catch (e) { console.error("Navigation failed:", e); }
+        } catch (e) { 
+            console.error("Navigation failed:", e); 
+            window.location.href = url; // Hard fallback
+        }
     }
 
     document.addEventListener('click', (e) => {
         const link = e.target.closest('a');
         if (link && link.href.includes(window.location.origin)) {
             const path = link.getAttribute('href');
+            // If it's a real page link and not a hash
             if (path && !path.startsWith('#') && !path.includes('admin')) {
                 e.preventDefault();
-                navigateTo(path);
+                // Ensure the path is relative for the fetch
+                const relativePath = path.split('/').pop();
+                navigateTo(relativePath);
             }
         }
-    });
+    });    // --- Real-time Presence Logic ---
+    function syncListeners() {
+        console.log("Initializing Real-time Presence Sync...");
+        const presenceRef = db.collection('stats').doc('presence');
+        
+        presenceRef.onSnapshot(doc => {
+            if (doc.exists) {
+                const count = doc.data().count || 0;
+                console.log("Real-time Listeners Updated:", count);
+                const counters = document.querySelectorAll('#online-counter, .chat-online-count');
+                counters.forEach(el => {
+                    el.innerHTML = `<span class="pulse"></span> ${count} Listeners Online`;
+                });
+            }
+        });
+
+        presenceRef.get().then(doc => {
+            if (!doc.exists) presenceRef.set({ count: 1 });
+            else presenceRef.update({ count: firebase.firestore.FieldValue.increment(1) });
+        });
+
+        window.addEventListener('beforeunload', () => {
+            presenceRef.update({ count: firebase.firestore.FieldValue.increment(-1) });
+        });
+    }
+    syncListeners();
+
+    // --- RJ Introduction Rendering ---
+    window.renderRJs = function(blocks) {
+        const rjGrid = document.getElementById('rj-intro-grid');
+        if (!rjGrid) return;
+        
+        const sourceData = (blocks && blocks.length > 0) ? blocks : [
+            { rj: "RJ Malar", rjPhoto: "logo.jpg", show: "Morning Vibes" },
+            { rj: "RJ Uthiran", rjPhoto: "logo.jpg", show: "Retro Hits" },
+            { rj: "RJ Vijay", rjPhoto: "logo.jpg", show: "Evening Express" }
+        ];
+
+        const rjs = [];
+        const seen = new Set();
+        sourceData.forEach(b => {
+            if (b.rj && !seen.has(b.rj)) {
+                rjs.push({ name: b.rj, photo: b.rjPhoto || 'logo.jpg', show: b.show || 'Hello Machi FM' });
+                seen.add(b.rj);
+            }
+        });
+
+        rjGrid.innerHTML = rjs.map(rj => `
+            <div class="rj-premium-card">
+                <img src="${rj.photo}" alt="${rj.name}" onerror="this.src='logo.jpg'">
+                <div class="rj-overlay">
+                    <h3>${rj.name}</h3>
+                    <p>${rj.show}</p>
+                </div>
+            </div>
+        `).join('');
+    };
+;
 
     window.addEventListener('scroll', () => {
         const navbar = document.querySelector('.navbar');

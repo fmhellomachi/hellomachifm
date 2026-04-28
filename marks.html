@@ -36,8 +36,9 @@
         .singer-cell { display:flex; align-items:center; gap:12px; }
         .avatar { width:65px; height:65px; border-radius:10px; object-fit:contain; background:#000; border:2px solid var(--gold); flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.5); }
         .singer-name { font-weight:900; font-size:0.95rem; color:#fff; }
-        .singer-id { font-size:0.68rem; color:#555; font-family:monospace; margin-top:2px; }
-        .status-chip { display:inline-block; font-size:0.6rem; font-weight:900; padding:2px 8px; border-radius:6px; margin-top:4px; background:rgba(255,20,147,0.15); color:var(--primary); border:1px solid rgba(255,20,147,0.3); letter-spacing:0.5px; }
+        .singer-id { font-size:0.75rem; color:var(--gold); font-family:monospace; margin-top:2px; font-weight: bold; }
+        .singer-city { font-size:0.7rem; color:#888; letter-spacing:0.5px; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+        .status-chip { display:inline-block; font-size:0.6rem; font-weight:900; padding:2px 8px; border-radius:6px; margin-top:6px; background:rgba(255,20,147,0.15); color:var(--primary); border:1px solid rgba(255,20,147,0.3); letter-spacing:0.5px; text-transform: uppercase; }
 
         /* Rank */
         .rank { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; font-weight:900; font-size:0.88rem; background:rgba(255,255,255,0.07); }
@@ -241,7 +242,8 @@ async function render() {
                             <img src="${s.photoBase64||'logo.jpg'}" class="avatar" onerror="this.src='logo.jpg'">
                             <div>
                                 <div class="singer-name">${(s.name||'').toUpperCase()}</div>
-                                <div class="singer-id">${s.participantId||'—'}</div>
+                                <div class="singer-id">ID: ${s.participantId||'—'}</div>
+                                <div class="singer-city"><i class="fa-solid fa-location-dot"></i> ${(s.city||s.place||'TAMIL NADU').toUpperCase()}</div>
                                 <span class="status-chip">${s.currentStatus}</span>
                             </div>
                         </div>

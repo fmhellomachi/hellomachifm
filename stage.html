@@ -310,7 +310,9 @@
             <div id="current-round" class="round-text">LIVE PERFORMANCE</div>
             <div id="p-id-display" class="p-id-tag">ID: ---</div>
             <h2 id="singer-name">HELLO MACHI FM</h2>
-            <div id="singer-place" style="color:#00f2ff; font-weight:700; letter-spacing:2px; font-size: 1.1rem;">SUPER SINGER SEASON 1</div>
+            <div id="singer-place" style="color:#00f2ff; font-weight:700; letter-spacing:2px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; justify-content: center;">
+                <i class="fa-solid fa-location-dot" style="font-size: 0.9rem;"></i> <span id="singer-city-text">SUPER SINGER SEASON 1</span>
+            </div>
         </div>
     </div>
 
@@ -393,8 +395,9 @@
                             document.getElementById('qr-singer-photo').src = s.photoBase64 || 'logo.jpg';
                             document.getElementById('qr-name-display').textContent = s.name.toUpperCase();
                             document.getElementById('qr-p-id').textContent = `ID: ${s.participantId || '---'}`;
-                            document.getElementById('qr-place-display').textContent = s.place ? `FROM ${s.place.toUpperCase()}` : "LIVE PARTICIPANT";
-                            document.getElementById('singer-place').textContent = s.place ? `FROM ${s.place.toUpperCase()}` : "LIVE PARTICIPANT";
+                            const cityDisplay = (s.city || s.place || 'TAMIL NADU').toUpperCase();
+                            document.getElementById('qr-place-display').textContent = cityDisplay;
+                            document.getElementById('singer-city-text').textContent = cityDisplay;
                             if (s.photoBase64) document.getElementById('singer-photo').src = s.photoBase64;
                         }
                     }
@@ -414,6 +417,8 @@
                             const s2 = s2Snap.data();
                             if (s2.photoBase64) document.getElementById('singer-photo-2').src = s2.photoBase64;
                             document.getElementById('singer-name').textContent += ` & ${s2.name.toUpperCase()}`;
+                            const city2 = (s2.city || s2.place || 'TAMIL NADU').toUpperCase();
+                            document.getElementById('singer-city-text').textContent += ` & ${city2}`;
                         }
                     } else {
                         frame2.style.display = 'none';

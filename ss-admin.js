@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         cropViewport.addEventListener('wheel', (e) => {
             e.preventDefault();
-            scale = Math.max(0.1, Math.min(3, scale - e.deltaY * 0.002));
+            scale = Math.max(0.01, Math.min(5, scale - e.deltaY * 0.002));
             if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
             applyTransform();
         }, { passive: false });

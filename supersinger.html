@@ -89,6 +89,10 @@
             text-align: left;
         }
         .form-group.full { grid-column: span 2; }
+        @media (max-width: 480px) {
+            #crop-modal .modal-content { width: 95vw; padding: 15px; }
+            #crop-viewport { width: 80vw !important; height: auto !important; aspect-ratio: 3/4; }
+        }
         @media (max-width: 768px) {
             .form-grid { grid-template-columns: 1fr; gap: 15px; }
             .ss-logo { font-size: 2.2rem; }
@@ -222,7 +226,7 @@
             <!-- Zoom slider -->
             <div style="margin:20px auto; display:flex; align-items:center; gap:15px; max-width:300px;">
                 <i class="fa-solid fa-minus" style="color:#666;"></i>
-                <input type="range" id="zoom-slider" min="10" max="200" value="100" style="flex:1; accent-color:var(--primary);">
+                <input type="range" id="zoom-slider" min="1" max="400" value="100" style="flex:1; accent-color:var(--primary);">
                 <i class="fa-solid fa-plus" style="color:#666;"></i>
             </div>
 

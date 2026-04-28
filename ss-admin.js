@@ -63,11 +63,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         window.addEventListener('mouseup', () => { isDragging = false; if(cropViewport) cropViewport.style.cursor = 'grab'; });
         
+        // Zoom via scroll wheel
         cropViewport.addEventListener('wheel', (e) => {
             e.preventDefault();
             scale = Math.max(0.01, Math.min(5, scale - e.deltaY * 0.002));
             if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
             applyTransform();
+        }, { passive: false });
+
+        // Pinch-to-zoom for mobile
+        let initialPinchDist = 0;
+        let initialScale = 1;
+
+        cropViewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                initialPinchDist = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                initialScale = scale;
+            }
+        }, { passive: true });
+
+        cropViewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const dist = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                const ratio = dist / initialPinchDist;
+                scale = Math.max(0.01, Math.min(5, initialScale * ratio));
+                if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
+                applyTransform();
+            }
         }, { passive: false });
     }
 

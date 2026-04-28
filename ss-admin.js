@@ -822,18 +822,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // Submit all judge scores
     window.submitJudgeScores = async () => {
         if (!currentJudgeSingerId) { alert('No singer is currently on stage.'); return; }
+        const round = getEl('live-round').value;
         const inputs = document.querySelectorAll('#judge-rows input[data-judge]');
         if (inputs.length === 0) { alert('Add at least one judge first.'); return; }
+        
         const scores = {};
         inputs.forEach(inp => { scores[inp.dataset.judge] = parseFloat(inp.value) || 0; });
+        
         try {
+            // 1. Save to current live scores
             await db.collection('judge_scores').doc(currentJudgeSingerId).set({
                 singerId: currentJudgeSingerId,
                 singerName: currentJudgeSingerName,
                 scores,
+                round: round,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
-            alert('✅ Judge scores saved!');
+
+            // 2. Also archive to historical round results
+            // Get current audience average for this singer
+            const vSnap = await db.collection('live_votes').get();
+            const votes = [];
+            vSnap.forEach(vDoc => { 
+                const vData = vDoc.data();
+                if (vData.singerId === currentJudgeSingerId && vData.score) votes.push(vData.score); 
+            });
+            const audienceAvg = votes.length ? (votes.reduce((a, b) => a + b, 0) / votes.length) : 0;
+
+            const historyId = `${currentJudgeSingerId}_${round.replace(/\s+/g, '_')}`;
+            await db.collection('round_results').doc(historyId).set({
+                singerId: currentJudgeSingerId,
+                singerName: currentJudgeSingerName,
+                round: round,
+                judgeScores: scores,
+                audienceAvg: audienceAvg,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert('✅ Judge scores saved and archived for ' + round + '!');
         } catch(e) { alert('Error: ' + e.message); }
     };
 

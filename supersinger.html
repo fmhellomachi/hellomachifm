@@ -183,8 +183,131 @@
             color: var(--text-muted);
             font-style: italic;
         }
-        html { scroll-behavior: smooth; }
-        * { -webkit-tap-highlight-color: transparent; } /* Remove the tap square on mobile */
+        /* Skeleton Loader */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 12px;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Floating Hearts Animation */
+        .heart-float {
+            position: absolute;
+            bottom: 0;
+            color: #ff1493;
+            font-size: 1.5rem;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 100;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5) rotate(20deg); opacity: 0; }
+        }
+
+        /* Achievement Badges */
+        .badge-tag {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            z-index: 5;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-trending { background: linear-gradient(45deg, #ff4500, #ff8c00); color: white; }
+        .badge-judge { background: linear-gradient(45deg, #ffd700, #ff8c00); color: black; }
+
+        /* Search Bar Styles */
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .search-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 15px;
+            flex: 1;
+            min-width: 250px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .search-input:focus { border-color: var(--primary); }
+        .city-select {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 12px;
+            border-radius: 15px;
+            outline: none;
+        }
+        /* Voting Slider specific */
+        .voting-slider {
+            display: flex;
+            overflow-x: auto;
+            gap: 20px;
+            padding: 20px 10px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            scroll-behavior: smooth;
+        }
+        .voting-slider::-webkit-scrollbar { display: none; }
+        .voting-slider .participant-card {
+            flex: 0 0 300px;
+            scroll-snap-align: start;
+            margin-bottom: 0;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            .voting-slider .participant-card { flex: 0 0 260px; }
+        }
+
+        .slider-nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .nav-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-btn:hover { background: var(--primary); color: black; border-color: var(--primary); }
+
+        .city-select option { background: #111; color: white; }
+
+        /* Audio Visualizer */
+        .viz-bars { display: flex; align-items: flex-end; }
+        .v-bar { animation: barJump 0.5s ease-in-out infinite alternate; }
+        @keyframes barJump { 0% { height: 2px; } 100% { height: 100%; } }
+        .v-bar:nth-child(2n) { animation-delay: 0.1s; }
+        .v-bar:nth-child(3n) { animation-delay: 0.2s; }
         button:focus, a:focus { outline: none; }
     </style>
 </head>
@@ -381,11 +504,39 @@
             </div>
         </div>
 
-        <!-- Participants Grid -->
-        <div id="participants-grid" class="schedule-grid">
-            <!-- Cards will be injected here via JS -->
-            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">
-                <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Loading participants...
+        <!-- Search and Filter Section -->
+        <div class="filter-bar">
+            <input type="text" id="participant-search" class="search-input" placeholder="🔍 Search singer by name or ID..." oninput="handleFilter()">
+            <select id="city-filter" class="city-select" onchange="handleFilter()">
+                <option value="">All Cities</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Madurai">Madurai</option>
+                <option value="Coimbatore">Coimbatore</option>
+                <option value="Trichy">Trichy</option>
+                <option value="Salem">Salem</option>
+            </select>
+        </div>
+
+        <!-- Participants Voting Slider -->
+        <div style="position: relative;">
+            <div id="participants-grid" class="voting-slider">
+                <!-- Skeletons -->
+                <div class="participant-card" style="opacity: 0.5;">
+                    <div class="skeleton" style="width: 100%; aspect-ratio: 3/4; margin-bottom: 15px;"></div>
+                    <div class="skeleton" style="width: 70%; height: 20px; margin: 0 auto 10px;"></div>
+                    <div class="skeleton" style="width: 50%; height: 15px; margin: 0 auto;"></div>
+                </div>
+                <div class="participant-card" style="opacity: 0.5;">
+                    <div class="skeleton" style="width: 100%; aspect-ratio: 3/4; margin-bottom: 15px;"></div>
+                    <div class="skeleton" style="width: 70%; height: 20px; margin: 0 auto 10px;"></div>
+                    <div class="skeleton" style="width: 50%; height: 15px; margin: 0 auto;"></div>
+                </div>
+            </div>
+
+            <!-- Navigation Arrows -->
+            <div class="slider-nav">
+                <button class="nav-btn" onclick="scrollVoting(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="nav-btn" onclick="scrollVoting(1)"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
         </div>
     </section>

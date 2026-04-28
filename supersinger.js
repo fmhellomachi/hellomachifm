@@ -401,10 +401,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Get user's vote history from local storage
                 const hasVoted = localStorage.getItem(`voted_${id}`) === 'true';
 
+                // Achievement Badges logic
+                let badges = '';
+                if (votes > 20) badges += `<div class="badge-tag badge-trending"><i class="fa-solid fa-fire"></i> Trending</div>`;
+                if (data.status === 'Winner') badges += `<div class="badge-tag badge-judge"><i class="fa-solid fa-trophy"></i> Winner</div>`;
+                else if (["Round 3", "Final", "Semi-Final"].includes(data.status)) badges += `<div class="badge-tag badge-judge" style="background:linear-gradient(45deg, #7000ff, #ff00d2); color:white;"><i class="fa-solid fa-star"></i> Pro</div>`;
+
                 const card = document.createElement('div');
                 card.className = 'participant-card';
+                card.setAttribute('data-city', data.city || data.place || '');
                 card.innerHTML = `
-                    ${data.photoBase64 ? `<img src="${data.photoBase64}" class="participant-avatar-img" alt="${data.name}">` : `<div class="participant-avatar">${data.name.charAt(0).toUpperCase()}</div>`}
+                    ${badges}
+                    <div style="position:relative; overflow:hidden; border-radius:12px;">
+                        ${data.photoBase64 ? `<img src="${data.photoBase64}" class="participant-avatar-img" alt="${data.name}">` : `<div class="participant-avatar">${data.name.charAt(0).toUpperCase()}</div>`}
+                        <button onclick="sendApplause(this, '${id}')" style="position:absolute; bottom:10px; right:10px; background:rgba(255,20,147,0.9); border:none; color:white; width:36px; height:36px; border-radius:50%; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.5); z-index:10; display:flex; align-items:center; justify-content:center; transition:transform 0.1s;"><i class="fa-solid fa-heart"></i></button>
+                    </div>
                     <h3 class="participant-name">${data.name}</h3>
                     <div class="participant-bio">${data.bio ? data.bio.substring(0, 60) + '...' : 'Aspiring Singer'}</div>
                 <div style="font-family:monospace; font-size:0.8rem; color:var(--primary); margin-top:5px; font-weight:bold;">${data.participantId || ''}</div>
@@ -412,8 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${data.auditionLink ? `
                     <div class="audio-player-container" style="margin-top:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:12px;">
                         <audio id="audio-${id}" src="${data.auditionLink}" preload="none"></audio>
-                        <button onclick="toggleCardAudio('${id}')" class="btn btn-secondary" style="width:100%; font-size:0.8rem; padding:8px; border:1px solid rgba(255,255,255,0.1);">
+                        <button onclick="toggleCardAudio('${id}')" class="btn btn-secondary" style="width:100%; font-size:0.8rem; padding:8px; border:1px solid rgba(255,255,255,0.1); position:relative; overflow:hidden;">
                             <i class="fa-solid fa-play" id="icon-${id}"></i> LISTEN SONG
+                            <div class="viz-bars" id="viz-${id}" style="display:none; position:absolute; bottom:0; left:0; width:100%; height:4px; gap:2px; padding:0 5px;">
+                                ${Array.from({length: 15}).map(() => `<div class="v-bar" style="flex:1; background:var(--primary); height:2px;"></div>`).join('')}
+                            </div>
                         </button>
                     </div>
                 ` : ''}
@@ -445,23 +459,80 @@ document.addEventListener('DOMContentLoaded', () => {
     window.toggleCardAudio = (id) => {
         const audio = document.getElementById(`audio-${id}`);
         const icon = document.getElementById(`icon-${id}`);
+        const viz = document.getElementById(`viz-${id}`);
 
         if (currentPlayingId && currentPlayingId !== id) {
             const prevAudio = document.getElementById(`audio-${currentPlayingId}`);
             const prevIcon = document.getElementById(`icon-${currentPlayingId}`);
-            if (prevAudio) { prevAudio.pause(); prevIcon.className = 'fa-solid fa-play'; }
+            const prevViz = document.getElementById(`viz-${currentPlayingId}`);
+            if (prevAudio) { 
+                prevAudio.pause(); 
+                prevIcon.className = 'fa-solid fa-play'; 
+                if(prevViz) prevViz.style.display = 'none';
+            }
         }
 
         if (audio.paused) {
             audio.play();
             icon.className = 'fa-solid fa-pause';
+            if(viz) viz.style.display = 'flex';
             currentPlayingId = id;
         } else {
             audio.pause();
             icon.className = 'fa-solid fa-play';
+            if(viz) viz.style.display = 'none';
         }
         
-        audio.onended = () => { icon.className = 'fa-solid fa-play'; currentPlayingId = null; };
+        audio.onended = () => { 
+            icon.className = 'fa-solid fa-play'; 
+            if(viz) viz.style.display = 'none';
+            currentPlayingId = null; 
+        };
+    };
+
+    // --- VIRTUAL APPLAUSE (Floating Hearts) ---
+    window.sendApplause = (btn, id) => {
+        // Haptic feedback feel
+        btn.style.transform = 'scale(1.3)';
+        setTimeout(() => btn.style.transform = 'scale(1)', 100);
+
+        const container = btn.parentElement;
+        for(let i=0; i<3; i++) {
+            const heart = document.createElement('i');
+            heart.className = 'fa-solid fa-heart heart-float';
+            heart.style.left = (Math.random() * 60 + 20) + '%';
+            heart.style.fontSize = (Math.random() * 1 + 0.8) + 'rem';
+            heart.style.animationDelay = (i * 0.1) + 's';
+            container.appendChild(heart);
+            setTimeout(() => heart.remove(), 1000);
+        }
+    };
+
+    // --- SEARCH & FILTER ---
+    window.handleFilter = () => {
+        const searchTerm = document.getElementById('participant-search').value.toLowerCase();
+        const cityTerm = document.getElementById('city-filter').value;
+        const cards = document.querySelectorAll('.participant-card');
+        
+        cards.forEach(card => {
+            const name = card.querySelector('.participant-name').textContent.toLowerCase();
+            const pId = card.querySelector('[style*="monospace"]').textContent.toLowerCase();
+            const city = card.getAttribute('data-city') || '';
+            
+            const matchesSearch = name.includes(searchTerm) || pId.includes(searchTerm);
+            const matchesCity = cityTerm === "" || city === cityTerm;
+            
+            card.style.display = (matchesSearch && matchesCity) ? 'block' : 'none';
+        });
+    };
+
+    // --- VOTING SLIDER SCROLLING ---
+    window.scrollVoting = (direction) => {
+        const slider = document.getElementById('participants-grid');
+        if (slider) {
+            const scrollAmount = 320; // card width + gap
+            slider.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        }
     };
 
     // --- SHOUTOUTS LOGIC ---
@@ -627,9 +698,12 @@ async function checkStatus() {
                         <p style="font-size: 0.85rem; font-weight: bold; opacity: 0.7;">HELLO MACHI SUPER SINGER 2026</p>
                     </div>
                     
-                    <div class="no-print" style="margin-top: 30px;">
-                        <button onclick="downloadTicket()" class="btn" style="background: black; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; transition: transform 0.2s;">
+                    <div class="no-print" style="margin-top: 30px; display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                        <button onclick="downloadTicket()" class="btn" style="background: black; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; transition: transform 0.2s; width: 100%; max-width: 250px;">
                             <i class="fa-solid fa-download"></i> DOWNLOAD TICKET
+                        </button>
+                        <button onclick="shareSocialTicket()" class="btn" style="background: #e1306c; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; transition: transform 0.2s; width: 100%; max-width: 250px;">
+                            <i class="fa-brands fa-instagram"></i> INSTAGRAM SHARE
                         </button>
                     </div>
                 </div>
@@ -706,7 +780,18 @@ loadParticipantSlider();
 
 // --- DOWNLOAD TICKET FUNCTION ---
 window.downloadTicket = () => {
-    // We use a high-quality print approach with ticket-specific styling
-    // This allows the user to 'Save as PDF' which is the standard way to download official tickets.
     window.print();
+};
+
+// --- SOCIAL SHARE KIT ---
+window.shareSocialTicket = () => {
+    if (navigator.share) {
+        navigator.share({
+            title: 'My Golden Ticket! 🎫',
+            text: 'I just got selected for Hello Machi Super Singer 2026! Check out my Golden Ticket!',
+            url: window.location.href
+        }).catch(err => console.log('Share failed', err));
+    } else {
+        alert("📸 PRO TIP: Take a screenshot of your Golden Ticket to share it on your Instagram Story!");
+    }
 };

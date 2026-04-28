@@ -105,6 +105,83 @@
             .round-box { min-width: 100px; padding: 10px; font-size: 0.7rem; }
             .navbar .logo span { display: none; }
             .btn-accent { padding: 12px; font-size: 0.9rem; }
+            .participant-slider { gap: 15px; }
+            .p-card { flex: 0 0 140px; padding: 10px; }
+        }
+
+        /* Participant Slider Styles */
+        .participant-slider {
+            display: flex;
+            overflow-x: auto;
+            gap: 25px;
+            padding: 20px 5px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            cursor: grab;
+        }
+        .participant-slider::-webkit-scrollbar { display: none; }
+        .participant-slider:active { cursor: grabbing; }
+        
+        .p-card {
+            flex: 0 0 180px;
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 18px;
+            text-align: center;
+            scroll-snap-align: start;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        .p-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,215,0,0.05), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        .p-card:hover::before { transform: translateX(100%); }
+        .p-card:hover { 
+            transform: translateY(-10px); 
+            border-color: var(--primary); 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4), 0 0 15px rgba(255,215,0,0.1);
+        }
+        .p-card img {
+            width: 100%;
+            aspect-ratio: 3/4;
+            border-radius: 16px;
+            object-fit: cover;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: #000;
+        }
+        .p-card h3 { 
+            font-size: 1rem; 
+            margin-bottom: 6px; 
+            font-family: 'Outfit', sans-serif;
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            color: white;
+        }
+        .p-card p { 
+            font-size: 0.75rem; 
+            color: var(--text-muted); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 5px;
+        }
+        .slider-loading {
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
         }
         html { scroll-behavior: smooth; }
         * { -webkit-tap-highlight-color: transparent; } /* Remove the tap square on mobile */
@@ -142,6 +219,18 @@
             </div>
         </div>
     </header>
+
+    <section class="container mt-5" style="margin-bottom: 100px;">
+        <div class="section-header" style="text-align: center; margin-bottom: 30px;">
+            <h2 style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2rem;">MEET THE <span class="gradient-text">PARTICIPANTS</span></h2>
+            <p style="color: var(--text-muted); font-size: 1rem;">The talented voices of Super Singer 2026</p>
+        </div>
+        <div id="participant-slider" class="participant-slider">
+            <div class="slider-loading">
+                <i class="fa-solid fa-spinner fa-spin"></i> Loading our stars...
+            </div>
+        </div>
+    </section>
 
     <section class="container">
         <div class="registration-box">

@@ -651,6 +651,58 @@ async function checkStatus() {
     }
 }
 
+// --- LOAD PARTICIPANTS SLIDER ---
+async function loadParticipants() {
+    const slider = document.getElementById('participant-slider');
+    if (!slider) return;
+    
+    try {
+        // Fetch only approved/round-based participants (hide pending ones for privacy)
+        const snap = await db.collection('participants')
+            .where('status', 'not-in', ['pending', 'rejected'])
+            .get();
+            
+        if (snap.empty) {
+            slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Participations will be revealed soon!</p>';
+            return;
+        }
+        
+        slider.innerHTML = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'p-card';
+            card.innerHTML = `
+                <img src="${data.photoBase64 || 'logo.jpg'}" alt="${data.name}">
+                <h3>${data.name}</h3>
+                <p><i class="fa-solid fa-location-dot" style="font-size:0.7rem; color:var(--primary);"></i> ${data.city || data.place || 'Tamil Nadu'}</p>
+            `;
+            slider.appendChild(card);
+        });
+    } catch (e) {
+        console.error("Slider Error:", e);
+        // Fallback to simpler query if not-in index isn't ready
+        try {
+            const fallbackSnap = await db.collection('participants').limit(10).get();
+            slider.innerHTML = '';
+            fallbackSnap.forEach(doc => {
+                const data = doc.data();
+                const card = document.createElement('div');
+                card.className = 'p-card';
+                card.innerHTML = `
+                    <img src="${data.photoBase64 || 'logo.jpg'}" alt="${data.name}">
+                    <h3>${data.name}</h3>
+                    <p><i class="fa-solid fa-location-dot" style="font-size:0.7rem; color:var(--primary);"></i> ${data.city || data.place || 'Tamil Nadu'}</p>
+                `;
+                slider.appendChild(card);
+            });
+        } catch(e2) {
+            slider.innerHTML = '<p style="color:#666; width:100%; text-align:center;">Our stars are getting ready!</p>';
+        }
+    }
+}
+loadParticipants();
+
 // --- DOWNLOAD TICKET FUNCTION ---
 window.downloadTicket = () => {
     // We use a high-quality print approach with ticket-specific styling

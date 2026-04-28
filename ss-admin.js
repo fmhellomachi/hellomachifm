@@ -243,51 +243,150 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- History Logic ---
+    let historyAllItems = []; // cache for filter tabs
+
+    window.setHistoryFilter = (filter) => {
+        // Update button styles
+        ['all','scores','status','votes'].forEach(f => {
+            const btn = getEl(`hfilter-${f}`);
+            if (!btn) return;
+            btn.className = f === filter ? 'btn btn-primary' : 'btn btn-secondary';
+        });
+        renderHistoryFeed(filter);
+    };
+
+    function renderHistoryFeed(filter = 'all') {
+        const feed = getEl('history-feed');
+        if (!feed) return;
+
+        const items = filter === 'all'
+            ? historyAllItems
+            : historyAllItems.filter(i => i.type === filter);
+
+        if (items.length === 0) {
+            feed.innerHTML = `<div style="text-align:center;padding:40px;color:#555;">No ${filter === 'all' ? '' : filter + ' '}activity found.</div>`;
+            return;
+        }
+
+        const fmt = (ts) => ts ? ts.toDate().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Just now';
+
+        feed.innerHTML = items.map(item => {
+            if (item.type === 'scores') {
+                // Judge score submission
+                const judgeEntries = Object.entries(item.judgeScores || {})
+                    .map(([n,v]) => `<span style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);padding:2px 8px;border-radius:6px;font-size:0.75rem;"><strong style="color:#FFD700;">${n}</strong>: ${v.toFixed(1)}</span>`)
+                    .join(' ');
+                const vals = Object.values(item.judgeScores || {});
+                const avg = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : '—';
+                return `
+                    <div style="background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.15);border-left:4px solid #FFD700;border-radius:12px;padding:14px 18px;margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;">
+                            <div>
+                                <span style="font-size:0.65rem;font-weight:900;color:#FFD700;text-transform:uppercase;letter-spacing:1px;">📊 Score Submission</span>
+                                <div style="font-weight:900;font-size:1rem;color:#fff;margin-top:4px;">${item.singerName || '—'}</div>
+                                <div style="font-size:0.75rem;color:#888;margin-top:2px;">Round: <strong style="color:var(--primary);">${item.round || '—'}</strong> &nbsp;·&nbsp; Judge Avg: <strong style="color:#FFD700;">${avg} / 10</strong> &nbsp;·&nbsp; Audience: <strong style="color:#00BFFF;">${item.audienceAvg ? item.audienceAvg.toFixed(2) : '—'}</strong></div>
+                                <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">${judgeEntries}</div>
+                            </div>
+                            <div style="font-size:0.72rem;color:#555;white-space:nowrap;">${fmt(item.timestamp)}</div>
+                        </div>
+                    </div>`;
+
+            } else if (item.type === 'status') {
+                // Status change
+                const clr = item.status === 'Eliminated' ? '#ff4d4d' : item.status === 'Winner' ? '#FFD700' : item.status === 'waitlisted' ? '#00ffff' : '#FF1493';
+                return `
+                    <div style="background:rgba(255,20,147,0.04);border:1px solid rgba(255,20,147,0.12);border-left:4px solid ${clr};border-radius:12px;padding:14px 18px;margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;">
+                            <div>
+                                <span style="font-size:0.65rem;font-weight:900;color:${clr};text-transform:uppercase;letter-spacing:1px;">🔄 Status Change</span>
+                                <div style="font-weight:900;font-size:1rem;color:#fff;margin-top:4px;">${item.name || '—'}</div>
+                                <div style="font-size:0.75rem;color:#888;margin-top:2px;">
+                                    Moved to: <strong style="color:${clr};">${item.status}</strong>
+                                    &nbsp;·&nbsp; ID: <span style="font-family:monospace;color:#555;">${item.participantId || '—'}</span>
+                                </div>
+                            </div>
+                            <div style="font-size:0.72rem;color:#555;white-space:nowrap;">${fmt(item.timestamp)}</div>
+                        </div>
+                    </div>`;
+
+            } else if (item.type === 'votes') {
+                // Audience vote
+                return `
+                    <div style="background:rgba(0,191,255,0.03);border:1px solid rgba(0,191,255,0.1);border-left:4px solid #00BFFF;border-radius:12px;padding:12px 18px;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                            <div>
+                                <span style="font-size:0.65rem;font-weight:900;color:#00BFFF;text-transform:uppercase;letter-spacing:1px;">🗳️ Audience Vote</span>
+                                <div style="font-size:0.82rem;color:#ccc;margin-top:4px;">
+                                    Voter: <strong style="color:#fff;">${item.voterId || 'Anonymous'}</strong>
+                                    &nbsp;→&nbsp; Singer: <strong style="color:#FF1493;">${item.singerName || item.singerId || '—'}</strong>
+                                    &nbsp;·&nbsp; Score: <strong style="color:#00BFFF;">${item.score} / 10</strong>
+                                </div>
+                            </div>
+                            <div style="font-size:0.72rem;color:#555;white-space:nowrap;">${fmt(item.timestamp)}</div>
+                        </div>
+                    </div>`;
+            }
+            return '';
+        }).join('');
+    }
+
     window.fetchHistory = async () => {
-        const histBody = getEl('history-table-body');
-        const logsBody = getEl('vote-logs-body');
-        histBody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
-        logsBody.innerHTML = '<tr><td colspan="3" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading logs...</td></tr>';
+        const feed = getEl('history-feed');
+        if (feed) feed.innerHTML = '<div style="text-align:center;padding:40px;color:#888;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
 
         try {
-            // 1. Participant Score History
-            const pSnap = await db.collection('participants').orderBy('name', 'asc').get();
-            let histHtml = '';
-            pSnap.forEach(doc => {
-                const data = doc.data();
-                histHtml += `
-                    <tr>
-                        <td style="font-family:monospace;">${doc.id}</td>
-                        <td style="font-weight:bold;">${data.name}</td>
-                        <td><span class="badge badge-pending" style="color:#FFD700;border-color:#FFD700;background:rgba(255,215,0,0.1)">${(data.judgeScore || 0).toFixed(1)} / 10</span></td>
-                        <td><span class="badge badge-approved">${data.votes || 0} Votes</span></td>
-                        <td>${data.status}</td>
-                        <td>
-                            <button onclick="pushToStage('${doc.id}')" class="action-btn" style="background:var(--primary); color:black; font-weight:bold; font-size:0.7rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Push to Stage</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            histBody.innerHTML = histHtml || '<tr><td colspan="6" style="text-align:center;">No history found.</td></tr>';
+            // Build participant map for name lookups
+            const pSnap = await db.collection('participants').get();
+            const pMap = {};
+            pSnap.forEach(d => pMap[d.id] = d.data());
 
-            // 2. Vote Logs
-            const vSnap = await db.collection('votes_history').orderBy('timestamp', 'desc').limit(100).get();
-            let logsHtml = '';
-            vSnap.forEach(doc => {
-                const data = doc.data();
-                const timeStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
-                logsHtml += `
-                    <tr>
-                        <td style="font-size:0.8rem; color:#aaa;">${timeStr}</td>
-                        <td>${data.voterName} <br><span style="font-size:0.75rem; color:var(--primary);">${data.voterEmail}</span></td>
-                        <td style="font-family:monospace; color:#00ffff;">${data.participantId}</td>
-                    </tr>
-                `;
+            historyAllItems = [];
+
+            // 1. Round score submissions from round_results (newest first)
+            try {
+                const rrSnap = await db.collection('round_results').orderBy('timestamp', 'desc').limit(200).get();
+                rrSnap.forEach(d => {
+                    const data = d.data();
+                    historyAllItems.push({ type: 'scores', ...data, _ts: data.timestamp ? data.timestamp.toMillis() : 0 });
+                });
+            } catch(e) { /* collection may not exist yet */ }
+
+            // 2. Status changes: read from participants and surface recent status updates
+            //    We approximate by reading updatedAt on participants
+            pSnap.forEach(d => {
+                const data = d.data();
+                if (!data.status || data.status === 'pending') return;
+                historyAllItems.push({
+                    type: 'status',
+                    name: data.name,
+                    status: data.status,
+                    participantId: data.participantId,
+                    timestamp: data.updatedAt || data.createdAt || null,
+                    _ts: data.updatedAt ? data.updatedAt.toMillis() : 0
+                });
             });
-            logsBody.innerHTML = logsHtml || '<tr><td colspan="3" style="text-align:center;">No vote logs found.</td></tr>';
-        } catch (e) {
+
+            // 3. Audience votes (newest first, limit 100)
+            const vSnap = await db.collection('live_votes').orderBy('timestamp', 'desc').limit(100).get().catch(() => ({ forEach: ()=>{} }));
+            vSnap.forEach(d => {
+                const data = d.data();
+                const singer = pMap[data.singerId];
+                historyAllItems.push({
+                    type: 'votes',
+                    ...data,
+                    singerName: singer ? singer.name : data.singerId,
+                    _ts: data.timestamp ? data.timestamp.toMillis() : 0
+                });
+            });
+
+            // Sort ALL items newest first
+            historyAllItems.sort((a, b) => b._ts - a._ts);
+
+            renderHistoryFeed('all');
+
+        } catch(e) {
             console.error(e);
-            histBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Error loading history</td></tr>';
+            if (feed) feed.innerHTML = `<div style="text-align:center;padding:40px;color:red;">Error loading history: ${e.message}</div>`;
         }
     };
 

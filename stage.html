@@ -349,6 +349,25 @@
             db.collection('live_state').doc('current').onSnapshot(async (doc) => {
                 if (doc.exists) {
                     const data = doc.data();
+
+                    // ── RESET / IDLE STATE ─────────────────────────────────────
+                    if (!data.status || data.status === 'idle') {
+                        // Show standby screen, clear everything
+                        document.getElementById('singer-name').textContent = 'STANDBY';
+                        document.getElementById('p-id-display').textContent = 'Waiting for next performance...';
+                        document.getElementById('singer-place').textContent = '';
+                        document.getElementById('singer-photo').src = 'logo.jpg';
+                        document.getElementById('singer-photo-2').src = 'logo.jpg';
+                        document.getElementById('frame-2').style.display = 'none';
+                        document.getElementById('frame-1').style.width = 'clamp(250px, 60vh, 500px)';
+                        document.getElementById('frame-1').style.height = 'clamp(250px, 60vh, 500px)';
+                        document.getElementById('current-round').textContent = 'HELLO MACHI SUPER SINGER';
+                        document.getElementById('qr-overlay').style.display = 'none';
+                        document.getElementById('score-overlay').style.display = 'none';
+                        currentSinger1Id = null;
+                        return; // Don't process anything else for idle
+                    }
+
                     if (data.singer1 !== currentSinger1Id) { currentSinger1Id = data.singer1; }
                     
                     document.getElementById('current-round').textContent = data.round || 'LIVE PERFORMANCE';

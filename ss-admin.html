@@ -356,40 +356,21 @@
 
     <!-- History Panel -->
     <div id="view-history" style="display:none; padding:20px;">
-        <h3 style="color:var(--primary); margin-bottom:15px;"><i class="fa-solid fa-clock-rotate-left"></i> Participant Score History</h3>
-        <div class="table-container" style="margin-bottom: 40px;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Judge Avg</th>
-                        <th>Audience Votes</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="history-table-body">
-                    <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
-                </tbody>
-            </table>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+            <h3 style="color:var(--primary); margin:0;"><i class="fa-solid fa-clock-rotate-left"></i> Activity History Log</h3>
+            <button onclick="fetchHistory()" class="btn btn-secondary" style="font-size:0.8rem;"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
 
-        <h3 style="color:#00ffff; margin-bottom:15px;"><i class="fa-solid fa-users-viewfinder"></i> Audience Vote Logs</h3>
-        <p style="color:#888; font-size:0.85rem; margin-bottom:15px;">Detailed log of who voted for which participant.</p>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Voter Email / Name</th>
-                        <th>Voted For (Participant ID)</th>
-                    </tr>
-                </thead>
-                <tbody id="vote-logs-body">
-                    <tr><td colspan="3" style="text-align:center;">Loading logs...</td></tr>
-                </tbody>
-            </table>
+        <!-- Filter tabs -->
+        <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="hfilter-all" onclick="setHistoryFilter('all')">All Activity</button>
+            <button class="btn btn-secondary" id="hfilter-scores" onclick="setHistoryFilter('scores')">Score Submissions</button>
+            <button class="btn btn-secondary" id="hfilter-status" onclick="setHistoryFilter('status')">Status Changes</button>
+            <button class="btn btn-secondary" id="hfilter-votes" onclick="setHistoryFilter('votes')">Audience Votes</button>
+        </div>
+
+        <div id="history-feed">
+            <div style="text-align:center; padding:40px; color:#888;"><i class="fa-solid fa-spinner fa-spin"></i> Loading history...</div>
         </div>
     </div> <!-- End view-history -->
 

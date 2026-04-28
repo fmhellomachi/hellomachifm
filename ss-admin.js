@@ -28,36 +28,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup Auth Listener
     auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            let isAuthorized = false;
-            let isMaster = (user.email === 'fmhellomachi@gmail.com');
+        try {
+            if (user) {
+                let isAuthorized = false;
+                let isMaster = (user.email === 'fmhellomachi@gmail.com');
 
-            if (isMaster || AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
-                isAuthorized = true;
-            } else {
-                try {
-                    const adminDoc = await db.collection('admins').doc(user.email).get();
-                    if (adminDoc.exists) isAuthorized = true;
-                } catch (err) { console.error("Admin check failed", err); }
-            }
+                if (isMaster || AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
+                    isAuthorized = true;
+                } else {
+                    try {
+                        const adminDoc = await db.collection('admins').doc(user.email).get();
+                        if (adminDoc.exists) isAuthorized = true;
+                    } catch (err) { console.error("Admin check failed", err); }
+                }
 
-            if (isAuthorized) {
-                if(loginBtn) loginBtn.style.display = 'none';
-                if(adminUserInfo) adminUserInfo.style.display = 'flex';
-                if(adminName) adminName.textContent = user.displayName;
-                if(lockedContent) lockedContent.style.display = 'none';
-                if(adminContent) adminContent.style.display = 'block';
-                
-                switchMainTab('participants');
+                if (isAuthorized) {
+                    if(loginBtn) loginBtn.style.display = 'none';
+                    if(adminUserInfo) adminUserInfo.style.display = 'flex';
+                    if(adminName) adminName.textContent = user.displayName;
+                    if(lockedContent) lockedContent.style.display = 'none';
+                    if(adminContent) adminContent.style.display = 'block';
+                    
+                    switchMainTab('participants');
+                } else {
+                    auth.signOut();
+                    alert("Access Denied: " + user.email);
+                }
             } else {
-                auth.signOut();
-                alert("Access Denied: " + user.email);
+                if(loginBtn) loginBtn.style.display = 'block';
+                if(adminUserInfo) adminUserInfo.style.display = 'none';
+                if(lockedContent) lockedContent.style.display = 'block';
+                if(adminContent) adminContent.style.display = 'none';
             }
-        } else {
-            if(loginBtn) loginBtn.style.display = 'block';
-            if(adminUserInfo) adminUserInfo.style.display = 'none';
-            if(lockedContent) lockedContent.style.display = 'block';
-            if(adminContent) adminContent.style.display = 'none';
+        } catch (e) {
+            console.error("Auth Listener Error:", e);
         }
     });
 

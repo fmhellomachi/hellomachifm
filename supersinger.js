@@ -207,7 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    let currentUpdateDocId = null;
 
     if(form) {
         form.addEventListener('submit', async (e) => {

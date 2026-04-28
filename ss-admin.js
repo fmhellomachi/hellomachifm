@@ -448,7 +448,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <option value="Round 1" ${data.status==='Round 1'?'selected':''}>Round 1</option>
                                 <option value="Round 2" ${data.status==='Round 2'?'selected':''}>Round 2</option>
                                 <option value="Round 3" ${data.status==='Round 3'?'selected':''}>Round 3</option>
-                                <option value="Final" ${data.status==='Final'?'selected':''}>Final</option>
+                                <option value="Semi-Final" ${data.status==='Semi-Final'?'selected':''}>Semi-Final</option>
+                                <option value="Final Round" ${data.status==='Final Round'?'selected':''}>Final Round</option>
+                                <option value="Grand Finale" ${data.status==='Grand Finale'?'selected':''}>Grand Finale</option>
+                                <option value="Optional Round" ${data.status==='Optional Round'?'selected':''}>Optional Round</option>
                                 <option value="Winner" ${data.status==='Winner'?'selected':''}>Winner</option>
                                 <option value="Runner Up 1" ${data.status==='Runner Up 1'?'selected':''}>Runner Up 1</option>
                                 <option value="Runner Up 2" ${data.status==='Runner Up 2'?'selected':''}>Runner Up 2</option>
@@ -478,16 +481,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const updates = { status: s };
             
             // If advancing to a selection status and no ID exists, generate one
-            const selectionStatuses = ['approved', 'Round 1', 'Round 2', 'Round 3', 'Final', 'Winner', 'Runner Up 1', 'Runner Up 2', 'waitlisted'];
+            const selectionStatuses = ['approved', 'Round 1', 'Round 2', 'Round 3', 'Semi-Final', 'Final Round', 'Grand Finale', 'Optional Round', 'Winner', 'Runner Up 1', 'Runner Up 2', 'waitlisted'];
             if (selectionStatuses.includes(s) && !data.participantId) {
                 updates.participantId = await generateUniqueId();
             }
 
-            // Automatically trigger reveal ONLY for competitive transitions (not initial approval)
-            const revealTriggers = ['Round 1', 'Round 2', 'Round 3', 'Final', 'Winner', 'Runner Up 1', 'Runner Up 2', 'waitlisted', 'Eliminated'];
-            if (revealTriggers.includes(s)) {
-                updates.isRevealed = true;
-            }
+            // Automatically trigger reveal logic REMOVED based on user feedback. 
+            // Manual reveal via "Trigger Reveal" button is now required.
             
             await docRef.update(updates); 
             // ---- NO full reload — update the single row in-place ----
@@ -674,7 +674,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.toggleReveal = async (id, currentVal) => {
         try {
-            await db.collection("participants").doc(id).update({ isRevealed: !currentVal });
+            const updates = { isRevealed: !currentVal };
+            if (!currentVal) {
+                // If we are revealing, set a timestamp to force the animation on the wall
+                updates.lastRevealedAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
+            await db.collection("participants").doc(id).update(updates);
             fetchAdminData();
         } catch(e) {}
     };

@@ -68,41 +68,50 @@
         .badge-blue { background:rgba(0,210,255,0.15); color:#00d2ff; border:1px solid #00d2ff; }
 
         /* Reveal overlay */
-        #reveal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:2000; display:none; align-items:center; justify-content:center; }
+        #reveal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.96); z-index:2000; display:none; align-items:center; justify-content:center; flex-direction:column; }
         
-        .reveal-card { width:min(420px,90vw); padding:45px 35px; border-radius:28px; text-align:center; color:#000; animation:bigPop 0.7s cubic-bezier(0.175,0.885,0.32,1.275); }
+        .reveal-card { width:min(480px,92vw); padding:45px 35px; border-radius:28px; text-align:center; color:#000; animation:bigPop 0.7s cubic-bezier(0.175,0.885,0.32,1.275); position:relative; }
         .reveal-card.card-selected { background:linear-gradient(135deg,#FFD700,#FFA500,#B8860B); box-shadow:0 0 80px var(--gold),0 0 160px rgba(255,215,0,0.4); }
         .reveal-card.card-eliminated { background:linear-gradient(135deg,#5a0000,#ff0000,#8b0000); color:white; box-shadow:0 0 80px #ff0000,0 0 160px rgba(255,0,0,0.4); }
         .reveal-card.card-waitlisted { background:linear-gradient(135deg,#008b8b,#00ffff,#00ced1); color:black; box-shadow:0 0 80px #00ffff,0 0 160px rgba(0,255,255,0.4); }
 
         @keyframes bigPop { 0%{transform:scale(0.3) rotate(-6deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
-        .reveal-card img { width:150px; height:150px; border-radius:50%; border:6px solid #fff; display:block; margin:16px auto; object-fit:cover; box-shadow:0 8px 25px rgba(0,0,0,0.4); }
+        .reveal-card img { width:180px; height:180px; border-radius:50%; border:6px solid #fff; display:block; margin:16px auto; object-fit:cover; box-shadow:0 8px 25px rgba(0,0,0,0.4); }
+
+        /* Professional Unmute Overlay */
+        #unmute-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .unmute-btn-large {
+            background: var(--primary); color: white; border: none; padding: 25px 50px;
+            font-size: 1.5rem; font-weight: 900; border-radius: 60px; cursor: pointer;
+            box-shadow: 0 0 40px var(--primary); animation: unmutePulse 1.5s infinite;
+        }
+        @keyframes unmutePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1); box-shadow:0 0 60px var(--primary)} }
 
         /* Flash */
         .flash { position:fixed; inset:0; background:#fff; z-index:3000; opacity:0; pointer-events:none; }
         .flash.on { animation:flashfx 0.4s ease-out forwards; }
         @keyframes flashfx { 0%{opacity:1} 100%{opacity:0} }
 
-        /* Setup */
-        #setup-overlay { position:fixed; inset:0; background:linear-gradient(135deg,#050508,#1a0830); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; }
-        .btn-start { background:linear-gradient(135deg,#FFD700,#B8860B); color:#000; border:none; padding:18px 56px; font-size:1.3rem; font-weight:900; border-radius:50px; cursor:pointer; box-shadow:0 0 28px rgba(255,215,0,0.5); transition:transform 0.2s; font-family:'Outfit',sans-serif; }
-        .btn-start:hover { transform:scale(1.05); }
-
         /* Mobile */
         @media(max-width:768px){
-            body { overflow-y: auto; height: auto; }
-            .page { padding:10px; height: auto; min-height: 100dvh; }
-            .logo-img { width:52px; height:52px; }
-            .header { gap:12px; margin-bottom: 30px; }
-            .header-text { font-size:1.1rem; letter-spacing:1px; }
-            .round-badge { font-size: 0.75rem; padding: 3px 15px; bottom: -20px; }
-            .split-container { flex-direction:column; overflow:visible; gap: 40px; }
-            .split-zone { min-width:0; flex:none !important; min-height: 300px; }
-            .wall-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; overflow: visible; }
-            .p-avatar,.p-placeholder { width:70px; height:70px; font-size:1.6rem; }
-            .p-name { font-size:0.8rem; }
-            .reveal-card { padding:28px 18px; width: 95%; }
-            .reveal-card img { width:110px; height:110px; }
+            body { overflow-y: auto; height: auto; position: relative; }
+            .page { padding:15px; height: auto; min-height: 100vh; display: block; }
+            .header { margin-bottom: 40px; flex-direction: row; flex-wrap: wrap; }
+            .header-text { font-size:1.3rem; letter-spacing:1px; }
+            .logo-img { width:65px; height:65px; }
+            .round-badge { font-size: 0.8rem; padding: 4px 18px; bottom: -25px; white-space: nowrap; }
+            .split-container { display: flex; flex-direction:column; overflow:visible; gap: 30px; margin-top: 20px; }
+            .split-zone { min-width:0; flex:none !important; min-height: auto; padding: 10px; }
+            .wall-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; overflow: visible; display: grid !important; justify-content: center !important; }
+            .p-avatar,.p-placeholder { width:80px; height:80px; font-size:1.8rem; }
+            .p-name { font-size:0.85rem; }
+            .reveal-card { padding:30px 20px; width: 92vw; border-radius: 20px; }
+            .reveal-card img { width:140px; height:140px; }
+            .reveal-card h2 { font-size: 1.5rem !important; }
         }
     </style>
 </head>
@@ -147,14 +156,20 @@
 </div>
 
 <div id="reveal-overlay">
-    <button id="unmute-btn" onclick="unmuteAudio()" style="display:none; position:absolute; top:20px; right:20px; background:var(--primary); color:black; font-weight:bold; border:none; padding:10px 20px; border-radius:10px; z-index:99999; font-size:1.2rem; cursor:pointer; box-shadow:0 0 15px var(--primary);"><i class="fa-solid fa-volume-high"></i> UNMUTE SOUND</button>
     <div class="reveal-card" id="reveal-card">
         <i id="reveal-icon" class="fa-solid fa-trophy fa-3x"></i>
         <h3 id="reveal-title" style="font-size:1.1rem;letter-spacing:3px;margin:14px 0 0;">CONGRATULATIONS!</h3>
         <img id="reveal-img" src="" alt="">
-        <h2 id="reveal-name" style="font-size:1.9rem;font-weight:900;"></h2>
-        <div id="reveal-status" style="margin-top:12px;font-weight:900;font-size:1rem;border-top:2px solid rgba(0,0,0,0.2);padding-top:12px;"></div>
+        <h2 id="reveal-name" style="font-size:2.2rem;font-weight:900;"></h2>
+        <div id="reveal-status" style="margin-top:12px;font-weight:900;font-size:1.2rem;border-top:2px solid rgba(0,0,0,0.1);padding-top:12px;"></div>
     </div>
+</div>
+
+<div id="unmute-overlay">
+    <button class="unmute-btn-large" onclick="unmuteAudio()">
+        <i class="fa-solid fa-volume-high"></i> TAP TO ENABLE SOUND
+    </button>
+    <p style="color:white; margin-top:20px; font-weight:bold; letter-spacing:2px; opacity:0.7;">CINEMATIC AUDIO READY</p>
 </div>
 
 <audio id="audio-selected" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
@@ -163,8 +178,8 @@
 <audio id="audio-round1" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto"></audio>
 <audio id="audio-round2" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 <audio id="audio-round3" src="https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3" preload="auto"></audio>
-<audio id="audio-winner" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
-<audio id="audio-runnerup" src="https://assets.mixkit.co/active_storage/sfx/1434/1434-preview.mp3" preload="auto"></audio>
+<audio id="audio-winner" src="https://assets.mixkit.co/active_storage/sfx/2012/2012-preview.mp3" preload="auto"></audio>
+<audio id="audio-runnerup" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto"></audio>
 
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
@@ -195,7 +210,6 @@
     }
 
     function showReveal(p) {
-        if (lastReveal === p.id) return;
         lastReveal = p.id;
         flash();
         
@@ -208,7 +222,7 @@
 
         // Reset classes
         card.className = 'reveal-card';
-        overlay.style.background = 'rgba(0,0,0,0.94)';
+        overlay.style.background = 'rgba(0,0,0,0.96)';
 
         let audioPromise;
         if (statusLower === 'eliminated') {
@@ -216,7 +230,7 @@
             icon.className = 'fa-solid fa-heart-crack fa-3x';
             title.textContent = 'HARD LUCK!';
             statusText.textContent = 'ELIMINATED';
-            overlay.style.background = 'rgba(100,0,0,0.9)';
+            overlay.style.background = 'rgba(60,0,0,0.9)';
             audioPromise = document.getElementById('audio-eliminated').play();
         } else if (statusLower === 'waitlisted') {
             card.classList.add('card-waitlisted');
@@ -233,8 +247,8 @@
             
             audioPromise = document.getElementById(statusLower === 'winner' ? 'audio-winner' : 'audio-runnerup').play();
             
-            // The Great Bang! Massive confetti explosion from both sides
-            const duration = 3000;
+            // Continuous confetti for the winner
+            const duration = statusLower === 'winner' ? 6000 : 3000;
             const end = Date.now() + duration;
             (function frame() {
                 confetti({ particleCount: 15, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFD700','#B8860B','#fff'] });
@@ -246,12 +260,13 @@
             card.classList.add('card-selected');
             icon.className = 'fa-solid fa-trophy fa-3x';
             title.textContent = 'CONGRATULATIONS!';
-            statusText.textContent = `ADVANCED TO ${(p.status || '').toUpperCase()}`;
+            statusText.textContent = `SELECTED AND ADVANCED TO ${(p.status || '').toUpperCase()}`;
             
             let audioId = 'audio-selected';
-            if (statusLower === 'round 1') audioId = 'audio-round1';
-            else if (statusLower === 'round 2') audioId = 'audio-round2';
-            else if (statusLower === 'round 3') audioId = 'audio-round3';
+            const sClean = statusLower.replace(/\s/g, '');
+            if (sClean === 'round1') audioId = 'audio-round1';
+            else if (sClean === 'round2') audioId = 'audio-round2';
+            else if (sClean === 'round3') audioId = 'audio-round3';
             
             lastPlayedAudio = audioId;
             audioPromise = document.getElementById(audioId).play();
@@ -261,7 +276,7 @@
         if (audioPromise) {
             audioPromise.catch(e => {
                 console.log("Audio autoplay blocked by browser", e);
-                document.getElementById('unmute-btn').style.display = 'block';
+                document.getElementById('unmute-overlay').style.display = 'flex';
             });
         }
 
@@ -271,13 +286,13 @@
         
         setTimeout(() => { 
             overlay.style.display = 'none'; 
-            document.getElementById('unmute-btn').style.display = 'none';
-        }, 7000);
+            document.getElementById('unmute-overlay').style.display = 'none';
+        }, 8000);
     }
 
     let lastPlayedAudio = null;
     function unmuteAudio() {
-        document.getElementById('unmute-btn').style.display = 'none';
+        document.getElementById('unmute-overlay').style.display = 'none';
         if (lastPlayedAudio) {
             document.getElementById(lastPlayedAudio).play().catch(e=>console.log(e));
         } else {
@@ -432,14 +447,17 @@
             });
         }
 
-        // Trigger big reveal for newly isRevealed participants
+        // Trigger reveal for newly revealed participants or if a manual reveal timestamp is updated
         visible.forEach(p => {
-            // If it's not the initial page load, and the participant is newly revealed, show it!
-            if (!isInitialLoad && p.isRevealed === true && revealedState.get(p.id) !== true) {
+            const lastRevTime = p.lastRevealedAt ? (p.lastRevealedAt.toMillis ? p.lastRevealedAt.toMillis() : p.lastRevealedAt) : 0;
+            const knownRevTime = revealedState.get(p.id) || 0;
+
+            // Trigger if newly revealed OR if the manual reveal timestamp is newer than what we know
+            if (!isInitialLoad && p.isRevealed === true && lastRevTime > knownRevTime) {
                 setTimeout(() => showReveal(p), 600);
             }
-            // Track their current reveal state
-            revealedState.set(p.id, p.isRevealed === true);
+            // Store the timestamp we've seen
+            revealedState.set(p.id, lastRevTime);
         });
         
         isInitialLoad = false; // After first load, any changes can trigger a reveal

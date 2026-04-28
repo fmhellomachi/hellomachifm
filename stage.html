@@ -193,11 +193,20 @@
         .final-score-val { font-size: 7.5rem; font-weight: 900; background: linear-gradient(to bottom, #FFD700, #B8860B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         @media (max-width: 768px) {
+            body { overflow: auto; position: relative; height: auto; }
+            .stage-header { padding: 10px; gap: 15px; position: relative; top: 10px; }
+            .stage-header h1 { font-size: 1.2rem; letter-spacing: 2px; }
+            .header-logo { width: 50px; height: 50px; }
             .trophy-container { display: none; }
-            .singer-frame { width: 60vw; height: 60vw; margin-top: -10vh; }
-            .lower-thirds { padding: 15px; border-radius: 20px; }
+            .stage-main { height: auto; min-height: 80vh; padding: 40px 10px; justify-content: flex-start; gap: 30px; }
+            .stage-center { gap: 20px; }
+            .singer-frame { width: 75vw; height: 75vw; border-width: 4px; box-shadow: 0 0 30px var(--primary); }
+            .lower-thirds { position: relative; bottom: 0; width: 100%; padding: 20px; border-radius: 20px; margin-top: 20px; }
+            .singer-info h2 { font-size: 2.2rem; }
             .vote-header { font-size: 2.5rem; letter-spacing: 4px; }
             .qr-frame img { width: 70vw; height: 70vw; }
+            .qr-singer-card { width: 90vw; padding: 20px; }
+            #qr-overlay { flex-direction: column; gap: 30px; padding: 20px; overflow-y: auto; }
         }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
     </style>
@@ -430,9 +439,14 @@
         function updateSpotlights(round) {
             const lights = document.querySelectorAll('.spotlight');
             let color = 'rgba(255, 20, 147, 0.15)'; // Default Pink
-            if (round && round.includes('Selection')) color = 'rgba(0, 242, 255, 0.15)'; // Blue
-            if (round && round.includes('Round 2')) color = 'rgba(255, 215, 0, 0.15)'; // Gold
-            if (round && round.includes('Final')) color = 'rgba(255, 215, 0, 0.3)'; // Intense Gold
+            if (!round) return;
+            const r = round.toLowerCase();
+            if (r.includes('selection')) color = 'rgba(0, 242, 255, 0.15)'; // Blue
+            else if (r.includes('round 2')) color = 'rgba(255, 215, 0, 0.15)'; // Gold
+            else if (r.includes('round 3')) color = 'rgba(0, 255, 127, 0.15)'; // Spring Green
+            else if (r.includes('semi')) color = 'rgba(255, 0, 255, 0.2)'; // Magenta
+            else if (r.includes('final')) color = 'rgba(255, 215, 0, 0.35)'; // Intense Gold
+            else if (r.includes('optional')) color = 'rgba(255, 255, 255, 0.15)'; // White
             
             lights.forEach(l => l.style.background = `linear-gradient(to top, ${color}, transparent)`);
         }

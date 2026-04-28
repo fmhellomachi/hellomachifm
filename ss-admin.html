@@ -191,6 +191,7 @@
                 <li onclick="switchMainTab('live-control')" class="btn btn-secondary"><i class="fa-solid fa-tower-broadcast"></i> Live Control Room</li>
                 <li onclick="switchMainTab('history')" class="btn btn-secondary"><i class="fa-solid fa-clock-rotate-left"></i> History Logs</li>
                 <li onclick="switchMainTab('wall-of-fame')" class="btn btn-secondary"><i class="fa-solid fa-tv"></i> Wall of Fame Controls</li>
+                <a href="marks.html" target="_blank" class="btn btn-secondary"><i class="fa-solid fa-square-poll-vertical"></i> View Results</a>
                 <a href="walloffame.html" target="_blank" class="btn btn-secondary"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Wall</a>
             </div>
         </div>
@@ -203,7 +204,10 @@
                     <button class="btn btn-secondary" onclick="filterTable('Round 1')">Round 1</button>
                     <button class="btn btn-secondary" onclick="filterTable('Round 2')">Round 2</button>
                     <button class="btn btn-secondary" onclick="filterTable('Round 3')">Round 3</button>
-                    <button class="btn btn-secondary" onclick="filterTable('Final')">Final</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Semi-Final')">Semi-Final</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Final Round')">Final Round</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Grand Finale')">Grand Finale</button>
+                    <button class="btn btn-secondary" onclick="filterTable('Optional Round')">Optional Round</button>
                     <button class="btn btn-secondary" onclick="filterTable('waitlisted')">Waitlist</button>
                     <button class="btn btn-secondary" onclick="filterTable('Eliminated')">Eliminated</button>
                 </div>
@@ -249,8 +253,10 @@
                         <option value="Round 1">Round 1: Solo</option>
                         <option value="Round 2">Round 2: Duet</option>
                         <option value="Round 3">Round 3: Battle</option>
-                        <option value="Round 4">Semi-Final</option>
-                        <option value="Final">Grand Finale</option>
+                        <option value="Semi-Final">Semi-Final</option>
+                        <option value="Final Round">Final Round</option>
+                        <option value="Grand Finale">Grand Finale</option>
+                        <option value="Optional Round">Optional Round</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -533,7 +539,10 @@
                         <option value="Round 1">Round 1</option>
                         <option value="Round 2">Round 2</option>
                         <option value="Round 3">Round 3</option>
-                        <option value="Final">Final</option>
+                        <option value="Semi-Final">Semi-Final</option>
+                        <option value="Final Round">Final Round</option>
+                        <option value="Grand Finale">Grand Finale</option>
+                        <option value="Optional Round">Optional Round</option>
                         <option value="Winner">Winner</option>
                         <option value="Runner Up 1">Runner Up 1</option>
                         <option value="Runner Up 2">Runner Up 2</option>

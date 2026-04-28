@@ -429,7 +429,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!hasApproved) {
                 participantsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">The voting arena is getting ready. Check back soon!</div>';
+            } else {
+                // Attach vote listeners ONLY if we have participants
+                document.querySelectorAll('.vote-btn').forEach(btn => {
+                    btn.addEventListener('click', handleVote);
+                });
             }
+        } catch (error) {
+            console.error("Error loading participants:", error);
+            participantsGrid.innerHTML = '❌ Error loading data.';
+        }
+    }
+
     // --- AUDIO CONTROL ---
     let currentPlayingId = null;
     window.toggleCardAudio = (id) => {
@@ -456,8 +467,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- SHOUTOUTS LOGIC ---
     window.sendShoutout = async () => {
-        const to = getEl('shoutout-to').value;
-        const msg = getEl('shoutout-msg').value;
+        const to = document.getElementById('shoutout-to').value;
+        const msg = document.getElementById('shoutout-msg').value;
         if(!to || !msg) return alert("Please fill both fields");
         
         try {
@@ -466,23 +477,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 message: msg,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            getEl('shoutout-to').value = '';
-            getEl('shoutout-msg').value = '';
-            getEl('shoutout-feedback').style.display = 'block';
-            setTimeout(() => getEl('shoutout-feedback').style.display = 'none', 3000);
+            document.getElementById('shoutout-to').value = '';
+            document.getElementById('shoutout-msg').value = '';
+            document.getElementById('shoutout-feedback').style.display = 'block';
+            setTimeout(() => document.getElementById('shoutout-feedback').style.display = 'none', 3000);
         } catch(e) { console.error(e); }
     };
-
-            // Attach vote listeners
-            document.querySelectorAll('.vote-btn').forEach(btn => {
-                btn.addEventListener('click', handleVote);
-            });
-
-        } catch (error) {
-            console.error("Error fetching participants: ", error);
-            participantsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: red;">Error loading participants.</div>';
-        }
-    }
 
     // Handle Vote Click
     async function handleVote(e) {

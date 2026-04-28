@@ -119,32 +119,74 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Live Control Room Logic ---
+    let allLiveParticipants = []; // cache all participants
+
+    function populateSingerDropdowns(round) {
+        const s1 = getEl('live-singer-1');
+        const s2 = getEl('live-singer-2');
+        if (!s1 || !s2) return;
+
+        // Filter to only participants in the selected round
+        const filtered = allLiveParticipants.filter(p => p.status === round);
+
+        let opts = '<option value="">-- Select Participant --</option>';
+        filtered.forEach(p => {
+            opts += `<option value="${p.id}">${p.name}</option>`;
+        });
+
+        if (filtered.length === 0) {
+            opts = `<option value="">-- No participants in ${round} --</option>`;
+        }
+
+        s1.innerHTML = opts;
+        s2.innerHTML = opts.replace('-- Select Participant --', '-- Optional Secondary --');
+    }
+
     async function fetchParticipantsForLive() {
         const s1 = getEl('live-singer-1');
         const s2 = getEl('live-singer-2');
+        const roundSel = getEl('live-round');
         if (!s1 || !s2) return;
 
         s1.innerHTML = '<option value="">Loading...</option>';
         s2.innerHTML = '<option value="">Loading...</option>';
 
         try {
+            // Load all participants into cache
             const snap = await db.collection('participants').orderBy('name', 'asc').get();
-            let options = '<option value="">-- Select Participant --</option>';
-            snap.forEach(doc => {
-                const data = doc.data();
-                options += `<option value="${doc.id}">${data.name} (${data.status})</option>`;
-            });
-            s1.innerHTML = options;
-            s2.innerHTML = options.replace('-- Select Participant --', '-- Optional Secondary --');
+            allLiveParticipants = [];
+            snap.forEach(doc => allLiveParticipants.push({ id: doc.id, ...doc.data() }));
 
+            // Restore saved live state
             const stateDoc = await db.collection('live_state').doc('current').get();
+            let savedRound = 'Round 1';
+            let savedS1 = '';
+            let savedS2 = '';
             if (stateDoc.exists) {
                 const state = stateDoc.data();
-                if(getEl('live-round')) getEl('live-round').value = state.round || "1";
-                s1.value = state.singer1 || "";
-                s2.value = state.singer2 || "";
+                savedRound = state.round || 'Round 1';
+                savedS1 = state.singer1 || '';
+                savedS2 = state.singer2 || '';
                 updateVotingUI(state.votingOpen);
             }
+
+            // Set round dropdown to saved value
+            if (roundSel) roundSel.value = savedRound;
+
+            // Populate singers for that round
+            populateSingerDropdowns(savedRound);
+
+            // Restore previous selections if still valid for this round
+            if (savedS1) s1.value = savedS1;
+            if (savedS2) s2.value = savedS2;
+
+            // Re-populate singers whenever round changes
+            if (roundSel) {
+                roundSel.onchange = () => {
+                    populateSingerDropdowns(roundSel.value);
+                };
+            }
+
         } catch (err) { console.error(err); }
     }
 

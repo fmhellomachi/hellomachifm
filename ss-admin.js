@@ -562,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td style="text-align:center;"><input type="checkbox" class="participant-checkbox" value="${id}" onclick="updateSelectedCount()"></td>
                     <td data-label="S.NO" style="color:#888; font-family:monospace; font-size:0.85rem;">${sNo}</td>
                     <td data-label="ID" style="color:var(--primary); font-weight:bold; font-family:monospace;">${data.participantId || '---'}</td>
-                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" style="width:60px;height:60px;border-radius:8px;object-fit:contain;background:#000;border:1px solid #333;">` : `<div style="width:60px;height:60px;border-radius:8px;background:#333;display:flex;align-items:center;justify-content:center;">${data.name ? data.name.charAt(0) : '?'}</div>`}</td>
+                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" style="width:90px;height:90px;border-radius:10px;object-fit:contain;background:#000;border:1px solid #333;box-shadow:0 4px 10px rgba(0,0,0,0.3);">` : `<div style="width:90px;height:90px;border-radius:10px;background:#333;display:flex;align-items:center;justify-content:center;">${data.name ? data.name.charAt(0) : '?'}</div>`}</td>
                     <td data-label="NAME">
                         <strong>${data.name || 'Unknown'}</strong><br>
                         ${ph ? `<a href="https://wa.me/${ph}?text=${encodedMsg}" target="_blank" style="color:#25D366;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> Notify WhatsApp</a>` : ''}
@@ -762,13 +762,13 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onload = (ev) => {
                 // Compress to 250x250
                 const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800;
-                    const MAX_HEIGHT = 800;
+                        const canvas = document.createElement('canvas');
+                    // Use higher resolution and preserve aspect ratio
+                    const MAX_WIDTH = 1200;
+                    const MAX_HEIGHT = 1200;
                     let width = img.width;
                     let height = img.height;
-
+ 
                     if (width > height) {
                         if (width > MAX_WIDTH) {
                             height *= MAX_WIDTH / width;
@@ -784,10 +784,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    editPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+                    editPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
                     editPhotoPreview.src = editPhotoBase64;
                     editPhotoPreview.style.display = 'block';
-                    editPhotoPreview.style.borderRadius = '12px'; // Rounded corners instead of circle
+                    editPhotoPreview.style.borderRadius = '12px';
+                    editPhotoPreview.style.objectFit = 'contain';
+                    editPhotoPreview.style.background = '#000';
                 };
                 img.src = ev.target.result;
             };

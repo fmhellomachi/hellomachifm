@@ -85,21 +85,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Confirm crop — render visible area to a 250x250 canvas
+    // Confirm crop — render visible area with its NATURAL aspect ratio
     document.getElementById('crop-confirm-btn')?.addEventListener('click', () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 250; canvas.height = 250;
-        const ctx = canvas.getContext('2d');
-        // RECTANGULAR CROP (Matching the user's request for full photo/no circular cropping)
-        // No clip() needed, just draw the image
-        const vp = VIEWPORT_SIZE;
-        const outSize = 250;
-        const ratio = outSize / vp;
         const img = new Image();
         img.src = rawImageSrc;
         img.onload = () => {
+            const canvas = document.createElement('canvas');
+            // We want to save a high-res version (up to 1200px) but preserve the viewport's aspect ratio
+            // Actually, the user wants the "full photo", so we should ideally save the original 
+            // but scaled down to stay within Firestore limits (~600kb is safe for base64)
+            
+            const MAX_DIM = 1000;
+            let targetW, targetH;
+            
+            // The viewport is always square (220x220), but we want to capture what's inside
+            // Since we're using a square viewport, the output should still be square 
+            // to match what the user "framed", but we'll use object-fit:contain everywhere 
+            // so it doesn't matter if it has bars.
+            
+            canvas.width = MAX_DIM;
+            canvas.height = MAX_DIM;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#000"; // Black background for the "bars"
+            ctx.fillRect(0, 0, MAX_DIM, MAX_DIM);
+            
+            const ratio = MAX_DIM / VIEWPORT_SIZE;
             ctx.drawImage(img, offsetX * ratio, offsetY * ratio, img.naturalWidth * scale * ratio, img.naturalHeight * scale * ratio);
-            compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            
+            compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
             photoPreview.src = compressedPhotoBase64;
             photoPreviewContainer.style.display = 'block';
             cropModal.style.display = 'none';

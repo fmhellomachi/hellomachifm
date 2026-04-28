@@ -3,97 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RESULTS | HELLO MACHI SUPER SINGER</title>
+    <title>SUPER SINGER RESULTS | HELLO MACHI FM</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #FF1493; --gold: #FFD700; --bg-dark: #050508; --glass: rgba(255, 255, 255, 0.05); }
+        :root { --primary: #FF1493; --gold: #FFD700; --bg: #050508; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg-dark); color: white; min-height: 100vh; padding-bottom: 60px; }
+        body { font-family:'Outfit',sans-serif; background:var(--bg); color:white; min-height:100vh; padding-bottom:60px; }
 
-        .page-container { max-width: 1300px; margin: 0 auto; padding: 20px; }
+        .wrap { max-width:1400px; margin:0 auto; padding:24px 16px; }
 
-        header { text-align: center; margin-bottom: 35px; padding: 30px 0 25px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .logo { width: 75px; height: 75px; border-radius: 50%; border: 3px solid var(--gold); margin-bottom: 14px; box-shadow: 0 0 20px rgba(255,215,0,0.3); }
-        h1 { font-size: 2.4rem; font-weight: 900; letter-spacing: 5px; background: linear-gradient(to bottom, #FFD700, #B8860B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .subtitle { color: #555; letter-spacing: 3px; font-size: 0.85rem; margin-top: 8px; text-transform: uppercase; }
+        header { text-align:center; padding:28px 0 22px; margin-bottom:30px; border-bottom:1px solid rgba(255,255,255,0.06); }
+        .logo { width:70px; height:70px; border-radius:50%; border:3px solid var(--gold); box-shadow:0 0 20px rgba(255,215,0,0.3); }
+        h1 { font-size:2.2rem; font-weight:900; letter-spacing:5px; background:linear-gradient(to bottom,#FFD700,#B8860B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-top:12px; }
+        .sub { color:#555; letter-spacing:3px; font-size:0.8rem; margin-top:6px; }
 
-        .round-section { margin-bottom: 50px; animation: fadeIn 0.6s ease both; }
-        .round-title {
-            font-size: 1.6rem; font-weight: 900; color: var(--primary); margin-bottom: 18px;
-            display: flex; align-items: center; gap: 14px; text-transform: uppercase; letter-spacing: 2px;
-        }
-        .round-title::after { content: ""; flex: 1; height: 1px; background: rgba(255,20,147,0.2); }
+        /* Note banner */
+        .note { background:rgba(255,20,147,0.08); border:1px solid rgba(255,20,147,0.2); border-radius:12px; padding:12px 18px; font-size:0.82rem; color:#aaa; margin-bottom:28px; display:flex; gap:10px; align-items:flex-start; }
+        .note i { color:var(--primary); margin-top:2px; flex-shrink:0; }
 
-        .table-wrapper {
-            background: rgba(255,255,255,0.03); border-radius: 18px;
-            border: 1px solid rgba(255,255,255,0.08); overflow-x: auto;
-            backdrop-filter: blur(12px);
-        }
-        table { width: 100%; border-collapse: collapse; min-width: 750px; }
-        th, td { padding: 16px 18px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
-        thead tr { background: rgba(0,0,0,0.35); }
-        th { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
-        tbody tr:hover { background: rgba(255,255,255,0.02); }
-        tbody tr:last-child td { border-bottom: none; }
+        /* Table */
+        .table-scroll { overflow-x:auto; border-radius:18px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); backdrop-filter:blur(12px); }
+        table { width:100%; border-collapse:collapse; min-width:900px; }
+        thead tr { background:rgba(0,0,0,0.4); }
+        th { padding:14px 16px; font-size:0.72rem; color:#666; text-transform:uppercase; letter-spacing:1.5px; font-weight:700; white-space:nowrap; }
+        td { padding:16px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:top; }
+        tbody tr:last-child td { border-bottom:none; }
+        tbody tr:hover { background:rgba(255,255,255,0.02); }
+        .tie-row { background:rgba(255,20,147,0.06) !important; border-left:3px solid var(--primary); }
 
-        .singer-cell { display: flex; align-items: center; gap: 14px; }
-        .singer-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); flex-shrink: 0; }
-        .singer-info b { font-size: 0.95rem; color: #fff; display: block; line-height: 1.3; }
-        .singer-info p { font-size: 0.7rem; color: #555; font-family: monospace; margin-top: 2px; }
+        /* Singer cell */
+        .singer-cell { display:flex; align-items:center; gap:12px; }
+        .avatar { width:46px; height:46px; border-radius:50%; object-fit:cover; border:2px solid var(--gold); flex-shrink:0; }
+        .singer-name { font-weight:900; font-size:0.95rem; color:#fff; }
+        .singer-id { font-size:0.68rem; color:#555; font-family:monospace; margin-top:2px; }
+        .status-chip { display:inline-block; font-size:0.6rem; font-weight:900; padding:2px 8px; border-radius:6px; margin-top:4px; background:rgba(255,20,147,0.15); color:var(--primary); border:1px solid rgba(255,20,147,0.3); letter-spacing:0.5px; }
 
-        /* Judge score pills */
-        .judge-scores { display: flex; flex-wrap: wrap; gap: 5px; }
-        .judge-pill {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px; padding: 3px 9px; font-size: 0.72rem; color: #ccc;
-        }
-        .judge-pill strong { color: var(--gold); }
+        /* Rank */
+        .rank { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; font-weight:900; font-size:0.88rem; background:rgba(255,255,255,0.07); }
+        .r1 { background:linear-gradient(135deg,#FFD700,#B8860B); color:#000; box-shadow:0 0 16px rgba(255,215,0,0.5); }
+        .r2 { background:linear-gradient(135deg,#C0C0C0,#888); color:#000; }
+        .r3 { background:linear-gradient(135deg,#CD7F32,#8B4513); color:#000; }
 
-        .score-cell { font-weight: 700; font-size: 1rem; color: #eee; }
-        .audience-cell { font-weight: 700; font-size: 1rem; color: #00BFFF; }
-        .total-cell { font-weight: 900; font-size: 1.25rem; color: var(--gold); text-shadow: 0 0 12px rgba(255,215,0,0.35); }
+        /* Round boxes */
+        .round-box { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:9px 11px; margin-bottom:6px; min-width:180px; }
+        .round-box:last-child { margin-bottom:0; }
+        .round-label { font-size:0.62rem; font-weight:900; color:var(--primary); text-transform:uppercase; letter-spacing:1px; margin-bottom:5px; display:block; }
+        .judge-pills { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px; }
+        .pill { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:2px 7px; font-size:0.68rem; color:#ccc; }
+        .pill strong { color:var(--gold); }
+        .score-row { display:flex; gap:14px; font-size:0.72rem; }
+        .score-row span { color:#666; }
+        .score-row b { color:#ccc; }
+        .score-row .sub-tot { color:var(--gold); font-weight:900; }
+        .no-data { font-size:0.72rem; color:#444; font-style:italic; }
 
-        .rank-badge {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 32px; height: 32px; border-radius: 50%;
-            background: rgba(255,255,255,0.08); font-weight: 900; font-size: 0.9rem;
-        }
-        .rank-1 { background: linear-gradient(135deg,#FFD700,#B8860B); color: #000; box-shadow: 0 0 18px rgba(255,215,0,0.6); }
-        .rank-2 { background: linear-gradient(135deg,#C0C0C0,#888); color: #000; }
-        .rank-3 { background: linear-gradient(135deg,#CD7F32,#8B4513); color: #000; }
+        /* Overall */
+        .overall { font-size:1.5rem; font-weight:900; color:var(--gold); text-shadow:0 0 14px rgba(255,215,0,0.4); }
+        .tie-note { font-size:0.62rem; color:var(--primary); display:block; margin-top:4px; font-weight:700; }
 
-        .tie-row { background: rgba(255,20,147,0.06) !important; border-left: 3px solid var(--primary); }
-        .tie-note { font-size: 0.65rem; color: var(--primary); display: block; margin-top: 3px; font-weight: 700; }
+        /* Loading / empty */
+        .state-box { text-align:center; padding:80px 0; }
+        .state-box i { font-size:2.5rem; color:var(--primary); }
+        .state-box p { margin-top:16px; color:#555; }
 
-        .loading-state { text-align: center; padding: 80px 0; }
-        .spinner { font-size: 2.5rem; color: var(--primary); }
-        .empty-state { text-align: center; padding: 60px; color: #444; font-size: 0.95rem; }
-
-        @keyframes fadeIn { from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:translateY(0)} }
-
-        @media (max-width: 768px) {
-            .page-container { padding: 12px; }
-            h1 { font-size: 1.7rem; letter-spacing: 3px; }
-            th, td { padding: 10px 10px; }
-            .round-title { font-size: 1.2rem; }
-            .total-cell { font-size: 1rem; }
+        @media(max-width:768px) {
+            h1 { font-size:1.6rem; }
+            th,td { padding:10px 8px; }
         }
     </style>
 </head>
 <body>
-
-<div class="page-container">
+<div class="wrap">
     <header>
         <img src="logo.jpg" class="logo" alt="Hello Machi FM">
         <h1>SUPER SINGER RESULTS</h1>
-        <div class="subtitle">Official Performance Leaderboard</div>
+        <div class="sub">Official Performance Leaderboard</div>
     </header>
 
+    <div class="note">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>
+            <strong style="color:white;">How scores work:</strong> Each row shows one participant.
+            The <em>"Stage-wise Performance"</em> column shows their score from every round they competed in — prefixed with the round name.
+            Judge average (60%) + Audience average (40%) = Round subtotal.
+            The <em>"Overall Score"</em> is the sum of all round subtotals.
+        </span>
+    </div>
+
     <div id="results-container">
-        <div class="loading-state">
-            <i class="fa-solid fa-spinner fa-spin spinner"></i>
-            <p style="margin-top:18px; color:#555;">Loading performance data...</p>
+        <div class="state-box">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Loading performance data...</p>
         </div>
     </div>
 </div>
@@ -101,210 +102,181 @@
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-
 <script>
-    // Round display order (newest/highest first)
-    const ROUND_ORDER = ['Winner', 'Runner Up 1', 'Runner Up 2', 'Grand Finale', 'Final Round', 'Semi-Final', 'Round 3', 'Round 2', 'Round 1', 'approved'];
+const ROUND_ORDER = ['Round 1','Round 2','Round 3','Semi-Final','Final Round','Grand Finale','Optional Round','Winner','Runner Up 1','Runner Up 2'];
 
-    async function fetchAndRender() {
-        const container = document.getElementById('results-container');
+async function render() {
+    const container = document.getElementById('results-container');
+    try {
+        // ── Fetch everything in parallel ──────────────────────────────────────
+        const [pSnap, jSnap, vSnap, rrSnap] = await Promise.all([
+            db.collection('participants').get(),
+            db.collection('judge_scores').get(),
+            db.collection('live_votes').get(),
+            db.collection('round_results').get().catch(() => ({ forEach: () => {} }))
+        ]);
 
-        try {
-            // ── 1. Participants ─────────────────────────────────────────────
-            const pSnap = await db.collection('participants').get();
-            const participants = [];
-            const pMap = {};
-            pSnap.forEach(doc => {
-                const d = { id: doc.id, ...doc.data() };
-                participants.push(d);
-                pMap[doc.id] = d;
+        // Build participant map
+        const pMap = {};
+        pSnap.forEach(d => pMap[d.id] = { id: d.id, ...d.data() });
+
+        // Build judge scores map { singerId: { scores, round } }
+        const judgeMap = {};
+        jSnap.forEach(d => judgeMap[d.id] = d.data());
+
+        // Build audience votes map { singerId: [scores] }
+        const voteMap = {};
+        vSnap.forEach(d => {
+            const { singerId, score } = d.data();
+            if (!singerId || !score) return;
+            if (!voteMap[singerId]) voteMap[singerId] = [];
+            voteMap[singerId].push(score);
+        });
+        const audAvg = sid => {
+            const v = voteMap[sid] || [];
+            return v.length ? v.reduce((a,b)=>a+b,0)/v.length : 0;
+        };
+
+        // Build historical round_results map { singerId: [entries] }
+        const rrMap = {};
+        rrSnap.forEach(d => {
+            const data = d.data();
+            if (!rrMap[data.singerId]) rrMap[data.singerId] = [];
+            rrMap[data.singerId].push(data);
+        });
+
+        // ── Build per-participant performance list ─────────────────────────
+        const singers = [];
+        Object.values(pMap).forEach(p => {
+            const st = p.status || '';
+            if (!st || st === 'pending' || st === 'Eliminated' || st === 'waitlisted' || st === 'approved') return;
+
+            // Collect round performances from round_results (historical, archived)
+            const archived = (rrMap[p.id] || []).map(h => {
+                const vals = Object.values(h.judgeScores || {});
+                const jAvg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+                const aAvg = h.audienceAvg || 0;
+                return { round: h.round, judgeScores: h.judgeScores || {}, jAvg, aAvg, subtotal: jAvg*0.6 + aAvg*0.4 };
             });
 
-            // ── 2. Judge scores (per-singer, current) ──────────────────────
-            const jSnap = await db.collection('judge_scores').get();
-            const judgeMap = {};          // { singerId: { scores:{}, round:'' } }
-            jSnap.forEach(doc => { judgeMap[doc.id] = doc.data(); });
+            // Also check current judge_scores entry
+            const currentJ = judgeMap[p.id];
+            const performances = [...archived];
 
-            // ── 3. Historical round_results (if any) ───────────────────────
-            let roundResultsMap = {};     // { singerId: [ {round, judgeScores, audienceAvg} ] }
-            try {
-                const rrSnap = await db.collection('round_results').get();
-                rrSnap.forEach(doc => {
-                    const d = doc.data();
-                    if (!roundResultsMap[d.singerId]) roundResultsMap[d.singerId] = [];
-                    roundResultsMap[d.singerId].push(d);
-                });
-            } catch(e) { /* collection may not exist yet */ }
-
-            // ── 4. Audience votes ──────────────────────────────────────────
-            const vSnap = await db.collection('live_votes').get();
-            const votesBySinger = {};     // { singerId: [scores] }
-            vSnap.forEach(doc => {
-                const d = doc.data();
-                const sid = d.singerId || d.id;
-                if (!sid) return;
-                if (!votesBySinger[sid]) votesBySinger[sid] = [];
-                if (d.score) votesBySinger[sid].push(d.score);
-            });
-            const audienceAvg = (sid) => {
-                const v = votesBySinger[sid] || [];
-                return v.length ? v.reduce((a,b)=>a+b,0)/v.length : 0;
-            };
-
-            // ── 5. Group participants by their current status (round) ──────
-            const roundGroups = {};
-            participants.forEach(p => {
-                const round = p.status;
-                if (!round || round === 'pending' || round === 'Eliminated' || round === 'waitlisted') return;
-                if (!roundGroups[round]) roundGroups[round] = [];
-
-                // Prefer historical data if it exists
-                const history = roundResultsMap[p.id] || [];
-
-                // Build per-round performance from history
-                let roundPerformances = history.map(h => {
-                    const vals = Object.values(h.judgeScores || {});
-                    const jAvg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
-                    const aAvg = h.audienceAvg || 0;
-                    return { round: h.round, judgeScores: h.judgeScores || {}, jAvg, aAvg, total: jAvg*0.6 + aAvg*0.4 };
-                });
-
-                // If no history, fall back to current judge_scores entry
-                if (roundPerformances.length === 0) {
-                    const jData = judgeMap[p.id];
-                    if (jData && jData.scores && Object.keys(jData.scores).length > 0) {
-                        const vals = Object.values(jData.scores);
-                        const jAvg = vals.reduce((a,b)=>a+b,0)/vals.length;
-                        const aAvg = audienceAvg(p.id);
-                        const roundLabel = jData.round || round;
-                        roundPerformances.push({ round: roundLabel, judgeScores: jData.scores, jAvg, aAvg, total: jAvg*0.6 + aAvg*0.4 });
-                    } else {
-                        // Participant exists in this round but no score yet
-                        const aAvg = audienceAvg(p.id);
-                        roundPerformances.push({ round, judgeScores: {}, jAvg: 0, aAvg, total: aAvg*0.4 });
-                    }
+            if (currentJ && currentJ.scores && Object.keys(currentJ.scores).length > 0) {
+                const round = currentJ.round || st;
+                // Only add if not already in archived (avoid duplicate)
+                const alreadyArchived = archived.some(a => a.round === round);
+                if (!alreadyArchived) {
+                    const vals = Object.values(currentJ.scores);
+                    const jAvg = vals.reduce((a,b)=>a+b,0)/vals.length;
+                    const aAvg = audAvg(p.id);
+                    performances.push({ round, judgeScores: currentJ.scores, jAvg, aAvg, subtotal: jAvg*0.6 + aAvg*0.4 });
                 }
-
-                const cumulativeTotal = roundPerformances.reduce((s,r)=>s+r.total, 0);
-                const maxJudgeScore = roundPerformances.reduce((mx, r) => {
-                    const vals = Object.values(r.judgeScores);
-                    return vals.length ? Math.max(mx, ...vals) : mx;
-                }, 0);
-
-                roundGroups[round].push({ ...p, roundPerformances, cumulativeTotal, maxJudgeScore });
-            });
-
-            // ── 6. Sort each round group and render ───────────────────────
-            const sortedRoundKeys = Object.keys(roundGroups).sort((a, b) => {
-                const ia = ROUND_ORDER.indexOf(a), ib = ROUND_ORDER.indexOf(b);
-                if (ia !== -1 && ib !== -1) return ia - ib;
-                if (ia !== -1) return -1;
-                if (ib !== -1) return 1;
-                return a.localeCompare(b);
-            });
-
-            if (sortedRoundKeys.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-info" style="font-size:2rem;color:#333;display:block;margin-bottom:12px;"></i>No participants with active round data found.</div>';
-                return;
+            } else if (performances.length === 0) {
+                // Participant in a round but no scores yet — show audience only
+                const aAvg = audAvg(p.id);
+                performances.push({ round: st, judgeScores: {}, jAvg: 0, aAvg, subtotal: aAvg*0.4 });
             }
 
-            container.innerHTML = '';
-
-            sortedRoundKeys.forEach(round => {
-                const group = roundGroups[round];
-
-                // Sort participants in this round
-                group.sort((a, b) => {
-                    if (Math.abs(b.cumulativeTotal - a.cumulativeTotal) < 0.01) {
-                        return b.maxJudgeScore - a.maxJudgeScore;   // tie-breaker
-                    }
-                    return b.cumulativeTotal - a.cumulativeTotal;
-                });
-
-                let rows = '';
-                group.forEach((p, i) => {
-                    const prevTie = i > 0 && Math.abs(p.cumulativeTotal - group[i-1].cumulativeTotal) < 0.01;
-                    const nextTie = i < group.length - 1 && Math.abs(p.cumulativeTotal - group[i+1].cumulativeTotal) < 0.01;
-                    const isTied = prevTie || nextTie;
-
-                    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
-
-                    // Build per-round breakdown rows inside the cell
-                    let perfHtml = '';
-                    p.roundPerformances.forEach(r => {
-                        const judgeHtml = Object.entries(r.judgeScores).map(([name, val]) =>
-                            `<span class="judge-pill"><strong>${name}</strong>: ${val.toFixed(1)}</span>`
-                        ).join('');
-                        const jDisplay = r.jAvg > 0 ? r.jAvg.toFixed(2) : '—';
-                        const aDisplay = r.aAvg > 0 ? r.aAvg.toFixed(2) : '—';
-                        const subtotal = r.total > 0 ? r.total.toFixed(2) : '—';
-
-                        perfHtml += `
-                            <div style="margin-bottom:8px; padding:8px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
-                                <div style="font-size:0.68rem; font-weight:900; color:var(--primary); text-transform:uppercase; letter-spacing:1px; margin-bottom:5px;">${r.round}</div>
-                                <div class="judge-scores" style="margin-bottom:5px;">${judgeHtml || '<span style="color:#444;font-size:0.75rem;">No judge data</span>'}</div>
-                                <div style="display:flex; gap:14px; font-size:0.78rem;">
-                                    <span style="color:#888;">Judge avg: <strong style="color:#eee;">${jDisplay}</strong></span>
-                                    <span style="color:#888;">Audience: <strong style="color:#00BFFF;">${aDisplay}</strong></span>
-                                    <span style="color:#888;">Subtotal: <strong style="color:var(--gold);">${subtotal}</strong></span>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    rows += `
-                        <tr class="${isTied ? 'tie-row' : ''}">
-                            <td><span class="rank-badge ${rankClass}">${i + 1}</span></td>
-                            <td>
-                                <div class="singer-cell">
-                                    <img src="${p.photoBase64 || 'logo.jpg'}" class="singer-img" onerror="this.src='logo.jpg'">
-                                    <div class="singer-info">
-                                        <b>${(p.name || 'Unknown').toUpperCase()}</b>
-                                        <p>${p.participantId || '---'}</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>${perfHtml}</td>
-                            <td style="text-align:center;">
-                                <div class="total-cell">${p.cumulativeTotal > 0 ? p.cumulativeTotal.toFixed(2) : '—'}</div>
-                                ${isTied ? `<span class="tie-note">TIE → PEAK: ${p.maxJudgeScore.toFixed(1)}</span>` : ''}
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                const section = document.createElement('div');
-                section.className = 'round-section';
-                section.innerHTML = `
-                    <div class="round-title">
-                        <i class="fa-solid fa-microphone-lines"></i> ${round}
-                    </div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th width="65">Rank</th>
-                                    <th width="220">Singer</th>
-                                    <th>Stage-wise Performance</th>
-                                    <th width="145" style="text-align:center;">Overall Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                        </table>
-                    </div>
-                `;
-                container.appendChild(section);
+            // Sort performances by round order
+            performances.sort((a,b) => {
+                const ia = ROUND_ORDER.indexOf(a.round), ib = ROUND_ORDER.indexOf(b.round);
+                if (ia !== -1 && ib !== -1) return ia - ib;
+                return 0;
             });
 
-        } catch(err) {
-            console.error(err);
-            container.innerHTML = `<div class="empty-state" style="color:#cc4444;">⚠️ Error loading data: ${err.message}</div>`;
+            const cumulative = performances.reduce((s, r) => s + r.subtotal, 0);
+            const peakJudge = performances.reduce((mx, r) => Math.max(mx, ...Object.values(r.judgeScores).concat([0])), 0);
+
+            singers.push({ ...p, performances, cumulative, peakJudge, currentStatus: st });
+        });
+
+        if (singers.length === 0) {
+            container.innerHTML = '<div class="state-box"><i class="fa-solid fa-microphone-slash"></i><p>No participant data with scores found.</p></div>';
+            return;
         }
+
+        // ── Sort all singers by cumulative score ──────────────────────────
+        singers.sort((a, b) => {
+            if (Math.abs(b.cumulative - a.cumulative) < 0.01) return b.peakJudge - a.peakJudge;
+            return b.cumulative - a.cumulative;
+        });
+
+        // ── Render table ──────────────────────────────────────────────────
+        let rows = '';
+        singers.forEach((s, i) => {
+            const prevTie = i > 0 && Math.abs(s.cumulative - singers[i-1].cumulative) < 0.01;
+            const nextTie = i < singers.length-1 && Math.abs(s.cumulative - singers[i+1].cumulative) < 0.01;
+            const isTied  = prevTie || nextTie;
+            const rClass  = i===0?'r1':i===1?'r2':i===2?'r3':'';
+
+            let perfHtml = '';
+            s.performances.forEach(r => {
+                const judgeHtml = Object.entries(r.judgeScores).length > 0
+                    ? Object.entries(r.judgeScores).map(([n,v]) => `<span class="pill"><strong>${n}</strong>: ${v.toFixed(1)}</span>`).join('')
+                    : '<span class="no-data">No judge scores</span>';
+
+                const jDisp = r.jAvg > 0 ? r.jAvg.toFixed(2) : '—';
+                const aDisp = r.aAvg > 0 ? r.aAvg.toFixed(2) : '—';
+                const stot  = r.subtotal > 0 ? r.subtotal.toFixed(2) : '—';
+
+                perfHtml += `
+                    <div class="round-box">
+                        <span class="round-label"><i class="fa-solid fa-circle-dot" style="font-size:0.55rem;margin-right:4px;"></i>${r.round}</span>
+                        <div class="judge-pills">${judgeHtml}</div>
+                        <div class="score-row">
+                            <span>Judge avg: <b>${jDisp}</b></span>
+                            <span>Audience: <b style="color:#00BFFF;">${aDisp}</b></span>
+                            <b class="sub-tot">= ${stot}</b>
+                        </div>
+                    </div>`;
+            });
+
+            rows += `
+                <tr class="${isTied?'tie-row':''}">
+                    <td><span class="rank ${rClass}">${i+1}</span></td>
+                    <td>
+                        <div class="singer-cell">
+                            <img src="${s.photoBase64||'logo.jpg'}" class="avatar" onerror="this.src='logo.jpg'">
+                            <div>
+                                <div class="singer-name">${(s.name||'').toUpperCase()}</div>
+                                <div class="singer-id">${s.participantId||'—'}</div>
+                                <span class="status-chip">${s.currentStatus}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${perfHtml}</td>
+                    <td style="text-align:center; vertical-align:middle;">
+                        <div class="overall">${s.cumulative>0 ? s.cumulative.toFixed(2) : '—'}</div>
+                        ${isTied?`<span class="tie-note">TIE → PEAK JUDGE: ${s.peakJudge.toFixed(1)}</span>`:''}
+                    </td>
+                </tr>`;
+        });
+
+        container.innerHTML = `
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="55">Rank</th>
+                            <th width="210">Participant</th>
+                            <th>Stage-wise Performance (Round → Judges · Audience → Subtotal)</th>
+                            <th width="140" style="text-align:center;">Overall Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+
+    } catch(err) {
+        console.error(err);
+        container.innerHTML = `<div class="state-box" style="color:#c44;"><i class="fa-solid fa-triangle-exclamation"></i><p>Error: ${err.message}</p></div>`;
     }
+}
 
-    fetchAndRender();
-    setInterval(fetchAndRender, 60000);
+render();
+setInterval(render, 60000);
 </script>
-
 </body>
 </html>

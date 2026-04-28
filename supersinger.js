@@ -380,17 +380,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!participantsGrid) return;
         
         try {
-            // ONLY load participants who have been approved by the admin
-            const querySnapshot = await db.collection("participants").where("status", "in", ["approved", "Round 1", "Round 2", "Round 3", "Round 4", "Final"]).get();
-            participantsGrid.innerHTML = ''; // Clear loading spinner
+            // Fetch all and filter in JS to avoid index requirements
+            const querySnapshot = await db.collection("participants").limit(100).get();
+            participantsGrid.innerHTML = ''; 
             
             if (querySnapshot.empty) {
                 participantsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">No participants registered yet. Check back soon!</div>';
                 return;
             }
 
+            const approvedStatuses = ["approved", "Round 1", "Round 2", "Round 3", "Round 4", "Final", "Semi-Final", "Grand Finale", "Winner"];
+            let hasApproved = false;
+
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
+                if (!approvedStatuses.includes(data.status)) return;
+                hasApproved = true;
                 const id = docSnap.id;
                 const votes = data.votes || 0;
                 
@@ -421,6 +426,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 participantsGrid.appendChild(card);
             });
+
+            if (!hasApproved) {
+                participantsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">The voting arena is getting ready. Check back soon!</div>';
+            }
     // --- AUDIO CONTROL ---
     let currentPlayingId = null;
     window.toggleCardAudio = (id) => {
@@ -652,7 +661,7 @@ async function checkStatus() {
 }
 
 // --- LOAD PARTICIPANTS SLIDER ---
-async function loadParticipants() {
+async function loadParticipantSlider() {
     const slider = document.getElementById('participant-slider');
     if (!slider) return;
     
@@ -694,7 +703,7 @@ async function loadParticipants() {
         slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Our stars are warming up!</p>';
     }
 }
-loadParticipants();
+loadParticipantSlider();
 
 // --- DOWNLOAD TICKET FUNCTION ---
 window.downloadTicket = () => {

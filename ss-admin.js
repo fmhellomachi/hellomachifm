@@ -12,6 +12,102 @@ document.addEventListener('DOMContentLoaded', () => {
     const masterAdminSection = getEl('master-admin-section');
     const adminListBody = getEl('admin-list-body');
 
+    // ===== PROFESSIONAL PHOTO FRAMER LOGIC =====
+    let editPhotoBase64 = null;
+    const editPhotoFile = getEl('edit-photo-file');
+    const editPhotoPreview = getEl('edit-photo-preview');
+    const cropModal = getEl('crop-modal');
+    const cropViewport = getEl('crop-viewport');
+    const cropImg = getEl('crop-image');
+    const zoomSlider = getEl('zoom-slider');
+    
+    let scale = 1, offsetX = 0, offsetY = 0;
+    let isDragging = false, startX = 0, startY = 0;
+    let rawImageSrc = null;
+    const VIEWPORT_W = 260;
+    const VIEWPORT_H = 320;
+
+    function applyTransform() {
+        if(cropImg) cropImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+    }
+
+    window.resetFraming = () => {
+        const naturalW = cropImg.naturalWidth;
+        const naturalH = cropImg.naturalHeight;
+        const fitScale = Math.max(VIEWPORT_W / naturalW, VIEWPORT_H / naturalH);
+        scale = fitScale;
+        offsetX = (VIEWPORT_W - naturalW * scale) / 2;
+        offsetY = (VIEWPORT_H - naturalH * scale) / 2;
+        if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
+        applyTransform();
+    };
+
+    function openCropModal(src) {
+        rawImageSrc = src;
+        cropImg.src = src;
+        cropImg.onload = () => {
+            resetFraming();
+        };
+        cropModal.style.display = 'flex';
+    }
+
+    if (cropViewport) {
+        cropViewport.addEventListener('mousedown', (e) => {
+            isDragging = true; startX = e.clientX - offsetX; startY = e.clientY - offsetY;
+            cropViewport.style.cursor = 'grabbing';
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            offsetX = e.clientX - startX; offsetY = e.clientY - startY;
+            applyTransform();
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; if(cropViewport) cropViewport.style.cursor = 'grab'; });
+        
+        cropViewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            scale = Math.max(0.1, Math.min(3, scale - e.deltaY * 0.002));
+            if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
+            applyTransform();
+        }, { passive: false });
+    }
+
+    if (zoomSlider) {
+        zoomSlider.addEventListener('input', () => {
+            scale = parseInt(zoomSlider.value) / 100;
+            applyTransform();
+        });
+    }
+
+    getEl('crop-cancel-btn')?.addEventListener('click', () => {
+        cropModal.style.display = 'none';
+        if (!editPhotoBase64 && editPhotoFile) editPhotoFile.value = '';
+    });
+
+    getEl('crop-confirm-btn')?.addEventListener('click', () => {
+        const img = new Image();
+        img.src = rawImageSrc;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_H = 1200;
+            const targetW = Math.round(MAX_H * (VIEWPORT_W / VIEWPORT_H));
+            const targetH = MAX_H;
+            canvas.width = targetW;
+            canvas.height = targetH;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#000"; 
+            ctx.fillRect(0, 0, targetW, targetH);
+            const ratio = targetH / VIEWPORT_H;
+            ctx.drawImage(img, offsetX * ratio, offsetY * ratio, img.naturalWidth * scale * ratio, img.naturalHeight * scale * ratio);
+            
+            editPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            if (editPhotoPreview) {
+                editPhotoPreview.src = editPhotoBase64;
+                editPhotoPreview.style.display = 'block';
+            }
+            cropModal.style.display = 'none';
+        };
+    });
+
     const provider = new firebase.auth.GoogleAuthProvider();
     let currentFilter = 'all';
 
@@ -721,52 +817,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ---- Photo preview inside modal ----
-    const editPhotoFile = document.getElementById('edit-photo-file');
-    const editPhotoPreview = document.getElementById('edit-photo-preview');
-    let editPhotoBase64 = null;
-    if (editPhotoFile) {
-        editPhotoFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                // Compress to 250x250
-                const img = new Image();
-                        const canvas = document.createElement('canvas');
-                    // Use higher resolution and preserve aspect ratio
-                    const MAX_WIDTH = 1200;
-                    const MAX_HEIGHT = 1200;
-                    let width = img.width;
-                    let height = img.height;
- 
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    editPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                    editPhotoPreview.src = editPhotoBase64;
-                    editPhotoPreview.style.display = 'block';
-                    editPhotoPreview.style.borderRadius = '12px';
-                    editPhotoPreview.style.objectFit = 'contain';
-                    editPhotoPreview.style.background = '#000';
-                };
-                img.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
 
     // ---- Open ADD modal (blank form) ----
     window.openAddModal = () => {
@@ -1040,12 +1090,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ====================================================
     // JUDGE SCORING SYSTEM
-    // ====================================================
-    let currentJudgeSingerId = null;
+    // (Variables declared at the top of the file)
     let currentJudgeSingerName = 'Unknown';
-    let judgeScoresUnsub = null;
-    let audienceScoresUnsub = null;
-
     let latestLiveState = null;
 
     window.switchJudgeSingerToggle = () => {

@@ -18,25 +18,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let scale = 1, offsetX = 0, offsetY = 0;
     let isDragging = false, startX = 0, startY = 0;
     let rawImageSrc = null;
-    const VIEWPORT_SIZE = 220;
+    const VIEWPORT_W = 260;
+    const VIEWPORT_H = 320;
 
     function applyTransform() {
         cropImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
     }
 
+    window.resetFraming = () => {
+        const naturalW = cropImg.naturalWidth;
+        const naturalH = cropImg.naturalHeight;
+        const fitScale = Math.max(VIEWPORT_W / naturalW, VIEWPORT_H / naturalH);
+        scale = fitScale;
+        offsetX = (VIEWPORT_W - naturalW * scale) / 2;
+        offsetY = (VIEWPORT_H - naturalH * scale) / 2;
+        zoomSlider.value = Math.round(scale * 100);
+        applyTransform();
+    };
+
     function openCropModal(src) {
         rawImageSrc = src;
         cropImg.src = src;
         cropImg.onload = () => {
-            // Auto-fit image to fill the circular viewport
-            const naturalW = cropImg.naturalWidth;
-            const naturalH = cropImg.naturalHeight;
-            const fitScale = Math.max(VIEWPORT_SIZE / naturalW, VIEWPORT_SIZE / naturalH);
-            scale = fitScale;
-            offsetX = (VIEWPORT_SIZE - naturalW * scale) / 2;
-            offsetY = (VIEWPORT_SIZE - naturalH * scale) / 2;
-            zoomSlider.value = Math.round(scale * 100);
-            applyTransform();
+            resetFraming();
         };
         cropModal.style.display = 'flex';
     }
@@ -85,39 +89,66 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Confirm crop — render visible area with its NATURAL aspect ratio
-    document.getElementById('crop-confirm-btn')?.addEventListener('click', () => {
+    // Confirmation logic for update vs initial registration
+    document.getElementById('crop-confirm-btn')?.addEventListener('click', async () => {
         const img = new Image();
         img.src = rawImageSrc;
-        img.onload = () => {
+        img.onload = async () => {
             const canvas = document.createElement('canvas');
-            // We want to save a high-res version (up to 1200px) but preserve the viewport's aspect ratio
-            // Actually, the user wants the "full photo", so we should ideally save the original 
-            // but scaled down to stay within Firestore limits (~600kb is safe for base64)
-            
-            const MAX_DIM = 1000;
-            let targetW, targetH;
-            
-            // The viewport is always square (220x220), but we want to capture what's inside
-            // Since we're using a square viewport, the output should still be square 
-            // to match what the user "framed", but we'll use object-fit:contain everywhere 
-            // so it doesn't matter if it has bars.
-            
-            canvas.width = MAX_DIM;
-            canvas.height = MAX_DIM;
+            const MAX_H = 1200;
+            const targetW = Math.round(MAX_H * (VIEWPORT_W / VIEWPORT_H));
+            const targetH = MAX_H;
+            canvas.width = targetW;
+            canvas.height = targetH;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = "#000"; // Black background for the "bars"
-            ctx.fillRect(0, 0, MAX_DIM, MAX_DIM);
-            
-            const ratio = MAX_DIM / VIEWPORT_SIZE;
+            ctx.fillStyle = "#000"; 
+            ctx.fillRect(0, 0, targetW, targetH);
+            const ratio = targetH / VIEWPORT_H;
             ctx.drawImage(img, offsetX * ratio, offsetY * ratio, img.naturalWidth * scale * ratio, img.naturalHeight * scale * ratio);
             
-            compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
-            photoPreview.src = compressedPhotoBase64;
-            photoPreviewContainer.style.display = 'block';
-            cropModal.style.display = 'none';
+            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+            
+            if (currentUpdateDocId) {
+                // Update mode
+                const btn = document.getElementById('crop-confirm-btn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+                try {
+                    await db.collection('participants').doc(currentUpdateDocId).update({
+                        photoBase64: base64,
+                        photoUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    alert("✅ Photo updated successfully! Re-checking status...");
+                    cropModal.style.display = 'none';
+                    checkStatus(); // Refresh the view
+                } catch(e) { alert("Error: " + e.message); }
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirm Frame';
+            } else {
+                // Initial registration mode
+                compressedPhotoBase64 = base64;
+                photoPreview.src = compressedPhotoBase64;
+                photoPreviewContainer.style.display = 'block';
+                cropModal.style.display = 'none';
+            }
         };
     });
+
+    window.startPhotoUpdate = (docId) => {
+        currentUpdateDocId = docId;
+        // Trigger file input
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'file';
+        hiddenInput.accept = 'image/*';
+        hiddenInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => openCropModal(ev.target.result);
+            reader.readAsDataURL(file);
+        };
+        hiddenInput.click();
+    };
 
     // Cancel crop
     document.getElementById('crop-cancel-btn')?.addEventListener('click', () => {
@@ -138,6 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.readAsDataURL(file);
         });
     }
+
+    let currentUpdateDocId = null;
 
     if(form) {
         form.addEventListener('submit', async (e) => {
@@ -498,10 +531,16 @@ async function checkStatus() {
 
         if (status === 'pending') {
             resultDiv.innerHTML = `
-                <div style="padding: 20px; background: rgba(0, 210, 255, 0.05); border: 1px solid var(--primary); border-radius: 12px;">
+                <div style="padding: 20px; background: rgba(0, 210, 255, 0.05); border: 1px solid var(--primary); border-radius: 12px; text-align:center;">
                     <i class="fa-solid fa-hourglass-half fa-2x" style="color: var(--primary);"></i><br>
                     <h3 class="mt-2">Application Received</h3>
                     <p>Hi <strong>${data.name}</strong>, your application is currently under review by our judges. We will notify you once the selection is made!</p>
+                    
+                    <div style="margin-top:20px; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px;">
+                        <img src="${data.photoBase64}" style="width:100px; height:120px; border-radius:10px; object-fit:contain; border:2px solid #444; background:#000; margin-bottom:10px;">
+                        <p style="font-size:0.8rem; color:#888;">Current Profile Photo</p>
+                        <button onclick="startPhotoUpdate('${querySnapshot.docs[0].id}')" class="btn btn-secondary" style="font-size:0.8rem; padding:6px 15px; margin-top:10px;">Update Photo</button>
+                    </div>
                 </div>
             `;
         } else if (status === 'rejected' || status === 'Eliminated') {
@@ -519,10 +558,14 @@ async function checkStatus() {
                     <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(15deg);"><i class="fa-solid fa-trophy"></i></div>
                     <div style="position: absolute; bottom: -20px; left: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);"><i class="fa-solid fa-microphone"></i></div>
                     
-                    <div style="margin-bottom: 20px;">
-                        <img src="logo.jpg" style="width: 70px; height: 70px; border-radius: 12px; border: 3px solid white; background: #000; object-fit: contain;">
+                    <div style="margin: 20px 0;">
+                        <img src="${data.photoBase64 || 'logo.jpg'}" style="width: 150px; height: 180px; border-radius: 15px; border: 4px solid white; background: #000; object-fit: contain; box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
                     </div>
-                    
+
+                    <div class="no-print" style="margin-bottom: 20px;">
+                        <button onclick="startPhotoUpdate('${querySnapshot.docs[0].id}')" style="background:rgba(0,0,0,0.1); border:1px solid rgba(0,0,0,0.2); color:black; padding:5px 15px; border-radius:20px; font-size:0.75rem; cursor:pointer; font-weight:bold;">Re-upload Photo</button>
+                    </div>
+
                     <i class="fa-solid fa-star fa-3x" style="color: white; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));"></i>
                     <h2 style="font-size: 2.2rem; margin: 10px 0; font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: 2px;">GOLDEN TICKET</h2>
                     

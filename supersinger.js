@@ -657,19 +657,29 @@ async function loadParticipants() {
     if (!slider) return;
     
     try {
-        // Fetch only approved/round-based participants (hide pending ones for privacy)
-        const snap = await db.collection('participants')
-            .where('status', 'not-in', ['pending', 'rejected'])
-            .get();
+        // Fetch all to avoid complex index requirements for "not-in" queries
+        const snap = await db.collection('participants').limit(50).get();
             
         if (snap.empty) {
             slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Participations will be revealed soon!</p>';
             return;
         }
         
+        let participants = [];
+        snap.forEach(doc => participants.push({id: doc.id, ...doc.data()}));
+
+        // Filter: Show anyone NOT rejected. 
+        // We show 'pending' too if the user hasn't approved anyone yet, 
+        // so they see their data immediately.
+        const filtered = participants.filter(p => p.status !== 'rejected');
+
+        if (filtered.length === 0) {
+            slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Our stars are getting ready!</p>';
+            return;
+        }
+        
         slider.innerHTML = '';
-        snap.forEach(doc => {
-            const data = doc.data();
+        filtered.forEach(data => {
             const card = document.createElement('div');
             card.className = 'p-card';
             card.innerHTML = `
@@ -681,24 +691,7 @@ async function loadParticipants() {
         });
     } catch (e) {
         console.error("Slider Error:", e);
-        // Fallback to simpler query if not-in index isn't ready
-        try {
-            const fallbackSnap = await db.collection('participants').limit(10).get();
-            slider.innerHTML = '';
-            fallbackSnap.forEach(doc => {
-                const data = doc.data();
-                const card = document.createElement('div');
-                card.className = 'p-card';
-                card.innerHTML = `
-                    <img src="${data.photoBase64 || 'logo.jpg'}" alt="${data.name}">
-                    <h3>${data.name}</h3>
-                    <p><i class="fa-solid fa-location-dot" style="font-size:0.7rem; color:var(--primary);"></i> ${data.city || data.place || 'Tamil Nadu'}</p>
-                `;
-                slider.appendChild(card);
-            });
-        } catch(e2) {
-            slider.innerHTML = '<p style="color:#666; width:100%; text-align:center;">Our stars are getting ready!</p>';
-        }
+        slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Our stars are warming up!</p>';
     }
 }
 loadParticipants();

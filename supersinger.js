@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let scale = 1, offsetX = 0, offsetY = 0;
     let isDragging = false, startX = 0, startY = 0;
     let rawImageSrc = null;
+    let currentUpdateDocId = null;
     const VIEWPORT_W = 260;
     const VIEWPORT_H = 320;
 
@@ -39,6 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function openCropModal(src) {
         rawImageSrc = src;
         cropImg.src = src;
+        const confirmBtn = document.getElementById('crop-confirm-btn');
+        if (confirmBtn) {
+            confirmBtn.innerHTML = currentUpdateDocId 
+                ? '<i class="fa-solid fa-check"></i> Confirm & Update' 
+                : '<i class="fa-solid fa-check"></i> Confirm Frame';
+        }
         cropImg.onload = () => {
             resetFraming();
         };
@@ -138,6 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (currentUpdateDocId) {
                 // Update mode
+                if (!confirm("Do you want to update this photo on your profile?")) return;
+                
                 const btn = document.getElementById('crop-confirm-btn');
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
@@ -146,12 +155,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         photoBase64: base64,
                         photoUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    alert("✅ Photo updated successfully! Re-checking status...");
+                    alert("✨ Photo Updated Successfully!");
                     cropModal.style.display = 'none';
                     checkStatus(); // Refresh the view
                 } catch(e) { alert("Error: " + e.message); }
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirm Frame';
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirm & Update';
             } else {
                 // Initial registration mode
                 compressedPhotoBase64 = base64;

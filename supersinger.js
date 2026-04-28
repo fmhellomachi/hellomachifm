@@ -90,11 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const canvas = document.createElement('canvas');
         canvas.width = 250; canvas.height = 250;
         const ctx = canvas.getContext('2d');
-        // Draw circular clip
-        ctx.beginPath();
-        ctx.arc(125, 125, 125, 0, Math.PI * 2);
-        ctx.clip();
-        // The viewport is 220px; scale factor from viewport to output canvas
+        // RECTANGULAR CROP (Matching the user's request for full photo/no circular cropping)
+        // No clip() needed, just draw the image
         const vp = VIEWPORT_SIZE;
         const outSize = 250;
         const ratio = outSize / vp;
@@ -102,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = rawImageSrc;
         img.onload = () => {
             ctx.drawImage(img, offsetX * ratio, offsetY * ratio, img.naturalWidth * scale * ratio, img.naturalHeight * scale * ratio);
-            compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+            compressedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
             photoPreview.src = compressedPhotoBase64;
             photoPreviewContainer.style.display = 'block';
             cropModal.style.display = 'none';
@@ -470,10 +467,10 @@ async function checkStatus() {
         
         if (querySnapshot.empty) {
             resultDiv.innerHTML = `
-                <div style="padding: 20px; background: rgba(220, 53, 69, 0.1); border: 1px solid #dc3545; border-radius: 12px; color: #dc3545;">
+                <div style="padding: 20px; background: rgba(220, 53, 69, 0.1); border: 1px solid #dc3545; border-radius: 12px; color: #dc3545; animation: shake 0.5s;">
                     <i class="fa-solid fa-circle-xmark fa-2x"></i><br>
-                    <strong>No registration found!</strong><br>
-                    Please make sure you entered the correct number used during registration.
+                    <strong style="display:block; margin-top:10px;">No registration found!</strong>
+                    <p style="font-size:0.9rem; margin-top:5px;">Please make sure you entered the correct WhatsApp number used during registration.</p>
                 </div>
             `;
             return;
@@ -483,16 +480,8 @@ async function checkStatus() {
         const status = data.status || 'pending';
         const isRevealed = data.isRevealed !== false; // Default to true if not specified, but we set it to false now
         
-        if (!isRevealed && status !== 'pending') {
-            resultDiv.innerHTML = `
-                <div style="padding: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 12px;">
-                    <i class="fa-solid fa-clock fa-2x" style="color: var(--secondary);"></i><br>
-                    <h3 class="mt-2">Result Pending</h3>
-                    <p class="text-muted">Your result hasn't been officially revealed yet. Stay tuned to Hello Machi FM!</p>
-                </div>
-            `;
-            return;
-        }
+        // Remove the isRevealed block to always show the status to the participant
+        // if (!isRevealed && status !== 'pending') { ... }
 
         if (status === 'pending') {
             resultDiv.innerHTML = `
@@ -513,32 +502,51 @@ async function checkStatus() {
         } else {
             // SELECTED / ROUND 1 / ROUND 2 etc. -> SHOW GOLDEN TICKET
             resultDiv.innerHTML = `
-                <div style="padding: 40px; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); border-radius: 20px; color: black; box-shadow: 0 0 50px rgba(255, 215, 0, 0.5); position: relative; overflow: hidden; animation: goldenPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                <div id="golden-ticket" style="padding: 40px; background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); border-radius: 20px; color: black; box-shadow: 0 0 50px rgba(255, 215, 0, 0.5); position: relative; overflow: hidden; animation: goldenPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center;">
                     <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(15deg);"><i class="fa-solid fa-trophy"></i></div>
-                    <i class="fa-solid fa-star fa-3x" style="color: white; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));"></i>
-                    <h2 style="font-size: 2.5rem; margin: 15px 0; font-family: 'Outfit', sans-serif;">CONGRATULATIONS!</h2>
-                    <div style="font-family: monospace; font-weight: bold; background: black; color: var(--gold); display: inline-block; padding: 5px 15px; border-radius: 5px; margin-bottom: 10px;">ID: ${data.participantId || '---'}</div>
-                    <p style="font-size: 1.2rem; font-weight: bold;">${data.name.toUpperCase()}</p>
-                    <div style="margin: 20px 0; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 10px; display: inline-block;">
-                        <span style="letter-spacing: 2px; font-weight: 900;">SELECTED FOR: ${status.toUpperCase()}</span>
+                    <div style="position: absolute; bottom: -20px; left: -20px; font-size: 8rem; opacity: 0.1; transform: rotate(-15deg);"><i class="fa-solid fa-microphone"></i></div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <img src="logo.jpg" style="width: 70px; height: 70px; border-radius: 12px; border: 3px solid white; background: #000; object-fit: contain;">
                     </div>
-                    <p style="font-size: 0.9rem; opacity: 0.8;">You have been officially promoted to the next phase of Hello Machi Super Singer 2026. Get ready to shine!</p>
-                    <div style="margin-top: 25px;">
-                        <button onclick="window.print()" class="btn" style="background: black; color: white; border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold;"><i class="fa-solid fa-download"></i> Save Ticket</button>
+                    
+                    <i class="fa-solid fa-star fa-3x" style="color: white; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));"></i>
+                    <h2 style="font-size: 2.2rem; margin: 10px 0; font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: 2px;">GOLDEN TICKET</h2>
+                    
+                    <div style="font-family: monospace; font-weight: bold; background: black; color: #FFD700; display: inline-block; padding: 5px 20px; border-radius: 5px; margin-bottom: 15px; font-size: 1.1rem; letter-spacing: 1px;">ID: ${data.participantId || '---'}</div>
+                    
+                    <p style="font-size: 1.4rem; font-weight: 900; color: #000; margin-bottom: 5px;">${data.name.toUpperCase()}</p>
+                    <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 20px;">${data.city || 'Tamil Nadu'}</p>
+                    
+                    <div style="margin: 10px 0 25px; padding: 12px 25px; background: rgba(0,0,0,0.1); border: 2px dashed rgba(0,0,0,0.2); border-radius: 12px; display: inline-block;">
+                        <span style="letter-spacing: 2px; font-weight: 900; font-size: 1.1rem;">PROMOTED TO: ${status.toUpperCase()}</span>
+                    </div>
+                    
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 20px; margin-top: 10px;">
+                        <p style="font-size: 0.85rem; font-weight: bold; opacity: 0.7;">HELLO MACHI SUPER SINGER 2026</p>
+                    </div>
+                    
+                    <div class="no-print" style="margin-top: 30px;">
+                        <button onclick="downloadTicket()" class="btn" style="background: black; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; transition: transform 0.2s;">
+                            <i class="fa-solid fa-download"></i> DOWNLOAD TICKET
+                        </button>
                     </div>
                 </div>
                 <style>
                     @keyframes goldenPop {
-                        0% { transform: scale(0.5); opacity: 0; }
-                        100% { transform: scale(1); opacity: 1; }
+                        0% { transform: scale(0.5) translateY(50px); opacity: 0; }
+                        100% { transform: scale(1) translateY(0); opacity: 1; }
                     }
-                    @media (max-width: 600px) {
-                        #status-result > div {
-                            padding: 20px !important;
-                        }
-                        #status-result h2 {
-                            font-size: 1.5rem !important;
-                        }
+                    @keyframes shake {
+                        0%, 100% { transform: translateX(0); }
+                        25% { transform: translateX(-10px); }
+                        75% { transform: translateX(10px); }
+                    }
+                    @media print {
+                        .no-print { display: none !important; }
+                        body * { visibility: hidden; }
+                        #golden-ticket, #golden-ticket * { visibility: visible; }
+                        #golden-ticket { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
                     }
                 </style>
             `;
@@ -549,3 +557,10 @@ async function checkStatus() {
         resultDiv.innerHTML = '❌ Error checking status. Please try again.';
     }
 }
+
+// --- DOWNLOAD TICKET FUNCTION ---
+window.downloadTicket = () => {
+    // We use a high-quality print approach with ticket-specific styling
+    // This allows the user to 'Save as PDF' which is the standard way to download official tickets.
+    window.print();
+};

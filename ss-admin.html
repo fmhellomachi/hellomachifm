@@ -56,10 +56,10 @@
             body { 
                 padding: 0;
                 font-size: 14px;
-                height: 100dvh;
-                overflow: hidden;
-                display: flex;
-                flex-direction: column;
+                min-height: 100vh;
+                overflow-x: hidden;
+                overflow-y: auto;
+                display: block;
             }
             .admin-header { padding: 15px 0; margin-bottom: 20px; }
             .admin-nav { padding: 0 15px; flex-direction: column; gap: 10px; align-items: center; }
@@ -125,10 +125,16 @@
                 display: flex !important;
                 background: #0a0a0f;
                 border-top: 1px solid #333;
-                padding: 10px 12px;
-                justify-content: space-around;
+                padding: 12px 10px;
+                justify-content: space-between;
                 z-index: 5000;
-                position: relative;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                overflow-x: auto;
+                gap: 20px;
+                -webkit-overflow-scrolling: touch;
             }
             .mobile-tab-btn {
                 display: flex;
@@ -137,8 +143,10 @@
                 gap: 4px;
                 color: #888;
                 font-size: 0.65rem;
+                min-width: 65px;
                 cursor: pointer;
                 text-decoration: none;
+                flex-shrink: 0;
             }
             .mobile-tab-btn i { font-size: 1.1rem; }
             .mobile-tab-btn.active { color: var(--primary); }
@@ -197,6 +205,41 @@
         </div>
 
         <div id="view-participants">
+            <!-- Bulk Actions Menu -->
+            <div id="bulk-menu" style="display:none; align-items:center; gap:10px; background:rgba(255,20,147,0.15); padding:15px; border-radius:16px; border:1px solid var(--primary); margin-bottom:20px; flex-wrap:wrap; box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+                <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                    <span style="font-weight:bold; color:var(--primary); font-size:0.9rem;"><i class="fa-solid fa-check-double"></i> <span id="selected-count">0</span> Selected</span>
+                    <button onclick="clearSelection()" style="background:transparent; border:none; color:#888; cursor:pointer; font-size:0.8rem;">Clear All</button>
+                </div>
+                
+                <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%;">
+                    <select id="bulk-status-select" style="flex:1; min-width:150px; padding:10px; background:#111; border:1px solid #444; color:white; border-radius:10px; font-size:0.85rem;">
+                        <option value="">-- Change Status --</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved (Selected)</option>
+                        <option value="Round 1">Round 1</option>
+                        <option value="Round 2">Round 2</option>
+                        <option value="Round 3">Round 3</option>
+                        <option value="Semi-Final">Semi-Final</option>
+                        <option value="Final Round">Final Round</option>
+                        <option value="Grand Finale">Grand Finale</option>
+                        <option value="Optional Round">Optional Round</option>
+                        <option value="waitlisted">Waitlisted</option>
+                        <option value="Eliminated">Eliminated</option>
+                    </select>
+                    <button onclick="applyBulkStatus()" class="btn btn-primary" style="padding:10px 15px; font-size:0.85rem; background:var(--primary); color:black; font-weight:900; border-radius:10px;">Apply</button>
+                </div>
+
+                <div style="display:flex; gap:8px; width:100%;">
+                    <button onclick="applyBulkReveal(true)" class="btn btn-secondary" style="flex:1; padding:10px; font-size:0.85rem; background:#28a745; color:white; border:none; border-radius:10px; font-weight:bold;">
+                        <i class="fa-solid fa-eye"></i> Bulk Reveal
+                    </button>
+                    <button onclick="applyBulkReveal(false)" class="btn btn-secondary" style="flex:1; padding:10px; font-size:0.85rem; background:#444; color:white; border:none; border-radius:10px; font-weight:bold;">
+                        <i class="fa-solid fa-eye-slash"></i> Bulk Hide
+                    </button>
+                </div>
+            </div>
+
             <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content:space-between; align-items:center;">
                 <div style="display:flex; gap:10px; flex-wrap:wrap;" id="admin-tabs">
                     <button class="btn btn-primary" onclick="filterTable('all')">All</button>
@@ -211,15 +254,22 @@
                     <button class="btn btn-secondary" onclick="filterTable('waitlisted')">Waitlist</button>
                     <button class="btn btn-secondary" onclick="filterTable('Eliminated')">Eliminated</button>
                 </div>
-                <button onclick="openAddModal()" class="btn btn-primary" style="background:var(--secondary); white-space:nowrap;">
-                    <i class="fa-solid fa-user-plus"></i> Add Participant
-                </button>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button id="regen-ids-btn" onclick="regenerateAllIds()" class="btn btn-secondary" style="background:#333; color:#aaa; font-weight:bold; border:1px solid #444; white-space:nowrap;">
+                        <i class="fa-solid fa-arrows-rotate"></i> Re-index All IDs
+                    </button>
+                    <button onclick="openAddModal()" class="btn btn-primary" style="background:var(--secondary); white-space:nowrap;">
+                        <i class="fa-solid fa-user-plus"></i> Add Participant
+                    </button>
+                </div>
             </div>
 
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
+                            <th width="40"><input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll()"></th>
+                            <th width="50">S.No</th>
                             <th>ID</th>
                             <th>Photo</th>
                             <th>Name & Contact</th>
@@ -543,7 +593,7 @@
                 <div style="grid-column:span 2;">
                     <label style="font-size:0.8rem;color:#888;">Profile Photo (leave blank to keep existing)</label>
                     <input type="file" id="edit-photo-file" accept="image/*" style="width:100%;padding:8px;background:#222;border:1px solid #444;color:white;border-radius:8px;margin-top:4px;">
-                    <img id="edit-photo-preview" src="" style="display:none;width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);margin-top:8px;">
+                    <img id="edit-photo-preview" src="" style="display:none;width:120px;height:auto;max-height:150px;border-radius:12px;object-fit:contain;border:3px solid var(--primary);margin-top:8px;background:#000;">
                 </div>
             </div>
 
@@ -554,27 +604,30 @@
         </div>
     </div>
 
-    <!-- Mobile Bottom Tabs -->
     <div class="mobile-tabs">
         <div class="mobile-tab-btn" onclick="switchMainTab('participants')">
             <i class="fa-solid fa-users"></i>
-            <span>Singers</span>
+            <span>Participants</span>
         </div>
         <div class="mobile-tab-btn" onclick="switchMainTab('live-control')">
             <i class="fa-solid fa-tower-broadcast"></i>
-            <span>Live</span>
+            <span>Stage Control</span>
+        </div>
+        <div class="mobile-tab-btn" onclick="switchMainTab('history')">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Logs</span>
+        </div>
+        <div class="mobile-tab-btn" onclick="switchMainTab('wall-of-fame')">
+            <i class="fa-solid fa-tv"></i>
+            <span>Wall Ctrl</span>
         </div>
         <div class="mobile-tab-btn" onclick="switchMainTab('leaderboard')">
             <i class="fa-solid fa-trophy"></i>
-            <span>Results</span>
+            <span>Leaderboard</span>
         </div>
-        <a href="walloffame.html" target="_blank" class="mobile-tab-btn" style="text-decoration: none;">
-            <i class="fa-solid fa-tv"></i>
-            <span>Display</span>
-        </a>
         <a href="index.html" class="mobile-tab-btn" style="text-decoration: none;">
             <i class="fa-solid fa-house-chimney"></i>
-            <span>Main FM</span>
+            <span>Home FM</span>
         </a>
     </div>
 

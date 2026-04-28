@@ -176,7 +176,7 @@
                         <!-- Face Preview after crop -->
                         <div id="photo-preview-container" style="display:none; margin-top:12px; text-align:center;">
                             <p style="font-size:0.8rem; color:#888; margin-bottom:6px;">✅ Face Preview</p>
-                            <img id="photo-preview" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);">
+                            <img id="photo-preview" style="width:80px; height:80px; border-radius:12px; object-fit:contain; border:3px solid var(--primary); background:#000;">
                             <button type="button" id="recrop-btn" style="display:block; margin:8px auto 0; background:transparent; border:1px solid #666; color:#aaa; padding:4px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer;">Re-crop</button>
                         </div>
                     </div>
@@ -202,7 +202,7 @@
             <p style="color:#888; font-size:0.85rem; margin-bottom:15px;">Drag to reposition · Pinch or scroll to zoom</p>
 
             <!-- Circular viewport -->
-            <div id="crop-viewport" style="width:220px; height:220px; border-radius:50%; overflow:hidden; border:4px solid var(--primary); margin:0 auto; position:relative; cursor:grab; touch-action:none; box-shadow:0 0 30px rgba(255,20,147,0.4);">
+            <div id="crop-viewport" style="width:220px; height:220px; border-radius:12px; overflow:hidden; border:4px solid var(--primary); margin:0 auto; position:relative; cursor:grab; touch-action:none; box-shadow:0 0 30px rgba(255,20,147,0.4);">
                 <img id="crop-image" style="position:absolute; transform-origin:top left; user-select:none; -webkit-user-drag:none; pointer-events:none;">
             </div>
 
@@ -263,7 +263,7 @@
                 Sign In with Google to Vote
             </button>
             <div id="user-info" style="display: none; align-items: center; justify-content: center; gap: 15px;">
-                <img id="user-avatar" src="" alt="User Avatar" style="width: 40px; border-radius: 50%;">
+                <img id="user-avatar" src="" alt="User Avatar" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
                 <span id="user-name" style="font-weight: bold;"></span>
                 <button id="logout-btn" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.8rem;">Logout</button>
             </div>

@@ -26,7 +26,7 @@
         /* Header */
         .header { display:flex; align-items:center; justify-content:center; gap:40px; margin-bottom:15px; }
         .header-text { font-size:clamp(1.2rem,4vw,2.4rem); font-weight:900; letter-spacing:4px; background:linear-gradient(to bottom,#FFD700,#FFFACD,#B8860B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0; }
-        .logo-img { width:85px; height:85px; border-radius:50%; border:3px solid var(--gold); object-fit:cover; box-shadow:0 0 20px var(--gold),0 0 50px rgba(255,215,0,0.3); animation:logoPulse 3s ease-in-out infinite; }
+        .logo-img { width:85px; height:85px; border-radius:12px; border:3px solid var(--gold); object-fit:contain; background:#000; box-shadow:0 0 20px var(--gold),0 0 50px rgba(255,215,0,0.3); animation:logoPulse 3s ease-in-out infinite; }
         @keyframes logoPulse { 0%,100%{box-shadow:0 0 18px var(--gold),0 0 40px rgba(255,215,0,0.2)} 50%{box-shadow:0 0 35px var(--gold),0 0 80px rgba(255,215,0,0.5)} }
         .round-badge { display:inline-block; background:var(--primary); padding:4px 22px; border-radius:50px; font-weight:900; font-size:0.85rem; box-shadow:0 0 16px var(--primary); animation:bPulse 2s infinite; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); z-index:2; }
         @keyframes bPulse { 0%,100%{box-shadow:0 0 14px var(--primary)} 50%{box-shadow:0 0 32px var(--primary),0 0 60px rgba(255,20,147,0.4)} }
@@ -56,8 +56,8 @@
         .p-card.finalist { border-color:var(--primary); box-shadow:0 0 22px rgba(255,20,147,0.3); background:linear-gradient(135deg,rgba(255,20,147,0.09),rgba(0,0,0,0.5)); animation:cardPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both,pglow 2s infinite alternate; }
         @keyframes pglow { from{box-shadow:0 0 14px rgba(255,20,147,0.3)} to{box-shadow:0 0 38px rgba(255,20,147,0.7)} }
         .p-card.eliminated { opacity:0.42; filter:grayscale(1); }
-        .p-avatar { width:95px; height:95px; border-radius:50%; border:3px solid var(--gold); margin:0 auto 10px; object-fit:cover; display:block; box-shadow:0 0 10px rgba(255,215,0,0.35); }
-        .p-placeholder { width:95px; height:95px; border-radius:50%; border:3px solid var(--gold); margin:0 auto 10px; background:linear-gradient(135deg,#2a1a3a,#1a0830); display:flex; align-items:center; justify-content:center; font-size:2.2rem; color:var(--gold); box-shadow:0 0 10px rgba(255,215,0,0.35); }
+        .p-avatar { width:95px; height:95px; border-radius:12px; border:3px solid var(--gold); margin:0 auto 10px; object-fit:contain; display:block; background:#000; box-shadow:0 0 10px rgba(255,215,0,0.35); }
+        .p-placeholder { width:95px; height:95px; border-radius:12px; border:3px solid var(--gold); margin:0 auto 10px; background:linear-gradient(135deg,#2a1a3a,#1a0830); display:flex; align-items:center; justify-content:center; font-size:2.2rem; color:var(--gold); box-shadow:0 0 10px rgba(255,215,0,0.35); }
         .p-name { font-weight:900; font-size:0.95rem; color:var(--gold); margin-bottom:3px; }
         .p-id { font-family:monospace; font-size:0.6rem; color:rgba(255,215,0,0.6); margin-bottom:4px; }
         .p-city { font-size:0.7rem; opacity:0.55; letter-spacing:0.5px; }
@@ -76,7 +76,7 @@
         .reveal-card.card-waitlisted { background:linear-gradient(135deg,#008b8b,#00ffff,#00ced1); color:black; box-shadow:0 0 80px #00ffff,0 0 160px rgba(0,255,255,0.4); }
 
         @keyframes bigPop { 0%{transform:scale(0.3) rotate(-6deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
-        .reveal-card img { width:180px; height:180px; border-radius:50%; border:6px solid #fff; display:block; margin:16px auto; object-fit:cover; box-shadow:0 8px 25px rgba(0,0,0,0.4); }
+        .reveal-card img { width:220px; height:auto; max-height:220px; border-radius:16px; border:6px solid #fff; display:block; margin:16px auto; object-fit:contain; background:#000; box-shadow:0 8px 25px rgba(0,0,0,0.4); }
 
         /* Professional Unmute Overlay */
         #unmute-overlay {
@@ -107,7 +107,7 @@
             .split-container { display: flex; flex-direction:column; overflow:visible; gap: 30px; margin-top: 20px; }
             .split-zone { min-width:0; flex:none !important; min-height: auto; padding: 10px; }
             .wall-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; overflow: visible; display: grid !important; justify-content: center !important; }
-            .p-avatar,.p-placeholder { width:80px; height:80px; font-size:1.8rem; }
+            .p-avatar,.p-placeholder { width:80px; height:80px; font-size:1.8rem; border-radius:8px; }
             .p-name { font-size:0.85rem; }
             .reveal-card { padding:30px 20px; width: 92vw; border-radius: 20px; }
             .reveal-card img { width:140px; height:140px; }
@@ -118,7 +118,7 @@
 <body>
 
 <div id="setup-overlay">
-    <img src="logo.jpg" style="width:88px;height:88px;border-radius:50%;border:3px solid var(--gold);box-shadow:0 0 25px var(--gold);object-fit:cover;">
+    <img src="logo.jpg" style="width:88px;height:88px;border-radius:12px;border:3px solid var(--gold);box-shadow:0 0 25px var(--gold);object-fit:contain;background:#000;">
     <h1 style="font-size:2.2rem;font-weight:900;letter-spacing:6px;background:linear-gradient(to bottom,#FFD700,#B8860B);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">WALL OF FAME</h1>
     <p style="color:#777;letter-spacing:2px;font-size:0.9rem;">Hello Machi Super Singer 2026</p>
     <button class="btn-start" onclick="startPortal()"><i class="fa-solid fa-star"></i> ENTER SELECTION STAGE</button>

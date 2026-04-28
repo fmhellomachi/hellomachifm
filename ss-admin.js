@@ -545,10 +545,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const snap = await db.collection("participants").get();
             tableBody.innerHTML = '';
+            let sNo = 0;
             snap.forEach((doc) => {
                 const data = doc.data();
                 const id = doc.id;
                 if (currentFilter !== 'all' && data.status !== currentFilter) return;
+                sNo++;
 
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-id', id); // for in-place updates
@@ -557,8 +559,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const bClass = data.status === 'approved' ? 'badge-approved' : 'badge-pending';
                 
                 tr.innerHTML = `
+                    <td style="text-align:center;"><input type="checkbox" class="participant-checkbox" value="${id}" onclick="updateSelectedCount()"></td>
+                    <td data-label="S.NO" style="color:#888; font-family:monospace; font-size:0.85rem;">${sNo}</td>
                     <td data-label="ID" style="color:var(--primary); font-weight:bold; font-family:monospace;">${data.participantId || '---'}</td>
-                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;">${data.name ? data.name.charAt(0) : '?'}</div>`}</td>
+                    <td data-label="PHOTO">${data.photoBase64 ? `<img src="${data.photoBase64}" style="width:60px;height:60px;border-radius:8px;object-fit:contain;background:#000;border:1px solid #333;">` : `<div style="width:60px;height:60px;border-radius:8px;background:#333;display:flex;align-items:center;justify-content:center;">${data.name ? data.name.charAt(0) : '?'}</div>`}</td>
                     <td data-label="NAME">
                         <strong>${data.name || 'Unknown'}</strong><br>
                         ${ph ? `<a href="https://wa.me/${ph}?text=${encodedMsg}" target="_blank" style="color:#25D366;font-size:0.85rem;"><i class="fa-brands fa-whatsapp"></i> Notify WhatsApp</a>` : ''}
@@ -624,12 +628,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // If advancing to a selection status and no ID exists, generate one
             const selectionStatuses = ['approved', 'Round 1', 'Round 2', 'Round 3', 'Semi-Final', 'Final Round', 'Grand Finale', 'Optional Round', 'Winner', 'Runner Up 1', 'Runner Up 2', 'waitlisted'];
             if (selectionStatuses.includes(s) && !data.participantId) {
-                updates.participantId = await generateUniqueId();
+                updates.participantId = await generateNextId();
             }
 
-            // Automatically trigger reveal logic REMOVED based on user feedback. 
-            // Manual reveal via "Trigger Reveal" button is now required.
-            
             await docRef.update(updates); 
             // ---- NO full reload — update the single row in-place ----
             const tr = document.querySelector(`tr[data-id="${id}"]`);
@@ -649,16 +650,105 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e){ console.error(e); }
     };
 
-    async function generateUniqueId() {
-        let isUnique = false;
-        let newId = '';
-        while (!isUnique) {
-            newId = 'HM' + Math.floor(10000 + Math.random() * 90000);
-            const check = await db.collection("participants").where("participantId", "==", newId).get();
-            if (check.empty) isUnique = true;
+    // ---- Bulk Action Functions ----
+    window.toggleSelectAll = () => {
+        const master = document.getElementById('select-all-checkbox');
+        const checkboxes = document.querySelectorAll('.participant-checkbox');
+        checkboxes.forEach(cb => cb.checked = master.checked);
+        updateSelectedCount();
+    };
+
+    window.updateSelectedCount = () => {
+        const checkboxes = document.querySelectorAll('.participant-checkbox:checked');
+        const count = checkboxes.length;
+        const countEl = document.getElementById('selected-count');
+        const menuEl = document.getElementById('bulk-menu');
+        if (countEl) countEl.textContent = count;
+        if (menuEl) menuEl.style.display = count > 0 ? 'flex' : 'none';
+    };
+
+    window.clearSelection = () => {
+        const master = document.getElementById('select-all-checkbox');
+        if (master) master.checked = false;
+        document.querySelectorAll('.participant-checkbox').forEach(cb => cb.checked = false);
+        updateSelectedCount();
+    };
+
+    window.applyBulkStatus = async () => {
+        const newStatus = document.getElementById('bulk-status-select').value;
+        if (!newStatus) return alert("Please select a status first.");
+        
+        const selected = Array.from(document.querySelectorAll('.participant-checkbox:checked')).map(cb => cb.value);
+        if (selected.length === 0) return alert("No participants selected.");
+        
+        if (!confirm(`Are you sure you want to move ${selected.length} participants to ${newStatus}?`)) return;
+
+        const btn = document.querySelector('button[onclick="applyBulkStatus()"]');
+        const originalText = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; }
+
+        try {
+            const selectionStatuses = ['approved', 'Round 1', 'Round 2', 'Round 3', 'Semi-Final', 'Final Round', 'Grand Finale', 'Optional Round', 'Winner', 'Runner Up 1', 'Runner Up 2', 'waitlisted'];
+            
+            // We'll process them one by one to ensure sequential ID generation works correctly
+            for (const id of selected) {
+                const docRef = db.collection("participants").doc(id);
+                const doc = await docRef.get();
+                const data = doc.data();
+                const updates = { status: newStatus };
+
+                if (selectionStatuses.includes(newStatus) && !data.participantId) {
+                    updates.participantId = await generateNextId();
+                } else if ((newStatus === 'pending' || newStatus === 'rejected') && data.participantId) {
+                    updates.participantId = firebase.firestore.FieldValue.delete();
+                }
+
+                await docRef.update(updates);
+            }
+
+            alert(`Bulk update complete! ${selected.length} participants moved to ${newStatus}.`);
+            clearSelection();
+            fetchAdminData();
+        } catch (e) {
+            console.error(e);
+            alert("Bulk update failed: " + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
         }
-        return newId;
-    }
+    };
+
+    window.applyBulkReveal = async (revealVal) => {
+        const selected = Array.from(document.querySelectorAll('.participant-checkbox:checked')).map(cb => cb.value);
+        if (selected.length === 0) return alert("No participants selected.");
+        
+        if (!confirm(`Are you sure you want to ${revealVal ? 'Reveal' : 'Hide'} ${selected.length} participants on the Wall of Fame?`)) return;
+
+        const btn = document.querySelector(`button[onclick="applyBulkReveal(${revealVal})"]`);
+        const originalText = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...'; }
+
+        try {
+            const batch = db.batch();
+            selected.forEach(id => {
+                const ref = db.collection("participants").doc(id);
+                const updates = { isRevealed: revealVal };
+                if (revealVal) {
+                    updates.lastRevealedAt = firebase.firestore.FieldValue.serverTimestamp();
+                }
+                batch.update(ref, updates);
+            });
+
+            await batch.commit();
+            alert(`Bulk ${revealVal ? 'Reveal' : 'Hide'} complete!`);
+            clearSelection();
+            fetchAdminData();
+        } catch (e) {
+            console.error(e);
+            alert("Bulk update failed: " + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+        }
+    };
 
     // ---- Photo preview inside modal ----
     const editPhotoFile = document.getElementById('edit-photo-file');
@@ -674,15 +764,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    canvas.width = 250; canvas.height = 250;
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
                     const ctx = canvas.getContext('2d');
-                    const scale = Math.max(250 / img.width, 250 / img.height);
-                    const x = (250 - img.width * scale) / 2;
-                    const y = (250 - img.height * scale) / 2;
-                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                    editPhotoBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                    ctx.drawImage(img, 0, 0, width, height);
+                    editPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
                     editPhotoPreview.src = editPhotoBase64;
                     editPhotoPreview.style.display = 'block';
+                    editPhotoPreview.style.borderRadius = '12px'; // Rounded corners instead of circle
                 };
                 img.src = ev.target.result;
             };
@@ -738,6 +843,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.closeEditModal = () => { document.getElementById('edit-modal').style.display = 'none'; };
 
+    // ---- ID Generation Logic ----
+    const generateNextId = async () => {
+        const pSnap = await db.collection("participants").get();
+        let maxNum = 0;
+        pSnap.forEach(doc => {
+            const pid = doc.data().participantId;
+            if (pid && pid.startsWith('HM-SS-')) {
+                const num = parseInt(pid.replace('HM-SS-', ''));
+                if (!isNaN(num) && num > maxNum) maxNum = num;
+            }
+        });
+        return `HM-SS-${(maxNum + 1).toString().padStart(3, '0')}`;
+    };
+
+    window.regenerateAllIds = async () => {
+        if (!confirm("This will REMOVE all existing IDs and create new ones (HM-SS-001, etc.) for all approved participants. Are you sure?")) return;
+        
+        const btn = document.getElementById('regen-ids-btn');
+        const originalText = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Re-indexing...'; }
+
+        try {
+            const pSnap = await db.collection("participants").orderBy('registeredAt', 'asc').get();
+            const batch = db.batch();
+            let count = 0;
+
+            pSnap.forEach(doc => {
+                const data = doc.data();
+                if (data.status !== 'pending' && data.status !== 'rejected') {
+                    count++;
+                    const newId = `HM-SS-${count.toString().padStart(3, '0')}`;
+                    batch.update(doc.ref, { participantId: newId });
+                } else {
+                    // Remove ID if they are pending or rejected
+                    batch.update(doc.ref, { participantId: firebase.firestore.FieldValue.delete() });
+                }
+            });
+
+            await batch.commit();
+            alert(`Success! Re-indexed ${count} participants.`);
+            fetchAdminData();
+        } catch (e) {
+            console.error(e);
+            alert("Error regenerating IDs: " + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+        }
+    };
+
     // ---- Save (works for both Add and Edit) ----
     window.saveParticipantChanges = async () => {
         const id = document.getElementById('edit-id').value;
@@ -747,6 +901,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = document.getElementById('edit-email').value.trim().toLowerCase();
         if (!name || !email) { alert('Name and Email are required.'); return; }
 
+        const newStatus = document.getElementById('edit-status').value;
+        
         const updates = {
             name,
             email,
@@ -754,7 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
             city: document.getElementById('edit-city').value.trim(),
             address: document.getElementById('edit-address').value.trim(),
             bio: document.getElementById('edit-bio').value.trim(),
-            status: document.getElementById('edit-status').value,
+            status: newStatus,
             judgeScore: parseFloat(document.getElementById('edit-judge-score').value) || 0,
             auditionLink: document.getElementById('edit-audition-link').value.trim(),
         };
@@ -771,9 +927,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 updates.isRevealed = false;
                 updates.votes = 0;
                 if (!updates.photoBase64) updates.photoBase64 = '';
+                
+                // If added as non-pending, generate ID
+                if (newStatus !== 'pending' && newStatus !== 'rejected') {
+                    updates.participantId = await generateNextId();
+                }
+
                 await db.collection("participants").add(updates);
                 alert('Participant added successfully!');
             } else {
+                // Fetch current to check if status is changing from pending
+                const currentDoc = await db.collection("participants").doc(id).get();
+                const currentData = currentDoc.data();
+                
+                // If moving from pending/rejected to an active status, and no ID exists
+                if ((currentData.status === 'pending' || currentData.status === 'rejected') && 
+                    (newStatus !== 'pending' && newStatus !== 'rejected') && 
+                    !currentData.participantId) {
+                    updates.participantId = await generateNextId();
+                }
+
                 await db.collection("participants").doc(id).update(updates);
                 alert('Changes saved!');
             }

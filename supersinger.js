@@ -761,7 +761,7 @@ async function loadParticipantSlider() {
     if (!slider) return;
     
     try {
-        const snap = await db.collection('participants').where('status', '==', 'approved').limit(50).get();
+        const snap = await db.collection('participants').limit(100).get();
             
         if (snap.empty) {
             slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Our stars are being handpicked — stay tuned!</p>';
@@ -769,7 +769,18 @@ async function loadParticipantSlider() {
         }
         
         let participants = [];
-        snap.forEach(doc => participants.push({id: doc.id, ...doc.data()}));
+        snap.forEach(doc => {
+            const d = doc.data();
+            // Show approved, or if no status field set yet (legacy data), show anyone not rejected
+            if (d.status !== 'rejected') {
+                participants.push({id: doc.id, ...d});
+            }
+        });
+
+        if (participants.length === 0) {
+            slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Our stars are getting ready!</p>';
+            return;
+        }
 
         slider.innerHTML = '';
         participants.forEach(data => {
@@ -781,7 +792,7 @@ async function loadParticipantSlider() {
                 <img src="${data.photoBase64 || 'logo.jpg'}" alt="${data.name}">
                 <h3 class="participant-name">${data.name}</h3>
                 <p><i class="fa-solid fa-location-dot" style="font-size:0.7rem; color:var(--primary);"></i> ${city}</p>
-                <p style="font-size:0.65rem; color:#555; font-family:monospace; margin-top:4px;">ID: ${data.participantId || '---'}</p>
+                <p style="font-size:0.65rem; color:var(--primary); font-family:monospace; margin-top:4px; font-weight:bold;">${data.participantId || ''}</p>
             `;
             slider.appendChild(card);
         });
@@ -797,26 +808,34 @@ async function loadVotingParticipants() {
     if (!grid) return;
 
     try {
-        const snap = await db.collection('participants').where('status', '==', 'approved').limit(50).get();
+        const snap = await db.collection('participants').limit(100).get();
 
-        if (snap.empty) {
+        let participants = [];
+        snap.forEach(doc => {
+            const d = doc.data();
+            if (d.status !== 'rejected') {
+                participants.push({id: doc.id, ...d});
+            }
+        });
+
+        if (participants.length === 0) {
             grid.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Voting opens when participants are announced!</p>';
             return;
         }
 
         grid.innerHTML = '';
-        snap.forEach(doc => {
-            const data = doc.data();
-            const alreadyVoted = localStorage.getItem(`voted_${doc.id}`) === 'true';
+        participants.forEach(data => {
+            const alreadyVoted = localStorage.getItem(`voted_${data.id}`) === 'true';
             const card = document.createElement('div');
             card.className = 'voting-card';
-            card.style.cssText = 'flex:0 0 200px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,20,147,0.2); border-radius:20px; padding:15px; text-align:center; cursor:pointer; transition:transform 0.2s;';
+            card.style.cssText = 'flex:0 0 200px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,20,147,0.2); border-radius:20px; padding:15px; text-align:center; transition:transform 0.2s;';
             card.innerHTML = `
                 <img src="${data.photoBase64 || 'logo.jpg'}" style="width:80px; height:80px; border-radius:12px; object-fit:contain; background:#000; border:2px solid var(--primary); margin-bottom:10px;">
-                <h4 style="margin:0 0 5px; font-size:0.95rem;">${data.name}</h4>
+                <h4 style="margin:0 0 3px; font-size:0.95rem;">${data.name}</h4>
+                <p style="font-size:0.7rem; color:var(--primary); font-family:monospace; margin-bottom:8px; font-weight:bold;">${data.participantId || ''}</p>
                 <p style="font-size:0.75rem; color:#888; margin-bottom:12px;">${data.city || data.place || ''}</p>
                 <button 
-                    onclick="castVoteForParticipant('${doc.id}', '${data.name}', this)" 
+                    onclick="castVoteForParticipant('${data.id}', '${data.name}', this)" 
                     style="width:100%; padding:10px; border-radius:10px; border:none; font-weight:800; cursor:pointer; background:${alreadyVoted ? '#333' : 'var(--primary)'}; color:${alreadyVoted ? '#888' : 'black'}; font-size:0.85rem;"
                     ${alreadyVoted ? 'disabled' : ''}>
                     ${alreadyVoted ? '✅ VOTED' : '❤️ VOTE'}

@@ -172,6 +172,20 @@
                 gap: 20px;
             }
         }
+        @media print {
+            body { background: white !important; color: black !important; }
+            #sidebar, #mobile-nav, .top-header, .btn, select, input, .action-cell, .fa-sort { display: none !important; }
+            #main-content { margin-left: 0 !important; padding: 0 !important; }
+            .main-panel { display: none !important; }
+            #leaderboard-panel { display: block !important; }
+            table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #ccc !important; }
+            th, td { border: 1px solid #ccc !important; color: black !important; padding: 8px !important; font-size: 12px !important; text-align: left; }
+            th { background: #eee !important; color: black !important; font-weight: bold; }
+            td:nth-last-child(1), td:nth-last-child(2), th:nth-last-child(1), th:nth-last-child(2) { display: none !important; }
+            .badge { background: none !important; color: black !important; font-weight: bold; }
+            img { display: none !important; } /* Hide avatars to save space/ink */
+            h2 { color: black !important; }
+        }
     </style>
 </head>
 <body>
@@ -544,6 +558,7 @@
                         <option value="Final Round">Final Round</option>
                     </select>
                     <button onclick="autoPromoteTopX()" class="btn btn-primary" style="background:linear-gradient(45deg, #FF1493, #800080); border:none; font-weight:bold;"><i class="fa-solid fa-bolt"></i> Auto-Promote Top X</button>
+                    <button onclick="window.print()" class="btn btn-secondary" style="background:#fff; color:#000; font-weight:bold; border:1px solid #ccc;"><i class="fa-solid fa-file-pdf"></i> Export to PDF</button>
                 </div>
 
                 <div class="table-container" style="padding:0; border:none; background:transparent;">

@@ -781,7 +781,7 @@ async function loadParticipantSlider() {
                 <img src="${data.photoBase64 || 'logo.jpg'}" alt="${data.name}">
                 <h3 class="participant-name">${data.name}</h3>
                 <p><i class="fa-solid fa-location-dot" style="font-size:0.7rem; color:var(--primary);"></i> ${city}</p>
-                <p style="font-size:0.7rem; color:#888; font-family:monospace;">${data.id}</p>
+                <p style="font-size:0.65rem; color:#555; font-family:monospace; margin-top:4px;">ID: ${data.participantId || '---'}</p>
             `;
             slider.appendChild(card);
         });

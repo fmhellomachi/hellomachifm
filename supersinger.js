@@ -761,35 +761,27 @@ async function loadParticipantSlider() {
     if (!slider) return;
     
     try {
-        // Fetch all to avoid complex index requirements for "not-in" queries
-        const snap = await db.collection('participants').limit(50).get();
+        const snap = await db.collection('participants').where('status', '==', 'approved').limit(50).get();
             
         if (snap.empty) {
-            slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Participations will be revealed soon!</p>';
+            slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Our stars are being handpicked — stay tuned!</p>';
             return;
         }
         
         let participants = [];
         snap.forEach(doc => participants.push({id: doc.id, ...doc.data()}));
 
-        // Filter: Show anyone NOT rejected. 
-        // We show 'pending' too if the user hasn't approved anyone yet, 
-        // so they see their data immediately.
-        const filtered = participants.filter(p => p.status !== 'rejected');
-
-        if (filtered.length === 0) {
-            slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Our stars are getting ready!</p>';
-            return;
-        }
-        
         slider.innerHTML = '';
-        filtered.forEach(data => {
+        participants.forEach(data => {
+            const city = data.city || data.place || 'Tamil Nadu';
             const card = document.createElement('div');
             card.className = 'p-card';
+            card.setAttribute('data-city', city);
             card.innerHTML = `
                 <img src="${data.photoBase64 || 'logo.jpg'}" alt="${data.name}">
-                <h3>${data.name}</h3>
-                <p><i class="fa-solid fa-location-dot" style="font-size:0.7rem; color:var(--primary);"></i> ${data.city || data.place || 'Tamil Nadu'}</p>
+                <h3 class="participant-name">${data.name}</h3>
+                <p><i class="fa-solid fa-location-dot" style="font-size:0.7rem; color:var(--primary);"></i> ${city}</p>
+                <p style="font-size:0.7rem; color:#888; font-family:monospace;">${data.id}</p>
             `;
             slider.appendChild(card);
         });
@@ -798,7 +790,51 @@ async function loadParticipantSlider() {
         slider.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Our stars are warming up!</p>';
     }
 }
-loadParticipantSlider();
+
+// --- LOAD APPROVED PARTICIPANTS INTO VOTING GRID ---
+async function loadVotingParticipants() {
+    const grid = document.getElementById('participants-grid');
+    if (!grid) return;
+
+    try {
+        const snap = await db.collection('participants').where('status', '==', 'approved').limit(50).get();
+
+        if (snap.empty) {
+            grid.innerHTML = '<p style="color:#666; width:100%; text-align:center; padding:20px;">Voting opens when participants are announced!</p>';
+            return;
+        }
+
+        grid.innerHTML = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const alreadyVoted = localStorage.getItem(`voted_${doc.id}`) === 'true';
+            const card = document.createElement('div');
+            card.className = 'voting-card';
+            card.style.cssText = 'flex:0 0 200px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,20,147,0.2); border-radius:20px; padding:15px; text-align:center; cursor:pointer; transition:transform 0.2s;';
+            card.innerHTML = `
+                <img src="${data.photoBase64 || 'logo.jpg'}" style="width:80px; height:80px; border-radius:12px; object-fit:contain; background:#000; border:2px solid var(--primary); margin-bottom:10px;">
+                <h4 style="margin:0 0 5px; font-size:0.95rem;">${data.name}</h4>
+                <p style="font-size:0.75rem; color:#888; margin-bottom:12px;">${data.city || data.place || ''}</p>
+                <button 
+                    onclick="castVoteForParticipant('${doc.id}', '${data.name}', this)" 
+                    style="width:100%; padding:10px; border-radius:10px; border:none; font-weight:800; cursor:pointer; background:${alreadyVoted ? '#333' : 'var(--primary)'}; color:${alreadyVoted ? '#888' : 'black'}; font-size:0.85rem;"
+                    ${alreadyVoted ? 'disabled' : ''}>
+                    ${alreadyVoted ? '✅ VOTED' : '❤️ VOTE'}
+                </button>
+            `;
+            grid.appendChild(card);
+        });
+    } catch (e) {
+        console.error('Voting grid error:', e);
+        grid.innerHTML = '<p style="color:#666; text-align:center;">Could not load participants.</p>';
+    }
+}
+
+// Call both on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadParticipantSlider();
+    loadVotingParticipants();
+});
 
 // --- DOWNLOAD TICKET FUNCTION ---
 window.downloadTicket = () => {
@@ -815,5 +851,50 @@ window.shareSocialTicket = () => {
         }).catch(err => console.log('Share failed', err));
     } else {
         alert("📸 PRO TIP: Take a screenshot of your Golden Ticket to share it on your Instagram Story!");
+    }
+};
+
+// --- CAST VOTE FOR A PARTICIPANT FROM THE MAIN PAGE ---
+window.castVoteForParticipant = async (participantId, participantName, btn) => {
+    // Check if already voted
+    if (localStorage.getItem(`voted_${participantId}`) === 'true') {
+        alert(`You have already voted for ${participantName}!`);
+        return;
+    }
+
+    // Ask for a score
+    const scoreStr = prompt(`Rate ${participantName}'s performance!\nEnter a score from 1 to 10:`);
+    if (!scoreStr) return;
+    const score = parseInt(scoreStr);
+    if (isNaN(score) || score < 1 || score > 10) {
+        alert("Please enter a valid score between 1 and 10.");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    const voterId = localStorage.getItem('voter_id') || ('V' + Math.floor(Math.random() * 1000000));
+    localStorage.setItem('voter_id', voterId);
+
+    try {
+        await db.collection('live_votes').add({
+            voterId: voterId,
+            singerId: participantId,
+            singerName: participantName,
+            score: score,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        localStorage.setItem(`voted_${participantId}`, 'true');
+        btn.textContent = '✅ VOTED';
+        btn.style.background = '#333';
+        btn.style.color = '#888';
+        alert(`🎉 Your vote of ${score}/10 for ${participantName} has been submitted!`);
+    } catch (err) {
+        console.error('Vote failed:', err);
+        btn.disabled = false;
+        btn.textContent = '❤️ VOTE';
+        alert('Vote failed. Please try again.');
     }
 };

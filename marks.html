@@ -157,7 +157,10 @@ async function render() {
                 const vals = Object.values(h.judgeScores || {});
                 const jAvg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
                 const aAvg = h.audienceAvg || 0;
-                return { round: h.round, judgeScores: h.judgeScores || {}, jAvg, aAvg, subtotal: jAvg*0.6 + aAvg*0.4 };
+                let jW = 0.6; let aW = 0.4;
+                if (jAvg === 0 && aAvg > 0) { jW = 0; aW = 1; }
+                if (aAvg === 0 && jAvg > 0) { jW = 1; aW = 0; }
+                return { round: h.round, judgeScores: h.judgeScores || {}, jAvg, aAvg, subtotal: jAvg*jW + aAvg*aW };
             });
 
             // Also check current judge_scores entry
@@ -172,7 +175,10 @@ async function render() {
                     const vals = Object.values(currentJ.scores);
                     const jAvg = vals.reduce((a,b)=>a+b,0)/vals.length;
                     const aAvg = audAvg(p.id);
-                    performances.push({ round, judgeScores: currentJ.scores, jAvg, aAvg, subtotal: jAvg*0.6 + aAvg*0.4 });
+                    let jW = 0.6; let aW = 0.4;
+                    if (jAvg === 0 && aAvg > 0) { jW = 0; aW = 1; }
+                    if (aAvg === 0 && jAvg > 0) { jW = 1; aW = 0; }
+                    performances.push({ round, judgeScores: currentJ.scores, jAvg, aAvg, subtotal: jAvg*jW + aAvg*aW });
                 }
             } else if (performances.length === 0) {
                 // Participant in a round but no scores yet — show audience only

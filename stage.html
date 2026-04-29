@@ -540,7 +540,12 @@
             if (step === 'final') {
                 fContainer.style.display = 'block';
                 const jAvg = judges.length > 0 ? (judges.reduce((a,b)=>a+jScores[b],0)/judges.length) : 0;
-                const final = (jAvg * 0.6) + (aScore * 0.4);
+                
+                let jW = 0.6; let aW = 0.4;
+                if (jAvg === 0 && aScore > 0) { jW = 0; aW = 1; }
+                if (aScore === 0 && jAvg > 0) { jW = 1; aW = 0; }
+                
+                const final = (jAvg * jW) + (aScore * aW);
                 document.getElementById('final-score-val').textContent = final.toFixed(2);
             } else { fContainer.style.display = 'none'; }
         }

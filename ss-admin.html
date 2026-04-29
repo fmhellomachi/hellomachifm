@@ -509,28 +509,59 @@
         </div>
     </div> <!-- End view-wall-of-fame -->
 
-        <!-- Leaderboard Panel -->
-        <div id="leaderboard-panel" class="main-panel" style="display:none;">
-            <div class="panel-header">
-                <h2><i class="fa-solid fa-trophy"></i> Super Singer Leaderboard</h2>
-                <p>Calculated results based on Judges (60%) and Audience (40%) scores.</p>
+        <!-- Leaderboard & Selection Hub -->
+        <div id="leaderboard-panel" class="main-panel" style="display:none; padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:15px;">
+                <div>
+                    <h2 style="color:var(--gold); margin-bottom:5px;"><i class="fa-solid fa-trophy"></i> Live Selection Hub</h2>
+                    <p style="color:#888; font-size:0.9rem;">Sort, score, and promote participants from a single view.</p>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div style="background:#111; border:1px solid #333; padding:10px 15px; border-radius:10px; display:flex; align-items:center; gap:10px;">
+                        <label style="color:#aaa; font-size:0.8rem; font-weight:bold;">Weight Engine:</label>
+                        <select id="weight-slider" onchange="calculateLeaderboard()" style="background:#222; color:var(--primary); border:none; outline:none; font-weight:bold; font-size:0.9rem;">
+                            <option value="60">60% Judge / 40% Audience</option>
+                            <option value="50">50% Judge / 50% Audience</option>
+                            <option value="70">70% Judge / 30% Audience</option>
+                            <option value="100">100% Judge / 0% Audience</option>
+                            <option value="0">0% Judge / 100% Audience</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="openManageJudgesModal()"><i class="fa-solid fa-gavel"></i> Manage Judges</button>
+                </div>
             </div>
-            <div class="cms-card">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Singer</th>
-                            <th>Judge Score (60%)</th>
-                            <th>Audience Avg (40%)</th>
-                            <th>Total Score</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-body">
-                        <!-- Calculated scores go here -->
-                    </tbody>
-                </table>
+
+            <div style="background:var(--bg-card); border:1px solid var(--glass-border); border-radius:16px; padding:20px;">
+                <div style="display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap;">
+                    <input type="text" id="lb-search" placeholder="Search singer..." oninput="filterLeaderboard()" style="flex:1; min-width:200px; padding:12px; background:rgba(0,0,0,0.5); border:1px solid #444; color:white; border-radius:8px;">
+                    <select id="lb-round-filter" onchange="filterLeaderboard()" style="padding:12px; background:rgba(0,0,0,0.5); border:1px solid #444; color:white; border-radius:8px;">
+                        <option value="all">All Rounds</option>
+                        <option value="Round 1">Round 1</option>
+                        <option value="Round 2">Round 2</option>
+                        <option value="Round 3">Round 3</option>
+                        <option value="Semi-Final">Semi-Final</option>
+                        <option value="Final Round">Final Round</option>
+                    </select>
+                    <button onclick="autoPromoteTopX()" class="btn btn-primary" style="background:linear-gradient(45deg, #FF1493, #800080); border:none; font-weight:bold;"><i class="fa-solid fa-bolt"></i> Auto-Promote Top X</button>
+                </div>
+
+                <div class="table-container" style="padding:0; border:none; background:transparent;">
+                    <table style="width:100%; min-width:1000px;">
+                        <thead style="background:rgba(0,0,0,0.4);">
+                            <tr id="lb-header-row">
+                                <th width="50" onclick="sortLeaderboard('rank')" style="cursor:pointer;">Rank <i class="fa-solid fa-sort"></i></th>
+                                <th width="200" onclick="sortLeaderboard('name')" style="cursor:pointer;">Singer <i class="fa-solid fa-sort"></i></th>
+                                <!-- Dynamic round columns will be inserted here -->
+                                <th width="120" onclick="sortLeaderboard('total')" style="cursor:pointer; color:var(--gold);">Total Score <i class="fa-solid fa-sort"></i></th>
+                                <th width="120">Status</th>
+                                <th width="280">Quick Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -642,6 +673,49 @@
                 <button class="btn btn-primary" onclick="saveParticipantChanges()" style="flex:1;" id="modal-save-btn">Save Changes</button>
                 <button class="btn btn-secondary" onclick="closeEditModal()" style="flex:1;">Cancel</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Quick Score Modal -->
+    <div id="quick-score-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: #111; border: 1px solid var(--primary); padding: 30px; border-radius: 20px; width: 92%; max-width: 500px; box-shadow: 0 0 40px rgba(255,20,147,0.3);">
+            <h2 style="color: var(--gold); margin-bottom: 5px;"><i class="fa-solid fa-star"></i> Quick Score</h2>
+            <div style="color:#aaa; font-size:0.9rem; margin-bottom:20px;" id="qs-singer-name">Singer Name (Round X)</div>
+            <input type="hidden" id="qs-singer-id">
+            <input type="hidden" id="qs-round">
+
+            <div id="qs-judge-rows" style="display:flex; flex-direction:column; gap:12px; margin-bottom:25px;">
+                <!-- Filled dynamically with persistent judges -->
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button onclick="saveQuickScore()" class="btn btn-primary" style="flex:1; background:linear-gradient(45deg, #FFD700, #B8860B); color:black; font-weight:900;"><i class="fa-solid fa-save"></i> Save Scores</button>
+                <button onclick="closeQuickScore()" class="btn btn-secondary" style="flex:1;">Cancel</button>
+            </div>
+            
+            <div style="margin-top:20px; border-top:1px dashed #444; padding-top:20px;">
+                <button onclick="triggerGoldenBuzzer()" class="btn btn-primary" style="width:100%; background:linear-gradient(135deg, #FFD700, #FF4500); color:white; font-size:1.2rem; font-weight:900; padding:15px; border-radius:12px; box-shadow:0 0 20px rgba(255,215,0,0.5); border:2px solid #FFF;"><i class="fa-solid fa-star"></i> GOLDEN BUZZER <i class="fa-solid fa-star"></i></button>
+                <p style="color:#888; font-size:0.75rem; text-align:center; margin-top:8px;">Bypasses all math and sends them straight to the Grand Finale!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Judges Modal -->
+    <div id="manage-judges-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: #111; border: 1px solid #444; padding: 30px; border-radius: 20px; width: 92%; max-width: 500px;">
+            <h2 style="color: white; margin-bottom: 20px;"><i class="fa-solid fa-gavel"></i> Manage Persistent Judges</h2>
+            <p style="color:#aaa; font-size:0.85rem; margin-bottom:20px;">These judges will appear in all scoring modals automatically.</p>
+            
+            <div id="persistent-judges-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+                <!-- Filled dynamically -->
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <input type="text" id="new-pjudge-name" placeholder="New Judge Name..." style="flex:1; padding:10px; background:#222; border:1px solid #444; color:white; border-radius:8px;">
+                <button onclick="addPersistentJudge()" class="btn btn-secondary"><i class="fa-solid fa-plus"></i> Add</button>
+            </div>
+            
+            <button onclick="closeManageJudgesModal()" class="btn btn-primary" style="width:100%;">Done</button>
         </div>
     </div>
 

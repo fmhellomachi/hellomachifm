@@ -378,8 +378,21 @@
 
                     if (data.singer1 !== currentSinger1Id) { currentSinger1Id = data.singer1; }
                     
-                    document.getElementById('current-round').textContent = data.round || 'LIVE PERFORMANCE';
-                    updateSpotlights(data.round);
+                    if (data.golden_buzzer) {
+                        document.getElementById('stage-ui').style.boxShadow = 'inset 0 0 150px #FFD700';
+                        document.getElementById('current-round').textContent = '⭐ GOLDEN BUZZER ⭐';
+                        document.getElementById('current-round').style.color = '#FFD700';
+                        document.getElementById('singer-name').style.textShadow = '0 0 30px #FFD700';
+                        document.getElementById('singer-name').textContent = "DIRECT TO FINALE!";
+                        updateSpotlights('final round');
+                        for(let i=0; i<3; i++) spawnHeart(); // Spam hearts
+                    } else {
+                        document.getElementById('stage-ui').style.boxShadow = 'none';
+                        document.getElementById('current-round').textContent = data.round || 'LIVE PERFORMANCE';
+                        document.getElementById('current-round').style.color = 'var(--primary)';
+                        document.getElementById('singer-name').style.textShadow = 'none';
+                        updateSpotlights(data.round);
+                    }
 
                     // Vote Overlay Logic
                     const voteOverlay = document.getElementById('qr-overlay');

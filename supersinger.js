@@ -26,14 +26,32 @@ document.addEventListener('DOMContentLoaded', () => {
         cropImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
     }
 
+    function setScaleCenter(newScale) {
+        if (!cropViewport) return;
+        const rect = cropViewport.getBoundingClientRect();
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        offsetX = cx - (cx - offsetX) * (newScale / scale);
+        offsetY = cy - (cy - offsetY) * (newScale / scale);
+        scale = newScale;
+        applyTransform();
+    }
+
     window.resetFraming = () => {
+        if (!cropImg || !cropViewport) return;
+        const rect = cropViewport.getBoundingClientRect();
+        const actualVW = rect.width;
+        const actualVH = rect.height;
         const naturalW = cropImg.naturalWidth;
         const naturalH = cropImg.naturalHeight;
-        const fitScale = Math.max(VIEWPORT_W / naturalW, VIEWPORT_H / naturalH);
+        
+        if (!naturalW || !naturalH) return;
+        
+        const fitScale = Math.max(actualVW / naturalW, actualVH / naturalH);
         scale = fitScale;
-        offsetX = (VIEWPORT_W - naturalW * scale) / 2;
-        offsetY = (VIEWPORT_H - naturalH * scale) / 2;
-        zoomSlider.value = Math.round(scale * 100);
+        offsetX = (actualVW - naturalW * scale) / 2;
+        offsetY = (actualVH - naturalH * scale) / 2;
+        if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
         applyTransform();
     };
 
@@ -83,9 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Zoom via scroll wheel
     cropViewport.addEventListener('wheel', (e) => {
         e.preventDefault();
-        scale = Math.max(0.01, Math.min(5, scale - e.deltaY * 0.002));
-        if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
-        applyTransform();
+        const newScale = Math.max(0.01, Math.min(5, scale - e.deltaY * 0.002));
+        if(zoomSlider) zoomSlider.value = Math.round(newScale * 100);
+        setScaleCenter(newScale);
     }, { passive: false });
 
     // Pinch-to-zoom for mobile
@@ -110,17 +128,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.touches[0].pageY - e.touches[1].pageY
             );
             const ratio = dist / initialPinchDist;
-            scale = Math.max(0.01, Math.min(5, initialScale * ratio));
-            if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
-            applyTransform();
+            const newScale = Math.max(0.01, Math.min(5, initialScale * ratio));
+            if(zoomSlider) zoomSlider.value = Math.round(newScale * 100);
+            setScaleCenter(newScale);
         }
     }, { passive: false });
 
     // Zoom via slider
     if (zoomSlider) {
         zoomSlider.addEventListener('input', () => {
-            scale = parseInt(zoomSlider.value) / 100;
-            applyTransform();
+            const newScale = parseInt(zoomSlider.value) / 100;
+            setScaleCenter(newScale);
         });
     }
 
@@ -130,15 +148,19 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = rawImageSrc;
         img.onload = async () => {
             const canvas = document.createElement('canvas');
+            const rect = cropViewport.getBoundingClientRect();
+            const actualVW = rect.width || VIEWPORT_W;
+            const actualVH = rect.height || VIEWPORT_H;
+            
             const MAX_H = 1200;
-            const targetW = Math.round(MAX_H * (VIEWPORT_W / VIEWPORT_H));
+            const targetW = Math.round(MAX_H * (actualVW / actualVH));
             const targetH = MAX_H;
             canvas.width = targetW;
             canvas.height = targetH;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = "#000"; 
             ctx.fillRect(0, 0, targetW, targetH);
-            const ratio = targetH / VIEWPORT_H;
+            const ratio = targetH / actualVH;
             ctx.drawImage(img, offsetX * ratio, offsetY * ratio, img.naturalWidth * scale * ratio, img.naturalHeight * scale * ratio);
             
             const base64 = canvas.toDataURL('image/jpeg', 0.8);

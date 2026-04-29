@@ -31,13 +31,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if(cropImg) cropImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
     }
 
+    function setScaleCenter(newScale) {
+        if (!cropViewport) return;
+        const rect = cropViewport.getBoundingClientRect();
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        offsetX = cx - (cx - offsetX) * (newScale / scale);
+        offsetY = cy - (cy - offsetY) * (newScale / scale);
+        scale = newScale;
+        applyTransform();
+    }
+
     window.resetFraming = () => {
+        if (!cropImg || !cropViewport) return;
+        const rect = cropViewport.getBoundingClientRect();
+        const actualVW = rect.width;
+        const actualVH = rect.height;
         const naturalW = cropImg.naturalWidth;
         const naturalH = cropImg.naturalHeight;
-        const fitScale = Math.max(VIEWPORT_W / naturalW, VIEWPORT_H / naturalH);
+        
+        if (!naturalW || !naturalH) return;
+        
+        const fitScale = Math.max(actualVW / naturalW, actualVH / naturalH);
         scale = fitScale;
-        offsetX = (VIEWPORT_W - naturalW * scale) / 2;
-        offsetY = (VIEWPORT_H - naturalH * scale) / 2;
+        offsetX = (actualVW - naturalW * scale) / 2;
+        offsetY = (actualVH - naturalH * scale) / 2;
         if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
         applyTransform();
     };
@@ -66,9 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Zoom via scroll wheel
         cropViewport.addEventListener('wheel', (e) => {
             e.preventDefault();
-            scale = Math.max(0.01, Math.min(5, scale - e.deltaY * 0.002));
-            if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
-            applyTransform();
+            const newScale = Math.max(0.01, Math.min(5, scale - e.deltaY * 0.002));
+            if(zoomSlider) zoomSlider.value = Math.round(newScale * 100);
+            setScaleCenter(newScale);
         }, { passive: false });
 
         // Pinch-to-zoom for mobile
@@ -93,17 +111,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.touches[0].pageY - e.touches[1].pageY
                 );
                 const ratio = dist / initialPinchDist;
-                scale = Math.max(0.01, Math.min(5, initialScale * ratio));
-                if(zoomSlider) zoomSlider.value = Math.round(scale * 100);
-                applyTransform();
+                const newScale = Math.max(0.01, Math.min(5, initialScale * ratio));
+                if(zoomSlider) zoomSlider.value = Math.round(newScale * 100);
+                setScaleCenter(newScale);
             }
         }, { passive: false });
     }
 
     if (zoomSlider) {
         zoomSlider.addEventListener('input', () => {
-            scale = parseInt(zoomSlider.value) / 100;
-            applyTransform();
+            const newScale = parseInt(zoomSlider.value) / 100;
+            setScaleCenter(newScale);
         });
     }
 
@@ -117,15 +135,19 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = rawImageSrc;
         img.onload = () => {
             const canvas = document.createElement('canvas');
+            const rect = cropViewport.getBoundingClientRect();
+            const actualVW = rect.width || VIEWPORT_W;
+            const actualVH = rect.height || VIEWPORT_H;
+
             const MAX_H = 1200;
-            const targetW = Math.round(MAX_H * (VIEWPORT_W / VIEWPORT_H));
+            const targetW = Math.round(MAX_H * (actualVW / actualVH));
             const targetH = MAX_H;
             canvas.width = targetW;
             canvas.height = targetH;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = "#000"; 
             ctx.fillRect(0, 0, targetW, targetH);
-            const ratio = targetH / VIEWPORT_H;
+            const ratio = targetH / actualVH;
             ctx.drawImage(img, offsetX * ratio, offsetY * ratio, img.naturalWidth * scale * ratio, img.naturalHeight * scale * ratio);
             
             editPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
@@ -1298,6 +1320,874 @@ document.addEventListener('DOMContentLoaded', () => {
         cEl.textContent = (j * 0.6 + a * 0.4).toFixed(2);
     }
 
+        // ==========================================
+    // ALL-IN-ONE HUB: LEADERBOARD & SELECTION
+    // ==========================================
+    let lbData = []; // Cached leaderboard data
+    let lbSortCol = 'total';
+    let lbSortAsc = false;
+    let persistentJudgesCache = [];
+    const ROUND_ORDER_LB = ['Round 1','Round 2','Round 3','Semi-Final','Final Round','Grand Finale','Optional Round'];
+
+    window.calculateLeaderboard = async () => {
+        const tbody = document.getElementById('leaderboard-body');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Crunching all scores...</td></tr>';
+
+        try {
+            const [pSnap, jSnap, vSnap, rrSnap] = await Promise.all([
+                db.collection('participants').get(),
+                db.collection('judge_scores').get(),
+                db.collection('live_votes').get(),
+                db.collection('round_results').get().catch(() => ({ forEach: () => {} }))
+            ]);
+
+            const pMap = {}; pSnap.forEach(d => pMap[d.id] = { id: d.id, ...d.data() });
+            const judgeMap = {}; jSnap.forEach(d => judgeMap[d.id] = d.data());
+            const voteMap = {}; 
+            vSnap.forEach(d => {
+                const { singerId, score } = d.data();
+                if (!singerId || !score) return;
+                if (!voteMap[singerId]) voteMap[singerId] = [];
+                voteMap[singerId].push(score);
+            });
+            const rrMap = {};
+            rrSnap.forEach(d => {
+                const data = d.data();
+                if (!rrMap[data.singerId]) rrMap[data.singerId] = [];
+                rrMap[data.singerId].push(data);
+            });
+
+            // Weight Engine
+            const weightSlider = document.getElementById('weight-slider');
+            const jWeightBase = weightSlider ? parseInt(weightSlider.value) / 100 : 0.6;
+            const aWeightBase = 1 - jWeightBase;
+
+            lbData = [];
+            const allRoundsFound = new Set();
+
+            Object.values(pMap).forEach(p => {
+                const st = p.status || '';
+                if (!st || st === 'pending' || st === 'waitlisted' || st === 'Eliminated' || st === 'approved') return; // Only show active competitors
+
+                const performances = [];
+                const archived = rrMap[p.id] || [];
+                archived.forEach(h => {
+                    const jVals = Object.values(h.judgeScores || {});
+                    const jAvg = jVals.length ? jVals.reduce((a,b)=>a+b,0)/jVals.length : 0;
+                    const aAvg = h.audienceAvg || 0;
+                    
+                    // Dynamic Weighting
+                    let jW = jWeightBase; let aW = aWeightBase;
+                    if (jAvg === 0 && aAvg > 0) { jW = 0; aW = 1; }
+                    if (aAvg === 0 && jAvg > 0) { jW = 1; aW = 0; }
+                    
+                    const subtotal = jAvg * jW + aAvg * aW;
+                    performances.push({ round: h.round, jAvg, aAvg, subtotal });
+                    allRoundsFound.add(h.round);
+                });
+
+                // Check active un-archived round
+                const currentJ = judgeMap[p.id];
+                let currentRound = st;
+                if (currentJ && currentJ.scores && Object.keys(currentJ.scores).length > 0) {
+                    currentRound = currentJ.round || st;
+                    if (!performances.some(a => a.round === currentRound)) {
+                        const jVals = Object.values(currentJ.scores);
+                        const jAvg = jVals.length ? jVals.reduce((a,b)=>a+b,0)/jVals.length : 0;
+                        const vList = voteMap[p.id] || [];
+                        const aAvg = vList.length ? vList.reduce((a,b)=>a+b,0)/vList.length : 0;
+                        
+                        let jW = jWeightBase; let aW = aWeightBase;
+                        if (jAvg === 0 && aAvg > 0) { jW = 0; aW = 1; }
+                        if (aAvg === 0 && jAvg > 0) { jW = 1; aW = 0; }
+                        
+                        performances.push({ round: currentRound, jAvg, aAvg, subtotal: jAvg * jW + aAvg * aW });
+                        allRoundsFound.add(currentRound);
+                    }
+                } else if (!performances.some(a => a.round === st)) {
+                    // Just audience or zero
+                    const vList = voteMap[p.id] || [];
+                    const aAvg = vList.length ? vList.reduce((a,b)=>a+b,0)/vList.length : 0;
+                    let jW = jWeightBase; let aW = aWeightBase;
+                    if (aAvg > 0) { jW = 0; aW = 1; }
+                    performances.push({ round: st, jAvg: 0, aAvg, subtotal: aAvg * aW });
+                    allRoundsFound.add(st);
+                }
+
+                const cumulative = performances.reduce((s, r) => s + r.subtotal, 0);
+                
+                // Map performances by round for easy table columns
+                const roundScores = {};
+                performances.forEach(pf => roundScores[pf.round] = pf.subtotal);
+
+                lbData.push({ ...p, performances, roundScores, cumulative, currentStatus: st });
+            });
+
+            // Update Dynamic Headers
+            const headerRow = document.getElementById('lb-header-row');
+            if (headerRow) {
+                // remove existing round columns
+                document.querySelectorAll('.dyn-round-col').forEach(el => el.remove());
+                const roundsArr = Array.from(allRoundsFound).sort((a,b) => ROUND_ORDER_LB.indexOf(a) - ROUND_ORDER_LB.indexOf(b));
+                
+                // Insert right before Total Score
+                const totalCol = Array.from(headerRow.children).find(th => th.textContent.includes('Total Score'));
+                roundsArr.forEach(r => {
+                    const th = document.createElement('th');
+                    th.className = 'dyn-round-col';
+                    th.innerHTML = `${r} <i class="fa-solid fa-sort"></i>`;
+                    th.style.cursor = 'pointer';
+                    th.onclick = () => window.sortLeaderboard(`round_${r}`);
+                    headerRow.insertBefore(th, totalCol);
+                });
+            }
+
+            window.sortLeaderboard(lbSortCol, true); // Keep current sort, just render
+
+        } catch(err) {
+            console.error(err);
+            tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error loading leaderboard.</td></tr>`;
+        }
+    };
+
+    window.sortLeaderboard = (col, skipToggle = false) => {
+        if (!skipToggle) {
+            if (lbSortCol === col) lbSortAsc = !lbSortAsc;
+            else { lbSortCol = col; lbSortAsc = false; }
+        }
+
+        lbData.sort((a, b) => {
+            let valA = 0, valB = 0;
+            if (col === 'rank' || col === 'total') { valA = a.cumulative; valB = b.cumulative; }
+            else if (col === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); }
+            else if (col.startsWith('round_')) {
+                const r = col.replace('round_', '');
+                valA = a.roundScores[r] || 0; valB = b.roundScores[r] || 0;
+            }
+
+            if (typeof valA === 'string') return lbSortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            return lbSortAsc ? valA - valB : valB - valA;
+        });
+
+        window.filterLeaderboard(); // renders table
+    };
+
+    window.filterLeaderboard = () => {
+        const search = (document.getElementById('lb-search')?.value || '').toLowerCase();
+        const rFilter = document.getElementById('lb-round-filter')?.value || 'all';
+        const tbody = document.getElementById('leaderboard-body');
+        if (!tbody) return;
+
+        let filtered = lbData.filter(s => {
+            const matchName = (s.name || '').toLowerCase().includes(search);
+            const matchRound = (rFilter === 'all') || (s.currentStatus === rFilter) || (s.roundScores[rFilter] !== undefined);
+            return matchName && matchRound;
+        });
+
+        const roundsArr = Array.from(document.querySelectorAll('.dyn-round-col')).map(th => th.textContent.replace(/[^a-zA-Z0-9 -]/g, '').trim());
+
+        let html = '';
+        filtered.forEach((s, idx) => {
+            let rankHtml = lbSortCol === 'total' || lbSortCol === 'rank' ? (idx + 1) : '-';
+            
+            let roundHtml = '';
+            roundsArr.forEach(r => {
+                const sc = s.roundScores[r] !== undefined ? s.roundScores[r].toFixed(2) : '<span style="color:#444;">-</span>';
+                roundHtml += `<td><strong style="color:var(--secondary);">${sc}</strong></td>`;
+            });
+
+            // Status Dropdown identical to Participants tab
+            const statuses = ["pending", "approved", "Round 1", "Round 2", "Round 3", "Semi-Final", "Final Round", "Grand Finale", "Optional Round", "Winner", "waitlisted", "Eliminated"];
+            let optHtml = statuses.map(st => `<option value="${st}" ${s.currentStatus === st ? 'selected' : ''}>${st}</option>`).join('');
+
+            html += `
+                <tr style="background:rgba(255,255,255,0.02); border-bottom:1px solid #222;">
+                    <td><div class="badge" style="background:#222; color:#fff;">${rankHtml}</div></td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${s.photoBase64||'logo.jpg'}" style="width:40px; height:40px; border-radius:8px; object-fit:cover; border:1px solid var(--primary);">
+                            <div>
+                                <div style="font-weight:bold; color:#fff; font-size:0.95rem;">${s.name}</div>
+                                <div style="color:#888; font-size:0.7rem; font-family:monospace;">${s.participantId}</div>
+                            </div>
+                        </div>
+                    </td>
+                    ${roundHtml}
+                    <td><div style="font-size:1.2rem; font-weight:900; color:var(--gold);">${s.cumulative.toFixed(2)}</div></td>
+                    <td>
+                        <select onchange="updateStatus('${s.id}', this.value)" style="padding:6px; background:#111; color:white; border:1px solid #444; border-radius:6px; font-size:0.8rem; width:100%;">
+                            ${optHtml}
+                        </select>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button onclick="pushToLiveStage('${s.id}', '${s.currentStatus}')" class="btn btn-secondary" style="padding:6px 10px; font-size:0.75rem; background:#333; color:#fff;" title="Push to Live Stage"><i class="fa-solid fa-tower-broadcast"></i></button>
+                            <button onclick="revealOnWall('${s.id}')" class="btn btn-secondary" style="padding:6px 10px; font-size:0.75rem; background:#28a745; color:#fff;" title="Reveal on Wall of Fame"><i class="fa-solid fa-star"></i></button>
+                            <button onclick="openQuickScore('${s.id}', '${s.currentStatus}', '${s.name.replace(/'/g, "\\'")}')" class="btn btn-primary" style="padding:6px 10px; font-size:0.75rem;" title="Quick Judge Score"><i class="fa-solid fa-gavel"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        if (!html) html = '<tr><td colspan="10" style="text-align:center; padding:20px;">No participants found for this filter.</td></tr>';
+        tbody.innerHTML = html;
+    };
+
+    window.autoPromoteTopX = () => {
+        const count = prompt("Enter the number of top participants to promote:", "10");
+        if (!count || isNaN(count)) return;
+        const targetCount = parseInt(count);
+        
+        const nextRound = prompt("Enter the target status (e.g. 'Round 2', 'Semi-Final'):", "Round 2");
+        if (!nextRound) return;
+
+        // Take top X from current view (assuming they sorted how they want)
+        const toPromote = Array.from(document.getElementById('leaderboard-body').querySelectorAll('tr')).slice(0, targetCount);
+        
+        if(confirm(`Are you sure you want to promote the top ${toPromote.length} visible participants to ${nextRound}?`)) {
+            let processed = 0;
+            toPromote.forEach(tr => {
+                const select = tr.querySelector('select');
+                if (select) {
+                    select.value = nextRound;
+                    const event = new Event('change');
+                    select.dispatchEvent(event);
+                }
+                processed++;
+            });
+            alert(`Successfully triggered promotion for ${processed} participants.`);
+        }
+    };
+
+    window.pushToLiveStage = async (singerId, round) => {
+        try {
+            await db.collection('live_state').doc('current').set({
+                round: round,
+                singer1_id: singerId,
+                singer2_id: "",
+                status: "on-air",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            await db.collection('live_votes').get().then(snap => {
+                const batch = db.batch();
+                snap.forEach(doc => batch.delete(doc.ref));
+                return batch.commit();
+            });
+
+            alert("Pushed to Live Stage successfully!");
+        } catch(e) {
+            console.error(e);
+            alert("Error pushing to live stage");
+        }
+    };
+
+    window.revealOnWall = async (singerId) => {
+        try {
+            const ref = db.collection('wall_of_fame_reveals').doc(singerId);
+            const doc = await ref.get();
+            if (doc.exists && doc.data().revealed) {
+                // Already revealed, maybe hide? 
+                await ref.set({ revealed: false }, { merge: true });
+                alert("Candidate hidden from Wall.");
+            } else {
+                await ref.set({ revealed: true, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                alert("Candidate REVEALED on Wall of Fame!");
+            }
+        } catch(err) { console.error(err); alert("Error revealing on wall"); }
+    };
+
+    // ==========================================
+    // QUICK SCORE & PERSISTENT JUDGES
+    // ==========================================
+    
+    window.openManageJudgesModal = async () => {
+        document.getElementById('manage-judges-modal').style.display = 'flex';
+        await loadPersistentJudges();
+    };
+
+    window.closeManageJudgesModal = () => {
+        document.getElementById('manage-judges-modal').style.display = 'none';
+    };
+
+    const loadPersistentJudges = async () => {
+        try {
+            const doc = await db.collection('config').doc('judges').get();
+            persistentJudgesCache = doc.exists && doc.data().list ? doc.data().list : [];
+            renderPersistentJudges();
+        } catch(e) { console.error(e); }
+    };
+
+    window.renderPersistentJudges = () => {
+        const list = document.getElementById('persistent-judges-list');
+        if (!list) return;
+        list.innerHTML = persistentJudgesCache.map((jName, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; border-radius:8px;">
+                <span style="color:white; font-weight:bold;">${jName}</span>
+                <button onclick="removePersistentJudge(${i})" class="btn btn-danger" style="padding:4px 8px;"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `).join('');
+    };
+
+    window.addPersistentJudge = async () => {
+        const input = document.getElementById('new-pjudge-name');
+        const name = input.value.trim();
+        if(!name) return;
+        persistentJudgesCache.push(name);
+        await db.collection('config').doc('judges').set({ list: persistentJudgesCache }, {merge:true});
+        input.value = '';
+        renderPersistentJudges();
+    };
+
+    window.removePersistentJudge = async (idx) => {
+        persistentJudgesCache.splice(idx, 1);
+        await db.collection('config').doc('judges').set({ list: persistentJudgesCache }, {merge:true});
+        renderPersistentJudges();
+    };
+
+    window.openQuickScore = async (singerId, round, name) => {
+        document.getElementById('quick-score-modal').style.display = 'flex';
+        document.getElementById('qs-singer-id').value = singerId;
+        document.getElementById('qs-round').value = round;
+        document.getElementById('qs-singer-name').textContent = `${name} (${round})`;
+
+        // Ensure we have judges loaded
+        if (persistentJudgesCache.length === 0) await loadPersistentJudges();
+
+        const container = document.getElementById('qs-judge-rows');
+        container.innerHTML = '';
+        
+        // Check if scores already exist for this round
+        let existingScores = {};
+        try {
+            const jDoc = await db.collection('judge_scores').doc(singerId).get();
+            if (jDoc.exists && jDoc.data().round === round) {
+                existingScores = jDoc.data().scores || {};
+            }
+        } catch(e){}
+
+        if (persistentJudgesCache.length === 0) {
+            container.innerHTML = '<div style="color:#aaa; font-size:0.8rem; text-align:center;">No persistent judges found. Manage Judges first!</div>';
+        } else {
+            persistentJudgesCache.forEach((jName, i) => {
+                const existingVal = existingScores[jName] !== undefined ? existingScores[jName] : '';
+                container.innerHTML += `
+                    <div style="display:flex; align-items:center; gap:10px; background:#222; padding:10px; border-radius:8px;">
+                        <span style="flex:1; color:var(--gold); font-weight:bold; font-size:0.9rem;">${jName}</span>
+                        <input type="number" class="qs-score-input" data-jname="${jName}" min="0" max="10" step="0.5" value="${existingVal}" placeholder="10" style="width:80px; padding:10px; background:#111; color:white; border:1px solid #444; border-radius:6px; font-weight:bold; text-align:center;">
+                    </div>
+                `;
+            });
+        }
+    };
+
+    window.closeQuickScore = () => {
+        document.getElementById('quick-score-modal').style.display = 'none';
+    };
+
+    window.saveQuickScore = async () => {
+        const singerId = document.getElementById('qs-singer-id').value;
+        const round = document.getElementById('qs-round').value;
+        const inputs = document.querySelectorAll('.qs-score-input');
+        
+        let scores = {};
+        inputs.forEach(input => {
+            const jName = input.getAttribute('data-jname');
+            const val = parseFloat(input.value);
+            if (!isNaN(val)) scores[jName] = val;
+        });
+
+        if (Object.keys(scores).length === 0) {
+            alert("Please enter at least one score.");
+            return;
+        }
+
+        try {
+            await db.collection('judge_scores').doc(singerId).set({
+                singerId: singerId,
+                round: round,
+                scores: scores,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            alert("Scores saved successfully!");
+            closeQuickScore();
+            if (document.getElementById('leaderboard-panel').style.display !== 'none') {
+                calculateLeaderboard();
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error saving scores: " + error.message);
+        }
+    };
+
+    window.triggerGoldenBuzzer = async () => {
+        if(!confirm("Are you sure you want to trigger the GOLDEN BUZZER? This will instantly promote them to the Grand Finale and trigger the live animation!")) return;
+        
+        const singerId = document.getElementById('qs-singer-id').value;
+        try {
+            // Promote to Grand Finale
+            await db.collection('participants').doc(singerId).update({ status: 'Grand Finale' });
+            
+            // Trigger animation on live stage
+            await db.collection('live_state').doc('current').set({
+                golden_buzzer: true,
+                golden_singer_id: singerId,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            // Auto reset buzzer flag after 10 seconds so it doesn't loop forever
+            setTimeout(() => {
+                db.collection('live_state').doc('current').update({ golden_buzzer: false });
+            }, 10000);
+
+            alert("GOLDEN BUZZER TRIGGERED!!!");
+            closeQuickScore();
+            if (document.getElementById('leaderboard-panel').style.display !== 'none') {
+                calculateLeaderboard();
+            }
+        } catch(err) {
+            console.error(err);
+            alert("Error triggering Golden Buzzer");
+        }
+    };
+
+    // ==========================================
+    // ALL-IN-ONE HUB: LEADERBOARD & SELECTION
+    // ==========================================
+    let lbData = []; // Cached leaderboard data
+    let lbSortCol = 'total';
+    let lbSortAsc = false;
+    let persistentJudgesCache = [];
+    const ROUND_ORDER_LB = ['Round 1','Round 2','Round 3','Semi-Final','Final Round','Grand Finale','Optional Round'];
+
+    window.calculateLeaderboard = async () => {
+        const tbody = document.getElementById('leaderboard-body');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Crunching all scores...</td></tr>';
+
+        try {
+            const [pSnap, jSnap, vSnap, rrSnap] = await Promise.all([
+                db.collection('participants').get(),
+                db.collection('judge_scores').get(),
+                db.collection('live_votes').get(),
+                db.collection('round_results').get().catch(() => ({ forEach: () => {} }))
+            ]);
+
+            const pMap = {}; pSnap.forEach(d => pMap[d.id] = { id: d.id, ...d.data() });
+            const judgeMap = {}; jSnap.forEach(d => judgeMap[d.id] = d.data());
+            const voteMap = {}; 
+            vSnap.forEach(d => {
+                const { singerId, score } = d.data();
+                if (!singerId || !score) return;
+                if (!voteMap[singerId]) voteMap[singerId] = [];
+                voteMap[singerId].push(score);
+            });
+            const rrMap = {};
+            rrSnap.forEach(d => {
+                const data = d.data();
+                if (!rrMap[data.singerId]) rrMap[data.singerId] = [];
+                rrMap[data.singerId].push(data);
+            });
+
+            // Weight Engine
+            const weightSlider = document.getElementById('weight-slider');
+            const jWeightBase = weightSlider ? parseInt(weightSlider.value) / 100 : 0.6;
+            const aWeightBase = 1 - jWeightBase;
+
+            lbData = [];
+            const allRoundsFound = new Set();
+
+            Object.values(pMap).forEach(p => {
+                const st = p.status || '';
+                if (!st || st === 'pending' || st === 'waitlisted' || st === 'Eliminated' || st === 'approved') return; // Only show active competitors
+
+                const performances = [];
+                const archived = rrMap[p.id] || [];
+                archived.forEach(h => {
+                    const jVals = Object.values(h.judgeScores || {});
+                    const jAvg = jVals.length ? jVals.reduce((a,b)=>a+b,0)/jVals.length : 0;
+                    const aAvg = h.audienceAvg || 0;
+                    
+                    // Dynamic Weighting
+                    let jW = jWeightBase; let aW = aWeightBase;
+                    if (jAvg === 0 && aAvg > 0) { jW = 0; aW = 1; }
+                    if (aAvg === 0 && jAvg > 0) { jW = 1; aW = 0; }
+                    
+                    const subtotal = jAvg * jW + aAvg * aW;
+                    performances.push({ round: h.round, jAvg, aAvg, subtotal });
+                    allRoundsFound.add(h.round);
+                });
+
+                // Check active un-archived round
+                const currentJ = judgeMap[p.id];
+                let currentRound = st;
+                if (currentJ && currentJ.scores && Object.keys(currentJ.scores).length > 0) {
+                    currentRound = currentJ.round || st;
+                    if (!performances.some(a => a.round === currentRound)) {
+                        const jVals = Object.values(currentJ.scores);
+                        const jAvg = jVals.length ? jVals.reduce((a,b)=>a+b,0)/jVals.length : 0;
+                        const vList = voteMap[p.id] || [];
+                        const aAvg = vList.length ? vList.reduce((a,b)=>a+b,0)/vList.length : 0;
+                        
+                        let jW = jWeightBase; let aW = aWeightBase;
+                        if (jAvg === 0 && aAvg > 0) { jW = 0; aW = 1; }
+                        if (aAvg === 0 && jAvg > 0) { jW = 1; aW = 0; }
+                        
+                        performances.push({ round: currentRound, jAvg, aAvg, subtotal: jAvg * jW + aAvg * aW });
+                        allRoundsFound.add(currentRound);
+                    }
+                } else if (!performances.some(a => a.round === st)) {
+                    // Just audience or zero
+                    const vList = voteMap[p.id] || [];
+                    const aAvg = vList.length ? vList.reduce((a,b)=>a+b,0)/vList.length : 0;
+                    let jW = jWeightBase; let aW = aWeightBase;
+                    if (aAvg > 0) { jW = 0; aW = 1; }
+                    performances.push({ round: st, jAvg: 0, aAvg, subtotal: aAvg * aW });
+                    allRoundsFound.add(st);
+                }
+
+                const cumulative = performances.reduce((s, r) => s + r.subtotal, 0);
+                
+                // Map performances by round for easy table columns
+                const roundScores = {};
+                performances.forEach(pf => roundScores[pf.round] = pf.subtotal);
+
+                lbData.push({ ...p, performances, roundScores, cumulative, currentStatus: st });
+            });
+
+            // Update Dynamic Headers
+            const headerRow = document.getElementById('lb-header-row');
+            if (headerRow) {
+                // remove existing round columns
+                document.querySelectorAll('.dyn-round-col').forEach(el => el.remove());
+                const roundsArr = Array.from(allRoundsFound).sort((a,b) => ROUND_ORDER_LB.indexOf(a) - ROUND_ORDER_LB.indexOf(b));
+                
+                // Insert right before Total Score
+                const totalCol = Array.from(headerRow.children).find(th => th.textContent.includes('Total Score'));
+                roundsArr.forEach(r => {
+                    const th = document.createElement('th');
+                    th.className = 'dyn-round-col';
+                    th.innerHTML = `${r} <i class="fa-solid fa-sort"></i>`;
+                    th.style.cursor = 'pointer';
+                    th.onclick = () => window.sortLeaderboard(`round_${r}`);
+                    headerRow.insertBefore(th, totalCol);
+                });
+            }
+
+            window.sortLeaderboard(lbSortCol, true); // Keep current sort, just render
+
+        } catch(err) {
+            console.error(err);
+            tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error loading leaderboard.</td></tr>`;
+        }
+    };
+
+    window.sortLeaderboard = (col, skipToggle = false) => {
+        if (!skipToggle) {
+            if (lbSortCol === col) lbSortAsc = !lbSortAsc;
+            else { lbSortCol = col; lbSortAsc = false; }
+        }
+
+        lbData.sort((a, b) => {
+            let valA = 0, valB = 0;
+            if (col === 'rank' || col === 'total') { valA = a.cumulative; valB = b.cumulative; }
+            else if (col === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); }
+            else if (col.startsWith('round_')) {
+                const r = col.replace('round_', '');
+                valA = a.roundScores[r] || 0; valB = b.roundScores[r] || 0;
+            }
+
+            if (typeof valA === 'string') return lbSortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            return lbSortAsc ? valA - valB : valB - valA;
+        });
+
+        window.filterLeaderboard(); // renders table
+    };
+
+    window.filterLeaderboard = () => {
+        const search = (document.getElementById('lb-search')?.value || '').toLowerCase();
+        const rFilter = document.getElementById('lb-round-filter')?.value || 'all';
+        const tbody = document.getElementById('leaderboard-body');
+        if (!tbody) return;
+
+        let filtered = lbData.filter(s => {
+            const matchName = (s.name || '').toLowerCase().includes(search);
+            const matchRound = (rFilter === 'all') || (s.currentStatus === rFilter) || (s.roundScores[rFilter] !== undefined);
+            return matchName && matchRound;
+        });
+
+        const roundsArr = Array.from(document.querySelectorAll('.dyn-round-col')).map(th => th.textContent.replace(/[^a-zA-Z0-9 -]/g, '').trim());
+
+        let html = '';
+        filtered.forEach((s, idx) => {
+            let rankHtml = lbSortCol === 'total' || lbSortCol === 'rank' ? (idx + 1) : '-';
+            
+            let roundHtml = '';
+            roundsArr.forEach(r => {
+                const sc = s.roundScores[r] !== undefined ? s.roundScores[r].toFixed(2) : '<span style="color:#444;">-</span>';
+                roundHtml += `<td><strong style="color:var(--secondary);">${sc}</strong></td>`;
+            });
+
+            // Status Dropdown identical to Participants tab
+            const statuses = ["pending", "approved", "Round 1", "Round 2", "Round 3", "Semi-Final", "Final Round", "Grand Finale", "Optional Round", "Winner", "waitlisted", "Eliminated"];
+            let optHtml = statuses.map(st => `<option value="${st}" ${s.currentStatus === st ? 'selected' : ''}>${st}</option>`).join('');
+
+            html += `
+                <tr style="background:rgba(255,255,255,0.02); border-bottom:1px solid #222;">
+                    <td><div class="badge" style="background:#222; color:#fff;">${rankHtml}</div></td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${s.photoBase64||'logo.jpg'}" style="width:40px; height:40px; border-radius:8px; object-fit:cover; border:1px solid var(--primary);">
+                            <div>
+                                <div style="font-weight:bold; color:#fff; font-size:0.95rem;">${s.name}</div>
+                                <div style="color:#888; font-size:0.7rem; font-family:monospace;">${s.participantId}</div>
+                            </div>
+                        </div>
+                    </td>
+                    ${roundHtml}
+                    <td><div style="font-size:1.2rem; font-weight:900; color:var(--gold);">${s.cumulative.toFixed(2)}</div></td>
+                    <td>
+                        <select onchange="updateStatus('${s.id}', this.value)" style="padding:6px; background:#111; color:white; border:1px solid #444; border-radius:6px; font-size:0.8rem; width:100%;">
+                            ${optHtml}
+                        </select>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button onclick="pushToLiveStage('${s.id}', '${s.currentStatus}')" class="btn btn-secondary" style="padding:6px 10px; font-size:0.75rem; background:#333; color:#fff;" title="Push to Live Stage"><i class="fa-solid fa-tower-broadcast"></i></button>
+                            <button onclick="revealOnWall('${s.id}')" class="btn btn-secondary" style="padding:6px 10px; font-size:0.75rem; background:#28a745; color:#fff;" title="Reveal on Wall of Fame"><i class="fa-solid fa-star"></i></button>
+                            <button onclick="openQuickScore('${s.id}', '${s.currentStatus}', '${s.name.replace(/'/g, "\\'")}')" class="btn btn-primary" style="padding:6px 10px; font-size:0.75rem;" title="Quick Judge Score"><i class="fa-solid fa-gavel"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        if (!html) html = '<tr><td colspan="10" style="text-align:center; padding:20px;">No participants found for this filter.</td></tr>';
+        tbody.innerHTML = html;
+    };
+
+    window.autoPromoteTopX = () => {
+        const count = prompt("Enter the number of top participants to promote:", "10");
+        if (!count || isNaN(count)) return;
+        const targetCount = parseInt(count);
+        
+        const nextRound = prompt("Enter the target status (e.g. 'Round 2', 'Semi-Final'):", "Round 2");
+        if (!nextRound) return;
+
+        // Take top X from current view (assuming they sorted how they want)
+        const toPromote = Array.from(document.getElementById('leaderboard-body').querySelectorAll('tr')).slice(0, targetCount);
+        
+        if(confirm(`Are you sure you want to promote the top ${toPromote.length} visible participants to ${nextRound}?`)) {
+            let processed = 0;
+            toPromote.forEach(tr => {
+                const select = tr.querySelector('select');
+                if (select) {
+                    select.value = nextRound;
+                    const event = new Event('change');
+                    select.dispatchEvent(event);
+                }
+                processed++;
+            });
+            alert(`Successfully triggered promotion for ${processed} participants.`);
+        }
+    };
+
+    window.pushToLiveStage = async (singerId, round) => {
+        try {
+            await db.collection('live_state').doc('current').set({
+                round: round,
+                singer1_id: singerId,
+                singer2_id: "",
+                status: "on-air",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            await db.collection('live_votes').get().then(snap => {
+                const batch = db.batch();
+                snap.forEach(doc => batch.delete(doc.ref));
+                return batch.commit();
+            });
+
+            alert("Pushed to Live Stage successfully!");
+        } catch(e) {
+            console.error(e);
+            alert("Error pushing to live stage");
+        }
+    };
+
+    window.revealOnWall = async (singerId) => {
+        try {
+            const ref = db.collection('wall_of_fame_reveals').doc(singerId);
+            const doc = await ref.get();
+            if (doc.exists && doc.data().revealed) {
+                // Already revealed, maybe hide? 
+                await ref.set({ revealed: false }, { merge: true });
+                alert("Candidate hidden from Wall.");
+            } else {
+                await ref.set({ revealed: true, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                alert("Candidate REVEALED on Wall of Fame!");
+            }
+        } catch(err) { console.error(err); alert("Error revealing on wall"); }
+    };
+
+    // ==========================================
+    // QUICK SCORE & PERSISTENT JUDGES
+    // ==========================================
+    
+    window.openManageJudgesModal = async () => {
+        document.getElementById('manage-judges-modal').style.display = 'flex';
+        await loadPersistentJudges();
+    };
+
+    window.closeManageJudgesModal = () => {
+        document.getElementById('manage-judges-modal').style.display = 'none';
+    };
+
+    const loadPersistentJudges = async () => {
+        try {
+            const doc = await db.collection('config').doc('judges').get();
+            persistentJudgesCache = doc.exists && doc.data().list ? doc.data().list : [];
+            renderPersistentJudges();
+        } catch(e) { console.error(e); }
+    };
+
+    window.renderPersistentJudges = () => {
+        const list = document.getElementById('persistent-judges-list');
+        if (!list) return;
+        list.innerHTML = persistentJudgesCache.map((jName, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; border-radius:8px;">
+                <span style="color:white; font-weight:bold;">${jName}</span>
+                <button onclick="removePersistentJudge(${i})" class="btn btn-danger" style="padding:4px 8px;"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `).join('');
+    };
+
+    window.addPersistentJudge = async () => {
+        const input = document.getElementById('new-pjudge-name');
+        const name = input.value.trim();
+        if(!name) return;
+        persistentJudgesCache.push(name);
+        await db.collection('config').doc('judges').set({ list: persistentJudgesCache }, {merge:true});
+        input.value = '';
+        renderPersistentJudges();
+    };
+
+    window.removePersistentJudge = async (idx) => {
+        persistentJudgesCache.splice(idx, 1);
+        await db.collection('config').doc('judges').set({ list: persistentJudgesCache }, {merge:true});
+        renderPersistentJudges();
+    };
+
+    window.openQuickScore = async (singerId, round, name) => {
+        document.getElementById('quick-score-modal').style.display = 'flex';
+        document.getElementById('qs-singer-id').value = singerId;
+        document.getElementById('qs-round').value = round;
+        document.getElementById('qs-singer-name').textContent = `${name} (${round})`;
+
+        // Ensure we have judges loaded
+        if (persistentJudgesCache.length === 0) await loadPersistentJudges();
+
+        const container = document.getElementById('qs-judge-rows');
+        container.innerHTML = '';
+        
+        // Check if scores already exist for this round
+        let existingScores = {};
+        try {
+            const jDoc = await db.collection('judge_scores').doc(singerId).get();
+            if (jDoc.exists && jDoc.data().round === round) {
+                existingScores = jDoc.data().scores || {};
+            }
+        } catch(e){}
+
+        if (persistentJudgesCache.length === 0) {
+            container.innerHTML = '<div style="color:#aaa; font-size:0.8rem; text-align:center;">No persistent judges found. Manage Judges first!</div>';
+        } else {
+            persistentJudgesCache.forEach((jName, i) => {
+                const existingVal = existingScores[jName] !== undefined ? existingScores[jName] : '';
+                container.innerHTML += `
+                    <div style="display:flex; align-items:center; gap:10px; background:#222; padding:10px; border-radius:8px;">
+                        <span style="flex:1; color:var(--gold); font-weight:bold; font-size:0.9rem;">${jName}</span>
+                        <input type="number" class="qs-score-input" data-jname="${jName}" min="0" max="10" step="0.5" value="${existingVal}" placeholder="10" style="width:80px; padding:10px; background:#111; color:white; border:1px solid #444; border-radius:6px; font-weight:bold; text-align:center;">
+                    </div>
+                `;
+            });
+        }
+    };
+
+    window.closeQuickScore = () => {
+        document.getElementById('quick-score-modal').style.display = 'none';
+    };
+
+    window.saveQuickScore = async () => {
+        const singerId = document.getElementById('qs-singer-id').value;
+        const round = document.getElementById('qs-round').value;
+        const inputs = document.querySelectorAll('.qs-score-input');
+        
+        let scores = {};
+        inputs.forEach(input => {
+            const jName = input.getAttribute('data-jname');
+            const val = parseFloat(input.value);
+            if (!isNaN(val)) scores[jName] = val;
+        });
+
+        if (Object.keys(scores).length === 0) {
+            alert("Please enter at least one score.");
+            return;
+        }
+
+        try {
+            await db.collection('judge_scores').doc(singerId).set({
+                singerId: singerId,
+                round: round,
+                scores: scores,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            alert("Scores saved successfully!");
+            closeQuickScore();
+            if (document.getElementById('leaderboard-panel').style.display !== 'none') {
+                calculateLeaderboard();
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error saving scores: " + error.message);
+        }
+    };
+
+    window.triggerGoldenBuzzer = async () => {
+        if(!confirm("Are you sure you want to trigger the GOLDEN BUZZER? This will instantly promote them to the Grand Finale and trigger the live animation!")) return;
+        
+        const singerId = document.getElementById('qs-singer-id').value;
+        try {
+            // Promote to Grand Finale
+            await db.collection('participants').doc(singerId).update({ status: 'Grand Finale' });
+            
+            // Trigger animation on live stage
+            await db.collection('live_state').doc('current').set({
+                golden_buzzer: true,
+                golden_singer_id: singerId,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            
+            // Auto reset buzzer flag after 10 seconds so it doesn't loop forever
+            setTimeout(() => {
+                db.collection('live_state').doc('current').update({ golden_buzzer: false });
+            }, 10000);
+
+            alert("GOLDEN BUZZER TRIGGERED!!!");
+            closeQuickScore();
+            if (document.getElementById('leaderboard-panel').style.display !== 'none') {
+                calculateLeaderboard();
+            }
+        } catch(err) {
+            console.error(err);
+            alert("Error triggering Golden Buzzer");
+        }
+    };
+
     // Setup Auth Listener (At the end to ensure all functions are defined)
     auth.onAuthStateChanged(async (user) => {
         try {
@@ -1337,3 +2227,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+

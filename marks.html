@@ -332,25 +332,28 @@ async function render() {
             });
 
             rows += `
-                <tr class="${isTied?'tie-row':''}">
-                    <td><span class="rank ${rClass}">${i+1}</span></td>
+                <tr class="${isTied ? 'tie-row' : ''}">
+                    <td style="text-align:center;">
+                        <span class="rank ${rClass}">${i + 1}</span>
+                    </td>
                     <td>
                         <div class="singer-cell">
-                            <img src="${s.photoBase64||'logo.jpg'}" class="avatar" onerror="this.src='logo.jpg'">
+                            <img src="${s.photoBase64 || 'logo.jpg'}" class="avatar" alt="${s.name}">
                             <div>
-                                <div class="singer-name">${(s.name||'').toUpperCase()}</div>
-                                <div class="singer-id">ID: ${s.participantId||'—'}</div>
-                                <div class="singer-city"><i class="fa-solid fa-location-dot"></i> ${(s.city||s.place||'TAMIL NADU').toUpperCase()}</div>
-                                <span class="status-chip">${s.currentStatus}</span>
+                                <div class="singer-name">${s.name.toUpperCase()}</div>
+                                <div class="singer-id">ID: ${s.participantId || '---'}</div>
+                                <div class="singer-city"><i class="fa-solid fa-location-dot"></i> ${s.city || s.place || 'TAMIL NADU'}</div>
+                                <div class="status-chip">${s.currentStatus}</div>
                             </div>
                         </div>
                     </td>
                     <td>${perfHtml}</td>
-                    <td style="text-align:center; vertical-align:middle;">
-                        <div class="overall">${s.cumulative>0 ? s.cumulative.toFixed(2) : '—'}</div>
-                        ${isTied?`<span class="tie-note">TIE → PEAK JUDGE: ${s.peakJudge.toFixed(1)}</span>`:''}
+                    <td>
+                        <div class="overall">${s.cumulative.toFixed(2)}</div>
+                        ${prevTie || nextTie ? '<span class="tie-note">TIE BREAKER: HIGHEST JUDGE SCORE</span>' : ''}
                     </td>
-                </tr>`;
+                </tr>
+            `;
         });
 
         container.innerHTML = `
@@ -368,8 +371,8 @@ async function render() {
                 </table>
             </div>`;
 
-    } catch(err) {
-        console.error(err);
+    } catch (err) {
+        console.error("Render Error:", err);
         container.innerHTML = `<div class="state-box" style="color:#c44;"><i class="fa-solid fa-triangle-exclamation"></i><p>Error: ${err.message}</p></div>`;
     }
 }

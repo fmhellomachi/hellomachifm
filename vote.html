@@ -199,110 +199,131 @@
         let activeSingerId = null;
         let singer1Data = null;
         let singer2Data = null;
+        let activeIdx = 1;
         let voterId = localStorage.getItem('voter_id') || ('V' + Math.floor(Math.random() * 1000000));
         localStorage.setItem('voter_id', voterId);
 
+        // 1. Listen to Live State
         db.collection('live_state').doc('current').onSnapshot(async doc => {
             if (!doc.exists) {
-                document.getElementById('live-voting-area').style.display = 'none';
-                document.getElementById('no-live-area').style.display = 'block';
+                showVotingClosed();
                 return;
             }
             const state = doc.data();
             const votingArea = document.getElementById('live-voting-area');
             const noLiveArea = document.getElementById('no-live-area');
 
-            if (state && state.status === 'on-air' && state.votingOpen && state.singer1) {
+            // Individual flags for each singer
+            const v1Open = state.status === 'on-air' && state.votingOpen1 && state.singer1;
+            const v2Open = state.status === 'on-air' && state.votingOpen2 && state.singer2;
+
+            if (v1Open || v2Open) {
                 votingArea.style.display = 'flex';
                 noLiveArea.style.display = 'none';
                 
-                // Load Singer 1
-                singer1Data = await loadSingerInfo(state.singer1);
-                
-                // Load Singer 2 if exists
-                if (state.singer2) {
-                    singer2Data = await loadSingerInfo(state.singer2);
-                    document.getElementById('singer-selector').style.display = 'flex';
-                    updateSelectorUI();
+                // Fetch/Refresh singer data
+                if (state.singer1) singer1Data = await loadSingerInfo(state.singer1);
+                if (state.singer2) singer2Data = await loadSingerInfo(state.singer2);
+                else singer2Data = null;
+
+                // Handle Duet Selector Visibility
+                const selector = document.getElementById('singer-selector');
+                if (v1Open && v2Open) {
+                    selector.style.display = 'flex';
+                    updateSelectorItem(1, singer1Data, true);
+                    updateSelectorItem(2, singer2Data, true);
                 } else {
-                    singer2Data = null;
-                    document.getElementById('singer-selector').style.display = 'none';
+                    selector.style.display = 'none';
                 }
 
-                // Default to singer 1 if no active singer yet or singer changed
-                if (!activeSingerId || (activeSingerId !== state.singer1 && activeSingerId !== state.singer2)) {
-                    activeSingerId = state.singer1;
+                // Auto-determine which singer to show
+                if (v1Open && v2Open) {
+                    // Both open, keep current or default to 1
+                    if (!activeSingerId) switchSinger(1);
+                    else updateCurrentSingerDisplay();
+                } else if (v1Open) {
                     switchSinger(1);
-                } else {
-                    // Just refresh current view
-                    updateCurrentSingerDisplay();
+                } else if (v2Open) {
+                    switchSinger(2);
                 }
 
             } else {
-                votingArea.style.display = 'none';
-                noLiveArea.style.display = 'block';
-                activeSingerId = null;
+                showVotingClosed();
             }
         });
+
+        function showVotingClosed() {
+            document.getElementById('live-voting-area').style.display = 'none';
+            document.getElementById('no-live-area').style.display = 'block';
+            activeSingerId = null;
+        }
 
         async function loadSingerInfo(id) {
             const doc = await db.collection('participants').doc(id).get();
             return doc.exists ? { id, ...doc.data() } : null;
         }
 
-        function updateSelectorUI() {
-            if (singer1Data) {
-                document.getElementById('sel-img-1').src = singer1Data.photoBase64 || 'logo.jpg';
-                document.getElementById('sel-name-1').textContent = singer1Data.name;
+        function updateSelectorItem(idx, data, isVisible) {
+            const el = document.getElementById(`sel-item-${idx}`);
+            if (!data || !isVisible) {
+                el.style.display = 'none';
+                return;
             }
-            if (singer2Data) {
-                document.getElementById('sel-img-2').src = singer2Data.photoBase64 || 'logo.jpg';
-                document.getElementById('sel-name-2').textContent = singer2Data.name;
-            }
+            el.style.display = 'flex';
+            document.getElementById(`sel-img-${idx}`).src = data.photoBase64 || 'logo.jpg';
+            document.getElementById(`sel-name-${idx}`).textContent = data.name.split(' ')[0];
         }
 
-        function switchSinger(index) {
-            activeSingerId = (index === 1) ? singer1Data?.id : singer2Data?.id;
+        function switchSinger(idx) {
+            activeIdx = idx;
+            const data = idx === 1 ? singer1Data : singer2Data;
+            if (!data) return;
+
+            activeSingerId = data.id;
             
-            // Update UI highlight
-            document.getElementById('sel-item-1').classList.toggle('active', index === 1);
-            document.getElementById('sel-item-2').classList.toggle('active', index === 2);
+            // UI Updates
+            document.getElementById('sel-item-1').classList.toggle('active', idx === 1);
+            document.getElementById('sel-item-2').classList.toggle('active', idx === 2);
             
             updateCurrentSingerDisplay();
         }
 
         function updateCurrentSingerDisplay() {
-            const data = (activeSingerId === singer1Data?.id) ? singer1Data : singer2Data;
+            const data = activeIdx === 1 ? singer1Data : singer2Data;
             if (!data) return;
 
-            document.getElementById('vote-singer-name').textContent = data.name;
             document.getElementById('vote-singer-img').src = data.photoBase64 || 'logo.jpg';
-
-            // Check if already voted for THIS singer
-            if (localStorage.getItem(`voted_${activeSingerId}`)) {
-                showSuccess();
+            document.getElementById('vote-singer-name').textContent = data.name.toUpperCase();
+            
+            // Check if already voted
+            const hasVoted = localStorage.getItem('voted_' + data.id);
+            const card = document.querySelector('.vote-card');
+            
+            if (hasVoted) {
+                card.classList.add('voted');
             } else {
-                resetVoteUI();
+                card.classList.remove('voted');
+                selectScore(0); // Reset selection
             }
         }
 
         function selectScore(s) {
             currentScore = s;
-            document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('active'));
-            const btn = document.querySelector(`.score-btn:nth-child(${s})`);
-            if (btn) btn.classList.add('active');
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.textContent) === s);
+            });
         }
 
         async function castVote() {
-            if (!activeSingerId) return;
             if (currentScore === 0) {
                 alert("Please select a score first!");
                 return;
             }
+            if (!activeSingerId) return;
 
             const btn = document.getElementById('submit-vote');
             btn.disabled = true;
-            btn.textContent = "CASTING...";
+            btn.textContent = "SENDING...";
 
             try {
                 await db.collection('live_votes').add({
@@ -311,20 +332,15 @@
                     score: currentScore,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
-                localStorage.setItem(`voted_${activeSingerId}`, "true");
-                showSuccess();
-            } catch (err) {
-                alert("Voting failed. Please try again.");
+
+                localStorage.setItem('voted_' + activeSingerId, 'true');
+                document.querySelector('.vote-card').classList.add('voted');
+                btn.textContent = "SUBMIT VOTE";
+            } catch (e) {
+                alert("Error sending vote. Please try again.");
                 btn.disabled = false;
                 btn.textContent = "SUBMIT VOTE";
             }
-        }
-
-        function showSuccess() {
-            document.getElementById('score-container').style.display = 'none';
-            document.getElementById('submit-vote').style.display = 'none';
-            document.getElementById('voted-msg').style.display = 'block';
         }
 
         function resetVoteUI() {

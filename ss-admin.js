@@ -280,14 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let savedRound = 'Round 1';
             let savedS1 = '';
             let savedS2 = '';
-            if (stateDoc.exists) {
-                const state = stateDoc.data();
-                savedRound = state.round || 'Round 1';
-                savedS1 = state.singer1 || '';
-                savedS2 = state.singer2 || '';
-                updateVotingUI(state.votingOpen);
-            }
-
             // Set round dropdown to saved value
             if (roundSel) roundSel.value = savedRound;
 
@@ -298,6 +290,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (savedS1) s1.value = savedS1;
             if (savedS2) s2.value = savedS2;
 
+            // Update UI toggles for voting
+            if (stateDoc.exists) {
+                const state = stateDoc.data();
+                updateVotingUI(state.votingOpen1, 1);
+                updateVotingUI(state.votingOpen2, 2);
+                const s2Ctrl = getEl('singer-2-voting-ctrl');
+                if(s2Ctrl) s2Ctrl.style.display = state.singer2 ? 'block' : 'none';
+            }
+
             // Re-populate singers whenever round changes
             if (roundSel) {
                 roundSel.onchange = () => {
@@ -305,7 +306,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
 
+            // ✅ Auto-load persistent judges into the scoring panel
+            await loadJudgesIntoPanel();
+
         } catch (err) { console.error(err); }
+    }
+
+    // Load saved persistent judges into the Live Control scoring panel
+    async function loadJudgesIntoPanel() {
+        const container = getEl('judge-rows');
+        if (!container) return;
+        try {
+            const doc = await db.collection('config').doc('judges').get();
+            const judges = (doc.exists && doc.data().list) ? doc.data().list : [];
+            if (judges.length === 0) {
+                container.innerHTML = '<div style="color:#888;font-size:0.8rem;text-align:center;padding:10px;">No judges added yet. Use the input below to add judge names.</div>';
+                return;
+            }
+            container.innerHTML = '';
+            judges.forEach(name => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#0d0d18;border:1px solid #2a2a3a;border-radius:10px;padding:10px 14px;';
+                row.innerHTML = `
+                    <span style="flex:1;font-size:0.9rem;font-weight:700;color:#FFD700;"><i class="fa-solid fa-gavel" style="margin-right:6px;font-size:0.75rem;"></i>${name}</span>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input type="number" min="0" max="10" step="0.5" value="" placeholder="—"
+                            data-judge="${name}"
+                            style="width:75px;background:#111;border:1px solid #FFD700;color:#FFD700;padding:8px;border-radius:8px;font-size:1.1rem;font-weight:900;text-align:center;">
+                        <span style="font-size:0.7rem;color:#555;">/10</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" style="background:transparent;border:1px solid #333;color:#555;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:0.8rem;">✕</button>
+                `;
+                container.appendChild(row);
+            });
+            // Also cache them for quick score
+            if (typeof persistentJudgesCache !== 'undefined') {
+                persistentJudgesCache = judges;
+            }
+        } catch(e) { console.error('loadJudgesIntoPanel error:', e); }
     }
 
     window.updateLiveState = async (status) => {
@@ -318,7 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await db.collection('live_state').doc('current').set({
                 status: status, round: round, singer1: s1, singer2: s2,
-                votingOpen: false, scoreRevealStep: 0, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                votingOpen1: false, votingOpen2: false,
+                scoreRevealStep: 0, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             
             // Clear current live votes
@@ -328,24 +367,31 @@ document.addEventListener('DOMContentLoaded', () => {
             await batch.commit();
 
             alert("Stage Updated! Scores reset.");
-            updateVotingUI(false);
+            updateVotingUI(false, 1);
+            updateVotingUI(false, 2);
+            
+            // Show/Hide Singer 2 controls based on presence
+            const s2Ctrl = getEl('singer-2-voting-ctrl');
+            if(s2Ctrl) s2Ctrl.style.display = s2 ? 'block' : 'none';
+
         } catch (err) { console.error(err); }
     };
 
-    window.toggleVoting = async (isOpen) => {
+    window.toggleVoting = async (isOpen, singerIndex) => {
         try {
-            await db.collection('live_state').doc('current').update({ votingOpen: isOpen });
-            updateVotingUI(isOpen);
+            const updates = {};
+            updates[`votingOpen${singerIndex}`] = isOpen;
+            await db.collection('live_state').doc('current').update(updates);
+            updateVotingUI(isOpen, singerIndex);
         } catch (err) { console.error(err); }
     };
 
     window.resetLiveState = () => { if(confirm("Reset Stage?")) updateLiveState('idle'); };
 
-    function updateVotingUI(isOpen) {
-        const badge = getEl('voting-status-badge');
-        if(!badge) return;
-        badge.innerHTML = isOpen ? 'Status: <strong style="color:#28a745;">OPEN</strong>' : 'Status: <strong style="color:#dc3545;">CLOSED</strong>';
-        badge.style.background = isOpen ? 'rgba(40,167,69,0.1)' : 'rgba(220,53,69,0.1)';
+    function updateVotingUI(isOpen, singerIndex) {
+        const statusEl = getEl(`voting-status-${singerIndex}`);
+        if(!statusEl) return;
+        statusEl.innerHTML = isOpen ? 'Status: <strong style="color:#28a745;">OPEN</strong>' : 'Status: <strong style="color:#dc3545;">CLOSED</strong>';
     }
 
     let statsUnsub = null;
@@ -1182,25 +1228,36 @@ document.addEventListener('DOMContentLoaded', () => {
         switchJudgeSingerToggle(); // Re-eval based on current radio selection
     });
 
-    // Add a judge row in the panel
-    window.addJudgeRow = () => {
-        const name = (document.getElementById('new-judge-name').value || '').trim();
+    // Add a judge row in the panel (and optionally save to persistent list)
+    window.addJudgeRow = async () => {
+        const input = document.getElementById('new-judge-name');
+        const name = (input ? input.value : '').trim();
         if (!name) { alert('Enter a judge name first'); return; }
-        document.getElementById('new-judge-name').value = '';
+        if (input) input.value = '';
         const container = document.getElementById('judge-rows');
         const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:10px;';
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;background:#0d0d18;border:1px solid #2a2a3a;border-radius:10px;padding:10px 14px;';
         row.innerHTML = `
-            <span style="flex:1;font-size:0.85rem;font-weight:bold;color:#ccc;">${name}</span>
+            <span style="flex:1;font-size:0.9rem;font-weight:700;color:#FFD700;"><i class="fa-solid fa-gavel" style="margin-right:6px;font-size:0.75rem;"></i>${name}</span>
             <div style="display:flex;align-items:center;gap:6px;">
-                <input type="number" min="0" max="10" step="0.5" value="5" 
+                <input type="number" min="0" max="10" step="0.5" value="" placeholder="—"
                     data-judge="${name}"
-                    style="width:70px;background:#1a1a24;border:1px solid #555;color:#FFD700;padding:7px;border-radius:8px;font-size:1rem;font-weight:900;text-align:center;">
-                <span style="font-size:0.7rem;color:#666;">/ 10</span>
+                    style="width:75px;background:#111;border:1px solid #FFD700;color:#FFD700;padding:8px;border-radius:8px;font-size:1.1rem;font-weight:900;text-align:center;">
+                <span style="font-size:0.7rem;color:#555;">/10</span>
             </div>
-            <button onclick="this.parentElement.remove()" style="background:transparent;border:1px solid #444;color:#888;padding:5px 8px;border-radius:6px;cursor:pointer;">✕</button>
+            <button onclick="this.parentElement.remove()" style="background:transparent;border:1px solid #333;color:#555;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:0.8rem;">✕</button>
         `;
         container.appendChild(row);
+        // Also persist to firebase so it shows next time
+        try {
+            const doc = await db.collection('config').doc('judges').get();
+            const existing = (doc.exists && doc.data().list) ? doc.data().list : [];
+            if (!existing.includes(name)) {
+                existing.push(name);
+                await db.collection('config').doc('judges').set({ list: existing }, { merge: true });
+                if (typeof persistentJudgesCache !== 'undefined') persistentJudgesCache = existing;
+            }
+        } catch(e) { /* non-critical */ }
     };
 
     // Submit all judge scores
@@ -1535,30 +1592,22 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = html;
     };
 
-    window.autoPromoteTopX = () => {
-        const count = prompt("Enter the number of top participants to promote:", "10");
-        if (!count || isNaN(count)) return;
-        const targetCount = parseInt(count);
-        
-        const nextRound = prompt("Enter the target status (e.g. 'Round 2', 'Semi-Final'):", "Round 2");
+    window.autoPromoteTopX = async () => {
+        const countStr = prompt("How many top participants to promote?", "5");
+        if (!countStr || isNaN(countStr)) return;
+        const targetCount = parseInt(countStr);
+        const nextRound = prompt("Promote to which round?", "Round 2");
         if (!nextRound) return;
-
-        // Take top X from current view (assuming they sorted how they want)
-        const toPromote = Array.from(document.getElementById('leaderboard-body').querySelectorAll('tr')).slice(0, targetCount);
-        
-        if(confirm(`Are you sure you want to promote the top ${toPromote.length} visible participants to ${nextRound}?`)) {
-            let processed = 0;
-            toPromote.forEach(tr => {
-                const select = tr.querySelector('select');
-                if (select) {
-                    select.value = nextRound;
-                    const event = new Event('change');
-                    select.dispatchEvent(event);
-                }
-                processed++;
-            });
-            alert(`Successfully triggered promotion for ${processed} participants.`);
-        }
+        const toPromote = lbData.slice(0, targetCount);
+        if (!toPromote.length) { alert('No data in leaderboard.'); return; }
+        if (!confirm(`Promote top ${toPromote.length} to "${nextRound}"?\n\n${toPromote.map((p,i) => `${i+1}. ${p.name}`).join('\n')}`)) return;
+        try {
+            const batch = db.batch();
+            toPromote.forEach(p => batch.update(db.collection('participants').doc(p.id), { status: nextRound }));
+            await batch.commit();
+            alert(`✅ Promoted ${toPromote.length} participants to ${nextRound}!`);
+            calculateLeaderboard();
+        } catch(e) { alert('Error: ' + e.message); }
     };
 
     window.pushToLiveStage = async (singerId, round) => {

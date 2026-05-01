@@ -382,8 +382,8 @@
             <!-- Status Card -->
             <div class="registration-box cozy-card" style="text-align: left; margin: 0; background:rgba(0,0,0,0.3);">
                 <h3 style="color:var(--secondary); margin-bottom:15px;"><i class="fa-solid fa-chart-simple"></i> Live Feedback</h3>
-                <div id="voting-status-badge" style="padding:15px; border-radius:12px; text-align:center; margin-bottom:20px; border:1px dashed #444;">
-                    Status: <strong>CLOSED</strong>
+                <div id="voting-status-badge" style="padding:15px; border-radius:12px; text-align:center; margin-bottom:20px; border:1px dashed #444; font-size: 0.85rem;">
+                    Audience Voting Controls
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
                     <div style="background:#222; padding:15px; border-radius:12px; text-align:center;">
@@ -395,9 +395,26 @@
                         <div id="stat-avg-score" style="font-size:1.5rem; font-weight:900; color:var(--secondary);">0.0</div>
                     </div>
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <button onclick="toggleVoting(true)" class="btn btn-primary" style="flex:1; background:#28a745;">OPEN VOTING</button>
-                    <button onclick="toggleVoting(false)" class="btn btn-danger" style="flex:1; background:#dc3545;">CLOSE</button>
+                
+                <!-- Individual Voting Toggles -->
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px; border:1px solid #333;">
+                        <div style="font-size:0.7rem; color:#888; margin-bottom:8px; text-transform:uppercase;">Singer 1 Voting</div>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="toggleVoting(true, 1)" class="btn btn-primary" style="flex:1; background:#28a745; padding:8px; font-size:0.75rem;">OPEN</button>
+                            <button onclick="toggleVoting(false, 1)" class="btn btn-danger" style="flex:1; background:#dc3545; padding:8px; font-size:0.75rem;">CLOSE</button>
+                        </div>
+                        <div id="voting-status-1" style="font-size:0.65rem; margin-top:5px; text-align:center;">Status: CLOSED</div>
+                    </div>
+                    
+                    <div id="singer-2-voting-ctrl" style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px; border:1px solid #333; display:none;">
+                        <div style="font-size:0.7rem; color:#888; margin-bottom:8px; text-transform:uppercase;">Singer 2 Voting</div>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="toggleVoting(true, 2)" class="btn btn-primary" style="flex:1; background:#28a745; padding:8px; font-size:0.75rem;">OPEN</button>
+                            <button onclick="toggleVoting(false, 2)" class="btn btn-danger" style="flex:1; background:#dc3545; padding:8px; font-size:0.75rem;">CLOSE</button>
+                        </div>
+                        <div id="voting-status-2" style="font-size:0.65rem; margin-top:5px; text-align:center;">Status: CLOSED</div>
+                    </div>
                 </div>
             </div>
         </div>

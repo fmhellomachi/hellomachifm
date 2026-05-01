@@ -229,12 +229,14 @@
         let singer1Data = null;
         let singer2Data = null;
         let activeIdx = 1;
-        let voterId = localStorage.getItem('voter_id') || ('V' + Math.floor(Math.random() * 1000000));
+        let voterId = localStorage.getItem('voter_id') || ('V' + Date.now() + Math.floor(Math.random() * 1000));
         localStorage.setItem('voter_id', voterId);
 
         const loadingOverlay = document.getElementById('loading-overlay');
         const votingArea = document.getElementById('live-voting-area');
         const noLiveArea = document.getElementById('no-live-area');
+
+        let currentRound = "Round 1";
 
         // 1. Listen to Live State
         db.collection('live_state').doc('current').onSnapshot(async doc => {
@@ -244,6 +246,7 @@
                     return;
                 }
                 const state = doc.data();
+                currentRound = state.round || "Round 1";
                 
                 // Debug info for admin
                 const debug = document.getElementById('admin-debug');
@@ -357,7 +360,8 @@
             document.getElementById('vote-singer-img').src = data.photoBase64 || 'logo.jpg';
             document.getElementById('vote-singer-name').textContent = (data.name || 'SINGER').toUpperCase();
             
-            const hasVoted = localStorage.getItem('voted_' + data.id);
+            const voteKey = 'voted_' + data.id + '_' + currentRound;
+            const hasVoted = localStorage.getItem(voteKey);
             const card = document.querySelector('.vote-card');
             
             if (hasVoted) {
@@ -391,10 +395,12 @@
                     voterId: voterId,
                     singerId: activeSingerId,
                     score: currentScore,
+                    round: currentRound,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                localStorage.setItem('voted_' + activeSingerId, 'true');
+                const voteKey = 'voted_' + activeSingerId + '_' + currentRound;
+                localStorage.setItem(voteKey, 'true');
                 document.querySelector('.vote-card').classList.add('voted');
             } catch (e) {
                 alert("Error sending vote. Please try again.");

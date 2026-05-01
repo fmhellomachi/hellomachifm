@@ -441,7 +441,43 @@
                     // ── OVERLAYS ──────────────────────────────────────────
                     const voteOverlay = document.getElementById('qr-overlay');
                     const isAnyVotingOpen = data.votingOpen1 || data.votingOpen2 || data.votingOpen;
-                    if(voteOverlay) voteOverlay.style.display = (data.status === 'on-air' && isAnyVotingOpen) ? 'flex' : 'none';
+                    
+                    if (voteOverlay) {
+                        voteOverlay.style.display = (data.status === 'on-air' && isAnyVotingOpen) ? 'flex' : 'none';
+                        
+                        if (isAnyVotingOpen) {
+                            const card1 = document.getElementById('qr-card-1');
+                            const card2 = document.getElementById('qr-card-2');
+
+                            // Update Singer 1 card
+                            if ((data.votingOpen1 || data.votingOpen) && data.singer1) {
+                                card1.style.display = 'block';
+                                db.collection('participants').doc(data.singer1).get().then(sSnap => {
+                                    if (sSnap.exists) {
+                                        const s = sSnap.data();
+                                        document.getElementById('qr-name-display-1').textContent = s.name.toUpperCase();
+                                        document.getElementById('qr-p-id-1').textContent = `ID: ${s.participantId || '---'}`;
+                                        document.getElementById('qr-place-display-1').textContent = (s.city || s.place || 'TAMIL NADU').toUpperCase();
+                                        if (s.photoBase64) document.getElementById('qr-singer-photo-1').src = s.photoBase64;
+                                    }
+                                });
+                            } else { card1.style.display = 'none'; }
+
+                            // Update Singer 2 card
+                            if ((data.votingOpen2 || (data.votingOpen && data.singer2)) && data.singer2) {
+                                card2.style.display = 'block';
+                                db.collection('participants').doc(data.singer2).get().then(sSnap => {
+                                    if (sSnap.exists) {
+                                        const s = sSnap.data();
+                                        document.getElementById('qr-name-display-2').textContent = s.name.toUpperCase();
+                                        document.getElementById('qr-p-id-2').textContent = `ID: ${s.participantId || '---'}`;
+                                        document.getElementById('qr-place-display-2').textContent = (s.city || s.place || 'TAMIL NADU').toUpperCase();
+                                        if (s.photoBase64) document.getElementById('qr-singer-photo-2').src = s.photoBase64;
+                                    }
+                                });
+                            } else { card2.style.display = 'none'; }
+                        }
+                    }
 
                     const scoreOverlay = document.getElementById('score-overlay');
                     const isRevealActive = data.status === 'on-air' && data.scoreRevealStep !== undefined && data.scoreRevealStep !== 0;

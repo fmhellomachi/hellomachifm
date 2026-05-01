@@ -280,12 +280,17 @@
 
                     // Auto-determine which singer to show
                     if (v1Open && v2Open) {
+                        // If both are open, show selector. If nothing selected yet, default to 1.
                         if (!activeSingerId) switchSinger(1);
                         else updateCurrentSingerDisplay();
                     } else if (v1Open) {
-                        switchSinger(1);
+                        // If ONLY 1 is open, force switch to 1 if not already there
+                        if (activeSingerId !== state.singer1) switchSinger(1);
+                        else updateCurrentSingerDisplay();
                     } else if (v2Open) {
-                        switchSinger(2);
+                        // If ONLY 2 is open, force switch to 2 if not already there
+                        if (activeSingerId !== state.singer2) switchSinger(2);
+                        else updateCurrentSingerDisplay();
                     }
 
                     votingArea.style.display = 'flex';

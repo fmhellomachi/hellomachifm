@@ -398,61 +398,17 @@ document.addEventListener('DOMContentLoaded', () => {
         statusEl.innerHTML = isOpen ? 'Status: <strong style="color:#28a745;">OPEN</strong>' : 'Status: <strong style="color:#dc3545;">CLOSED</strong>';
     }
 
+    let activeS1Id = null;
+    let activeS2Id = null;
     let statsUnsub = null;
-    function listenToLiveStats() {
-        if (statsUnsub) statsUnsub();
-        statsUnsub = db.collection('live_votes').onSnapshot(async snap => {
-            try {
-                const stateDoc = await db.collection('live_state').doc('current').get();
-                if (!stateDoc.exists) return;
-                const state = stateDoc.data();
-                const s1Id = state.singer1;
-                const s2Id = state.singer2;
 
-                let c1 = 0, t1 = 0, c2 = 0, t2 = 0;
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    if (d.singerId === s1Id) { c1++; t1 += (parseFloat(d.score) || 0); }
-                    else if (s2Id && d.singerId === s2Id) { c2++; t2 += (parseFloat(d.score) || 0); }
-                });
-
-                // Update Singer 1 Stats
-                if (getEl('stat-total-votes-1')) getEl('stat-total-votes-1').textContent = c1;
-                if (getEl('stat-avg-score-1')) getEl('stat-avg-score-1').textContent = c1 > 0 ? (t1/c1).toFixed(1) : "0.0";
-                
-                // Fetch and update names if possible
-                if (s1Id) {
-                    db.collection('participants').doc(s1Id).get().then(d => {
-                        if (d.exists && getEl('singer-1-name-stat')) getEl('singer-1-name-stat').textContent = d.data().name;
-                    });
-                }
-
-                // Update Singer 2 Stats
-                const s2Box = getEl('singer-2-stats-box');
-                if (s2Id) {
-                    if (s2Box) s2Box.style.display = 'block';
-                    if (getEl('stat-total-votes-2')) getEl('stat-total-votes-2').textContent = c2;
-                    if (getEl('stat-avg-score-2')) getEl('stat-avg-score-2').textContent = c2 > 0 ? (t2/c2).toFixed(1) : "0.0";
-                    
-                    db.collection('participants').doc(s2Id).get().then(d => {
-                        if (d.exists && getEl('singer-2-name-stat')) getEl('singer-2-name-stat').textContent = d.data().name;
-                    });
-                } else {
-                    if (s2Box) s2Box.style.display = 'none';
-                }
-
-                // Overall total for legacy purposes if any
-                if (getEl('stat-total-votes')) getEl('stat-total-votes').textContent = snap.size;
-
-            } catch (err) { console.error("Stats listener error:", err); }
-        });
-    }
-    
     function listenToLiveState() {
         if (liveStateUnsub) liveStateUnsub();
         liveStateUnsub = db.collection('live_state').doc('current').onSnapshot(doc => {
             if (!doc.exists) return;
             const data = doc.data();
+            activeS1Id = data.singer1;
+            activeS2Id = data.singer2;
             
             // Update judge panel labels
             const label = getEl('judge-singer-label');
@@ -476,6 +432,48 @@ document.addEventListener('DOMContentLoaded', () => {
             updateVotingUI(data.votingOpen2, 2);
             const s2Ctrl = getEl('singer-2-voting-ctrl');
             if(s2Ctrl) s2Ctrl.style.display = data.singer2 ? 'block' : 'none';
+
+            // Update stats labels names
+            if (activeS1Id) {
+                const s1 = allLiveParticipants.find(p => p.id === activeS1Id);
+                if (s1 && getEl('singer-1-name-stat')) getEl('singer-1-name-stat').textContent = s1.name;
+            }
+            if (activeS2Id) {
+                const s2 = allLiveParticipants.find(p => p.id === activeS2Id);
+                if (s2 && getEl('singer-2-name-stat')) getEl('singer-2-name-stat').textContent = s2.name;
+            }
+        });
+    }
+
+    function listenToLiveStats() {
+        if (statsUnsub) statsUnsub();
+        statsUnsub = db.collection('live_votes').onSnapshot(snap => {
+            let c1 = 0, t1 = 0, c2 = 0, t2 = 0;
+            
+            snap.forEach(doc => {
+                const d = doc.data();
+                if (activeS1Id && d.singerId === activeS1Id) {
+                    c1++;
+                    t1 += (parseFloat(d.score) || 0);
+                } else if (activeS2Id && d.singerId === activeS2Id) {
+                    c2++;
+                    t2 += (parseFloat(d.score) || 0);
+                }
+            });
+
+            // Update Singer 1 Display
+            if (getEl('stat-total-votes-1')) getEl('stat-total-votes-1').textContent = c1;
+            if (getEl('stat-avg-score-1')) getEl('stat-avg-score-1').textContent = c1 > 0 ? (t1/c1).toFixed(1) : "0.0";
+
+            // Update Singer 2 Display
+            const s2Box = getEl('singer-2-stats-box');
+            if (activeS2Id) {
+                if (s2Box) s2Box.style.display = 'block';
+                if (getEl('stat-total-votes-2')) getEl('stat-total-votes-2').textContent = c2;
+                if (getEl('stat-avg-score-2')) getEl('stat-avg-score-2').textContent = c2 > 0 ? (t2/c2).toFixed(1) : "0.0";
+            } else {
+                if (s2Box) s2Box.style.display = 'none';
+            }
         });
     }
 
@@ -1688,14 +1686,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.pushToLiveStage = async (singerId, round) => {
         try {
-            await db.collection('live_state').doc('current').set({
+            const stateDoc = await db.collection('live_state').doc('current').get();
+            const current = stateDoc.exists ? stateDoc.data() : {};
+            
+            let updates = {
                 round: round,
                 singer1: singerId,
                 singer2: "",
                 status: "on-air",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            };
+
+            // Duet Logic: If someone is already there, ask to add as partner
+            if (current.singer1 && current.singer1 !== singerId && !current.singer2) {
+                if (confirm(`Participant ${current.singer1} is already on stage. Add ${singerId} as a DUET partner?`)) {
+                    updates.singer1 = current.singer1;
+                    updates.singer2 = singerId;
+                }
+            }
+
+            await db.collection('live_state').doc('current').set(updates, { merge: true });
             
+            // Clear current live votes for the new performance
             await db.collection('live_votes').get().then(snap => {
                 const batch = db.batch();
                 snap.forEach(doc => batch.delete(doc.ref));
@@ -1703,9 +1715,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             alert("Pushed to Live Stage successfully!");
+            switchMainTab('live-control'); // Switch to control room to manage voting
         } catch(e) {
             console.error(e);
-            alert("Error pushing to live stage");
+            alert("Error pushing to live stage: " + e.message);
         }
     };
 

@@ -385,14 +385,32 @@
                 <div id="voting-status-badge" style="padding:15px; border-radius:12px; text-align:center; margin-bottom:20px; border:1px dashed #444; font-size: 0.85rem;">
                     Audience Voting Controls
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
-                    <div style="background:#222; padding:15px; border-radius:12px; text-align:center;">
-                        <div style="font-size:0.7rem; color:#888;">TOTAL VOTES</div>
-                        <div id="stat-total-votes" style="font-size:1.5rem; font-weight:900; color:var(--primary);">0</div>
+                <div id="voting-stats-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+                    <div style="background:#111; padding:12px; border-radius:12px; text-align:center; border: 1px solid #333;">
+                        <div id="singer-1-name-stat" style="font-size:0.6rem; color:#888; text-transform:uppercase; margin-bottom:4px;">Singer 1</div>
+                        <div style="display:flex; justify-content:space-around;">
+                            <div>
+                                <div style="font-size:0.55rem; color:#666;">VOTES</div>
+                                <div id="stat-total-votes-1" style="font-size:1.1rem; font-weight:900; color:var(--primary);">0</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.55rem; color:#666;">AVG</div>
+                                <div id="stat-avg-score-1" style="font-size:1.1rem; font-weight:900; color:var(--secondary);">0.0</div>
+                            </div>
+                        </div>
                     </div>
-                    <div style="background:#222; padding:15px; border-radius:12px; text-align:center;">
-                        <div style="font-size:0.7rem; color:#888;">AVG SCORE</div>
-                        <div id="stat-avg-score" style="font-size:1.5rem; font-weight:900; color:var(--secondary);">0.0</div>
+                    <div id="singer-2-stats-box" style="background:#111; padding:12px; border-radius:12px; text-align:center; border: 1px solid #333; display:none;">
+                        <div id="singer-2-name-stat" style="font-size:0.6rem; color:#888; text-transform:uppercase; margin-bottom:4px;">Singer 2</div>
+                        <div style="display:flex; justify-content:space-around;">
+                            <div>
+                                <div style="font-size:0.55rem; color:#666;">VOTES</div>
+                                <div id="stat-total-votes-2" style="font-size:1.1rem; font-weight:900; color:var(--primary);">0</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.55rem; color:#666;">AVG</div>
+                                <div id="stat-avg-score-2" style="font-size:1.1rem; font-weight:900; color:var(--secondary);">0.0</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 

@@ -96,6 +96,21 @@
         .flash.on { animation:flashfx 0.4s ease-out forwards; }
         @keyframes flashfx { 0%{opacity:1} 100%{opacity:0} }
 
+        /* Setup Overlay */
+        #setup-overlay {
+            position:fixed; inset:0; z-index:100;
+            background:radial-gradient(circle at 50% 30%, #1a0830, #050508);
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+        }
+        .btn-start {
+            background:var(--primary); color:white; border:none;
+            padding:18px 50px; font-size:1.3rem; font-weight:900;
+            border-radius:50px; cursor:pointer; letter-spacing:3px;
+            box-shadow:0 0 40px rgba(255,20,147,0.5);
+            transition:transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-start:hover { transform:scale(1.05); box-shadow:0 0 60px rgba(255,20,147,0.7); }
+
         /* Mobile */
         @media(max-width:768px){
             body { overflow-y: auto; height: auto; position: relative; }
@@ -399,8 +414,8 @@
         }
     }
 
+    let previousRevealedIds = new Set();
     let isInitialLoad = true;
-    let revealedState = new Map();
     let currentWofFilter = 'all_active';
     let currentParticipants = [];
 
@@ -421,46 +436,40 @@
         db.collection('participants').onSnapshot(snap => {
             currentParticipants = [];
             snap.forEach(doc => currentParticipants.push({ id: doc.id, ...doc.data() }));
-            
             applyFilterAndRender();
         });
     }
 
     function applyFilterAndRender() {
-        // Only show candidates who are strictly revealed and not pending
-        let visible = currentParticipants.filter(p => p.isRevealed === true && p.status && p.status !== 'pending');
+        // Filter participants who are marked as revealed
+        let visible = currentParticipants.filter(p => !!p.isRevealed);
 
         // Apply admin display filter
-        if (currentWofFilter === 'all_everyone') {
-            // Keep everyone who is revealed (already filtered above)
-        } else if (currentWofFilter === 'grand_finale') {
+        if (currentWofFilter === 'grand_finale') {
             visible = visible.filter(p => ['winner', 'runner up 1', 'runner up 2'].includes((p.status || '').toLowerCase()));
         } else if (currentWofFilter === 'all_active') {
             visible = visible.filter(p => !['eliminated', 'waitlisted'].includes((p.status || '').toLowerCase()));
-        } else if (currentWofFilter) {
-            // If filtering by a specific round (e.g. "Round 1"), 
-            // show the people in that round PLUS all waitlisted/eliminated people
+        } else if (currentWofFilter && currentWofFilter !== 'all_everyone') {
+            const f = currentWofFilter.toLowerCase();
             visible = visible.filter(p => {
                 const s = (p.status || '').toLowerCase();
-                const f = currentWofFilter.toLowerCase();
                 return s === f || s === 'waitlisted' || s === 'eliminated';
             });
         }
 
-        // Trigger reveal for newly revealed participants or if a manual reveal timestamp is updated
-        visible.forEach(p => {
-            const lastRevTime = p.lastRevealedAt ? (p.lastRevealedAt.toMillis ? p.lastRevealedAt.toMillis() : p.lastRevealedAt) : 0;
-            const knownRevTime = revealedState.get(p.id) || 0;
-
-            // Trigger if newly revealed OR if the manual reveal timestamp is newer than what we know
-            if (!isInitialLoad && p.isRevealed === true && lastRevTime > knownRevTime) {
-                setTimeout(() => showReveal(p), 600);
-            }
-            // Store the timestamp we've seen
-            revealedState.set(p.id, lastRevTime);
-        });
+        // Detect new reveals
+        if (!isInitialLoad) {
+            visible.forEach(p => {
+                if (!previousRevealedIds.has(p.id)) {
+                    // NEW REVEAL DETECTED
+                    setTimeout(() => showReveal(p), 600);
+                }
+            });
+        }
         
-        isInitialLoad = false; // After first load, any changes can trigger a reveal
+        // Update tracking state
+        previousRevealedIds = new Set(visible.map(p => p.id));
+        isInitialLoad = false;
 
         renderWall(visible);
     }

@@ -1724,17 +1724,102 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.revealOnWall = async (singerId) => {
         try {
-            const ref = db.collection('wall_of_fame_reveals').doc(singerId);
+            const ref = db.collection('participants').doc(singerId);
             const doc = await ref.get();
-            if (doc.exists && doc.data().revealed) {
-                // Already revealed, maybe hide? 
-                await ref.set({ revealed: false }, { merge: true });
-                alert("Candidate hidden from Wall.");
-            } else {
-                await ref.set({ revealed: true, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                alert("Candidate REVEALED on Wall of Fame!");
-            }
+            if (!doc.exists) return;
+            const current = doc.data().isRevealed || false;
+            
+            await ref.update({
+                isRevealed: !current,
+                lastRevealedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            alert(!current ? "Candidate REVEALED on Wall of Fame!" : "Candidate hidden from Wall.");
         } catch(err) { console.error(err); alert("Error revealing on wall"); }
+    };
+
+    window.toggleReveal = async (singerId, currentVal) => {
+        try {
+            await db.collection('participants').doc(singerId).update({
+                isRevealed: !currentVal,
+                lastRevealedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // 1. Update Participant Tab UI row in-place
+            const btnP = document.querySelector(`tr[data-id="${singerId}"] button[onclick^="toggleReveal"]`);
+            if (btnP) {
+                const newVal = !currentVal;
+                btnP.style.background = newVal ? '#28a745' : '#444';
+                btnP.innerHTML = newVal ? '<i class="fa-solid fa-eye"></i> Revealed' : '<i class="fa-solid fa-eye-slash"></i> Hidden';
+                btnP.setAttribute('onclick', `toggleReveal('${singerId}', ${newVal})`);
+            }
+
+            // 2. Update Wall of Fame Tab UI row in-place
+            const btnW = document.querySelector(`#wof-candidates-body tr button[onclick^="toggleReveal('${singerId}']`);
+            if (btnW) {
+                const newVal = !currentVal;
+                btnW.style.background = newVal ? '#28a745' : '#444';
+                btnW.innerHTML = newVal ? '<i class="fa-solid fa-eye"></i> Revealed' : '<i class="fa-solid fa-eye-slash"></i> Hidden';
+                btnW.setAttribute('onclick', `toggleReveal('${singerId}', ${newVal})`);
+            }
+
+        } catch(e) { console.error(e); }
+    };
+
+    // --- Wall of Fame Management ---
+    window.updateWofFilter = async (val) => {
+        try {
+            await db.collection('live_state').doc('current').update({ wallOfFameFilter: val });
+            alert(`Wall of Fame updated to: ${val}`);
+        } catch(e) { alert("Error updating filter: " + e.message); }
+    };
+
+    window.resetWallOfFame = async () => {
+        if (!confirm("Are you sure you want to hide EVERYONE and reset the Wall?")) return;
+        try {
+            const snap = await db.collection('participants').where('isRevealed', '==', true).get();
+            const batch = db.batch();
+            snap.forEach(doc => batch.update(doc.ref, { isRevealed: false }));
+            await batch.commit();
+            await db.collection('live_state').doc('current').update({ wallOfFameFilter: 'all_active' });
+            alert("Wall of Fame Reset Successfully.");
+            fetchWofCandidates();
+        } catch(e) { alert("Error resetting: " + e.message); }
+    };
+
+    window.fetchWofCandidates = async () => {
+        const tbody = document.getElementById('wof-candidates-body');
+        if (!tbody) return;
+        try {
+            const snap = await db.collection('participants').orderBy('name').get();
+            let html = '';
+            snap.forEach(doc => {
+                const p = doc.data();
+                if (p.status === 'pending' || p.status === 'rejected') return;
+                const isRevealed = p.isRevealed === true;
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <img src="${p.photoBase64||'logo.jpg'}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;">
+                                <div>
+                                    <div style="font-weight:bold;color:white;">${p.name}</div>
+                                    <div style="font-size:0.7rem; color:#888;">${p.participantId||'---'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-approved">${(p.status||'---').toUpperCase()}</span></td>
+                        <td>
+                            <button onclick="toggleReveal('${doc.id}', ${isRevealed})" 
+                                    style="background:${isRevealed?'#28a745':'#444'}; border:none; color:white; padding:5px 12px; border-radius:6px; cursor:pointer; font-size:0.75rem;">
+                                ${isRevealed ? '<i class="fa-solid fa-eye"></i> Revealed' : '<i class="fa-solid fa-eye-slash"></i> Hidden'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;">No qualified candidates found.</td></tr>';
+        } catch(e) { console.error(e); }
     };
 
     // ==========================================

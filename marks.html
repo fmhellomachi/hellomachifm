@@ -253,11 +253,10 @@ async function render() {
 
             if (currentJ && currentJ.scores && Object.keys(currentJ.scores).length > 0) {
                 const round = currentJ.round || st;
-                // Only add if not already in archived (avoid duplicate)
                 const alreadyArchived = archived.some(a => a.round === round);
                 if (!alreadyArchived) {
                     const vals = Object.values(currentJ.scores);
-                    const jAvg = vals.reduce((a,b)=>a+b,0)/vals.length;
+                    const jAvg = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
                     const aAvg = audAvg(p.id);
                     let jW = 0.6; let aW = 0.4;
                     if (jAvg === 0 && aAvg > 0) { jW = 0; aW = 1; }
@@ -265,26 +264,34 @@ async function render() {
                     performances.push({ round, judgeScores: currentJ.scores, jAvg, aAvg, subtotal: jAvg*jW + aAvg*aW, isHistorical: false });
                 }
             } else if (performances.length === 0) {
-                // Participant in a round but no scores yet — show audience only
                 const aAvg = audAvg(p.id);
                 performances.push({ round: st, judgeScores: {}, jAvg: 0, aAvg, subtotal: aAvg*0.4, isHistorical: false });
             }
 
-            // Sort performances by round order
             performances.sort((a,b) => {
                 const ia = ROUND_ORDER.indexOf(a.round), ib = ROUND_ORDER.indexOf(b.round);
                 if (ia !== -1 && ib !== -1) return ia - ib;
                 return 0;
             });
 
-            const cumulative = performances.reduce((s, r) => s + r.subtotal, 0);
-            const peakJudge = performances.reduce((mx, r) => Math.max(mx, ...Object.values(r.judgeScores).concat([0])), 0);
+            const cumulative = performances.reduce((s, r) => s + (parseFloat(r.subtotal) || 0), 0);
+            const peakJudge = performances.reduce((mx, r) => {
+                const scores = Object.values(r.judgeScores || {});
+                return Math.max(mx, ...(scores.length ? scores : [0]));
+            }, 0);
 
-            singers.push({ ...p, performances, cumulative, peakJudge, currentStatus: st });
+            singers.push({ ...p, performances, cumulative: parseFloat(cumulative) || 0, peakJudge, currentStatus: st });
         });
 
         if (singers.length === 0) {
-            container.innerHTML = '<div class="state-box"><i class="fa-solid fa-microphone-slash"></i><p>No participant data with scores found.</p></div>';
+            container.innerHTML = `
+                <div class="state-box">
+                    <i class="fa-solid fa-microphone-slash"></i>
+                    <p>No participants found in active competition rounds.</p>
+                    <small style="color:#444;">(Participants must be moved to "Round 1" or higher to appear here)</small>
+                    <br><br>
+                    <button onclick="render()" class="btn-admin" style="display:inline-flex; margin:0 auto;"><i class="fa-solid fa-rotate"></i> Retry</button>
+                </div>`;
             return;
         }
 
@@ -492,5 +499,6 @@ async function saveCorrection() {
         btn.textContent = "SAVE CHANGES";
     }
 }
+</script>
 </body>
 </html>

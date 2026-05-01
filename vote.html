@@ -8,6 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #FF1493;
+            --secondary: #C71585;
+            --bg-card: #12121c;
+            --glass-border: rgba(255,255,255,0.1);
+            --text-muted: #888;
+        }
+
         body {
             background: #050508;
             color: white;
@@ -29,6 +37,8 @@
             border: 1px solid var(--glass-border);
             text-align: center;
             margin-top: 20px;
+            position: relative;
+            overflow: hidden;
         }
 
         .singer-preview {
@@ -37,15 +47,15 @@
             border-radius: 12px;
             border: 3px solid var(--primary);
             margin-bottom: 15px;
-            object-fit: contain;
+            object-fit: cover;
             background: #000;
         }
 
-        h2 { color: var(--primary); margin: 10px 0; }
+        h2 { color: var(--primary); margin: 10px 0; font-size: 1.8rem; font-weight: 800; }
 
         .score-buttons {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(5, 2fr);
             gap: 10px;
             margin: 25px 0;
         }
@@ -84,10 +94,21 @@
         #submit-vote:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .voted-msg {
-            color: #28a745;
-            font-weight: bold;
+            color: #00E676;
+            font-weight: 800;
             display: none;
             margin-top: 20px;
+            font-size: 1.2rem;
+        }
+
+        .vote-card.voted .score-buttons,
+        .vote-card.voted #submit-vote,
+        .vote-card.voted p {
+            display: none;
+        }
+
+        .vote-card.voted .voted-msg {
+            display: block;
         }
 
         /* Duet Selector Styles */
@@ -119,14 +140,14 @@
             height: 60px;
             border-radius: 50%;
             border: 2px solid transparent;
-            object-fit: contain;
+            object-fit: cover;
             background: #000;
             margin-bottom: 8px;
         }
 
         .active .sel-img {
             border-color: var(--primary);
-            box-shadow: 0 0 15px var(--primary-glow);
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.5);
         }
 
         .sel-name {
@@ -142,10 +163,18 @@
 </head>
 <body>
 
-    <img src="logo.jpg" style="width: 80px; border-radius: 12px; margin-bottom: 20px; object-fit: contain; background: #000;">
+    <div id="loading-overlay" style="position:fixed; inset:0; background:#050508; z-index:1000; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:20px;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size:3rem; color:var(--primary);"></i>
+        <p style="letter-spacing:2px; font-weight:800; color:#444;">SYNCING STAGE...</p>
+    </div>
+
+    <div id="admin-debug" style="display:none; position:fixed; top:0; width:100%; background:rgba(255,255,255,0.05); padding:5px; font-size:0.6rem; color:#555; text-align:center; z-index:2000;">
+        DEBUG: <span id="debug-status">-</span> | V1: <span id="debug-v1">-</span> | V2: <span id="debug-v2">-</span>
+    </div>
+
+    <img src="logo.jpg" style="width: 80px; border-radius: 12px; margin-bottom: 20px; object-fit: contain; background: #000; z-index: 10;">
     
     <div id="live-voting-area" style="display:none; width: 100%; flex-direction:column; align-items:center;">
-        
         <!-- Duet Selector -->
         <div class="singer-selector" id="singer-selector">
             <div class="sel-item active" id="sel-item-1" onclick="switchSinger(1)">
@@ -160,7 +189,7 @@
 
         <div class="vote-card">
             <img id="vote-singer-img" src="logo.jpg" class="singer-preview">
-            <h3 style="margin:0; opacity:0.7;">VOTING FOR</h3>
+            <h3 style="margin:0; opacity:0.7; font-size: 0.8rem; letter-spacing: 2px;">VOTING FOR</h3>
             <h2 id="vote-singer-name">...</h2>
             
             <p style="margin-top:20px; font-size:0.9rem; color:var(--text-muted);">Rate this performance from 1 to 10</p>
@@ -179,14 +208,14 @@
             </div>
 
             <button id="submit-vote" onclick="castVote()">SUBMIT VOTE</button>
-            <div id="voted-msg" class="voted-msg"><i class="fa-solid fa-check-circle"></i> VOTE RECEIVED!</div>
+            <div id="voted-msg" class="voted-msg"><i class="fa-solid fa-circle-check"></i> VOTE RECEIVED!</div>
         </div>
     </div>
 
-    <div id="no-live-area" style="text-align:center; margin-top:50px;">
-        <i class="fa-solid fa-hourglass-half" style="font-size:3rem; color:var(--text-muted); margin-bottom:20px;"></i>
-        <h2>VOTING IS CLOSED</h2>
-        <p style="color:var(--text-muted);">Please stay tuned to the live broadcast to vote for the next singer.</p>
+    <div id="no-live-area" style="text-align:center; margin-top:50px; display: none;">
+        <i class="fa-solid fa-microphone-slash" style="font-size:3rem; color:var(--text-muted); margin-bottom:20px;"></i>
+        <h2 style="color: white; opacity: 0.5;">VOTING CLOSED</h2>
+        <p style="color:var(--text-muted);">Stay tuned to the broadcast.</p>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
@@ -203,64 +232,93 @@
         let voterId = localStorage.getItem('voter_id') || ('V' + Math.floor(Math.random() * 1000000));
         localStorage.setItem('voter_id', voterId);
 
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const votingArea = document.getElementById('live-voting-area');
+        const noLiveArea = document.getElementById('no-live-area');
+
         // 1. Listen to Live State
         db.collection('live_state').doc('current').onSnapshot(async doc => {
-            if (!doc.exists) {
-                showVotingClosed();
-                return;
-            }
-            const state = doc.data();
-            const votingArea = document.getElementById('live-voting-area');
-            const noLiveArea = document.getElementById('no-live-area');
-
-            // Individual flags for each singer
-            const v1Open = state.status === 'on-air' && state.votingOpen1 && state.singer1;
-            const v2Open = state.status === 'on-air' && state.votingOpen2 && state.singer2;
-
-            if (v1Open || v2Open) {
-                votingArea.style.display = 'flex';
-                noLiveArea.style.display = 'none';
+            try {
+                if (!doc.exists) {
+                    showVotingClosed("State doc missing");
+                    return;
+                }
+                const state = doc.data();
                 
-                // Fetch/Refresh singer data
-                if (state.singer1) singer1Data = await loadSingerInfo(state.singer1);
-                if (state.singer2) singer2Data = await loadSingerInfo(state.singer2);
-                else singer2Data = null;
+                // Debug info for admin
+                const debug = document.getElementById('admin-debug');
+                if (localStorage.getItem('ss_admin_mode')) {
+                    debug.style.display = 'block';
+                    document.getElementById('debug-status').textContent = state.status;
+                    document.getElementById('debug-v1').textContent = state.votingOpen1;
+                    document.getElementById('debug-v2').textContent = state.votingOpen2;
+                }
 
-                // Handle Duet Selector Visibility
-                const selector = document.getElementById('singer-selector');
-                if (v1Open && v2Open) {
-                    selector.style.display = 'flex';
-                    updateSelectorItem(1, singer1Data, true);
-                    updateSelectorItem(2, singer2Data, true);
+                const v1Open = state.status === 'on-air' && state.votingOpen1 && state.singer1;
+                const v2Open = state.status === 'on-air' && state.votingOpen2 && state.singer2;
+
+                if (v1Open || v2Open) {
+                    // Fetch singer data if needed
+                    if (state.singer1 && (!singer1Data || singer1Data.id !== state.singer1)) {
+                        singer1Data = await loadSingerInfo(state.singer1);
+                    }
+                    if (state.singer2 && (!singer2Data || singer2Data.id !== state.singer2)) {
+                        singer2Data = await loadSingerInfo(state.singer2);
+                    } else if (!state.singer2) {
+                        singer2Data = null;
+                    }
+
+                    // Handle Duet Selector Visibility
+                    const selector = document.getElementById('singer-selector');
+                    if (v1Open && v2Open) {
+                        selector.style.display = 'flex';
+                        updateSelectorItem(1, singer1Data, true);
+                        updateSelectorItem(2, singer2Data, true);
+                    } else {
+                        selector.style.display = 'none';
+                    }
+
+                    // Auto-determine which singer to show
+                    if (v1Open && v2Open) {
+                        if (!activeSingerId) switchSinger(1);
+                        else updateCurrentSingerDisplay();
+                    } else if (v1Open) {
+                        switchSinger(1);
+                    } else if (v2Open) {
+                        switchSinger(2);
+                    }
+
+                    votingArea.style.display = 'flex';
+                    noLiveArea.style.display = 'none';
+                    loadingOverlay.style.display = 'none';
+
                 } else {
-                    selector.style.display = 'none';
+                    showVotingClosed("Closed by Admin");
                 }
-
-                // Auto-determine which singer to show
-                if (v1Open && v2Open) {
-                    // Both open, keep current or default to 1
-                    if (!activeSingerId) switchSinger(1);
-                    else updateCurrentSingerDisplay();
-                } else if (v1Open) {
-                    switchSinger(1);
-                } else if (v2Open) {
-                    switchSinger(2);
-                }
-
-            } else {
-                showVotingClosed();
+            } catch (err) {
+                console.error("Snapshot error:", err);
+                loadingOverlay.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
             }
+        }, err => {
+            console.error("Firebase error:", err);
+            loadingOverlay.innerHTML = `<p style="color:red;">Firebase connection failed.</p>`;
         });
 
-        function showVotingClosed() {
-            document.getElementById('live-voting-area').style.display = 'none';
-            document.getElementById('no-live-area').style.display = 'block';
+        function showVotingClosed(reason) {
+            votingArea.style.display = 'none';
+            noLiveArea.style.display = 'block';
+            loadingOverlay.style.display = 'none';
             activeSingerId = null;
+            console.log("Voting closed:", reason);
         }
 
         async function loadSingerInfo(id) {
-            const doc = await db.collection('participants').doc(id).get();
-            return doc.exists ? { id, ...doc.data() } : null;
+            try {
+                const doc = await db.collection('participants').doc(id).get();
+                return doc.exists ? { id, ...doc.data() } : null;
+            } catch (e) {
+                return null;
+            }
         }
 
         function updateSelectorItem(idx, data, isVisible) {
@@ -271,7 +329,7 @@
             }
             el.style.display = 'flex';
             document.getElementById(`sel-img-${idx}`).src = data.photoBase64 || 'logo.jpg';
-            document.getElementById(`sel-name-${idx}`).textContent = data.name.split(' ')[0];
+            document.getElementById(`sel-name-${idx}`).textContent = (data.name || 'Singer').split(' ')[0];
         }
 
         function switchSinger(idx) {
@@ -281,7 +339,6 @@
 
             activeSingerId = data.id;
             
-            // UI Updates
             document.getElementById('sel-item-1').classList.toggle('active', idx === 1);
             document.getElementById('sel-item-2').classList.toggle('active', idx === 2);
             
@@ -293,9 +350,8 @@
             if (!data) return;
 
             document.getElementById('vote-singer-img').src = data.photoBase64 || 'logo.jpg';
-            document.getElementById('vote-singer-name').textContent = data.name.toUpperCase();
+            document.getElementById('vote-singer-name').textContent = (data.name || 'SINGER').toUpperCase();
             
-            // Check if already voted
             const hasVoted = localStorage.getItem('voted_' + data.id);
             const card = document.querySelector('.vote-card');
             
@@ -303,7 +359,7 @@
                 card.classList.add('voted');
             } else {
                 card.classList.remove('voted');
-                selectScore(0); // Reset selection
+                selectScore(0);
             }
         }
 
@@ -335,24 +391,13 @@
 
                 localStorage.setItem('voted_' + activeSingerId, 'true');
                 document.querySelector('.vote-card').classList.add('voted');
-                btn.textContent = "SUBMIT VOTE";
             } catch (e) {
                 alert("Error sending vote. Please try again.");
                 btn.disabled = false;
+            } finally {
                 btn.textContent = "SUBMIT VOTE";
             }
         }
-
-        function resetVoteUI() {
-            document.getElementById('score-container').style.display = 'grid';
-            document.getElementById('submit-vote').style.display = 'block';
-            document.getElementById('submit-vote').disabled = false;
-            document.getElementById('submit-vote').textContent = "SUBMIT VOTE";
-            document.getElementById('voted-msg').style.display = 'none';
-            currentScore = 0;
-            document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('active'));
-        }
-
     </script>
 </body>
 </html>

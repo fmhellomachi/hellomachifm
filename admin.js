@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(getEl('live-round')) getEl('live-round').value = state.round || "1";
                 s1.value = state.singer1 || "";
                 s2.value = state.singer2 || "";
-                updateVotingUI(state.votingOpen);
+                updateVotingUI(state.votingOpen || state.votingOpen1 || state.votingOpen2);
             }
         } catch (err) { console.error(err); }
     }
@@ -139,7 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await db.collection('live_state').doc('current').set({
                 status: status, round: round, singer1: s1, singer2: s2,
-                votingOpen: false, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                votingOpen1: false, votingOpen2: false, votingOpen: false, 
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             
             // Clear current live votes
@@ -155,7 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.toggleVoting = async (isOpen) => {
         try {
-            await db.collection('live_state').doc('current').update({ votingOpen: isOpen });
+            await db.collection('live_state').doc('current').update({ 
+                votingOpen: isOpen,
+                votingOpen1: isOpen,
+                votingOpen2: isOpen
+            });
             updateVotingUI(isOpen);
         } catch (err) { console.error(err); }
     };

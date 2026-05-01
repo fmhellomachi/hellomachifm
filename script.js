@@ -364,10 +364,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (voteBanner) {
         db.collection('live_state').doc('current').onSnapshot(doc => {
+            if (!doc.exists) { voteBanner.style.display = 'none'; return; }
             const state = doc.data();
-            if (state && state.status === 'on-air' && state.votingOpen) {
-                // Fetch singer name for the banner
-                db.collection('participants').doc(state.singer1).get().then(pDoc => {
+            
+            // Check if ANY singer's voting is open
+            const isAnyOpen = state.status === 'on-air' && (state.votingOpen1 || state.votingOpen2 || state.votingOpen);
+            
+            if (isAnyOpen) {
+                // Fetch singer name for the banner (default to singer 1)
+                const activeId = state.votingOpen2 && !state.votingOpen1 ? state.singer2 : state.singer1;
+                db.collection('participants').doc(activeId).get().then(pDoc => {
                     if (pDoc.exists) {
                         bannerSinger.textContent = pDoc.data().name.toUpperCase();
                         voteBanner.style.display = 'block';

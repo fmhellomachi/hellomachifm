@@ -371,14 +371,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const isAnyOpen = state.status === 'on-air' && (state.votingOpen1 || state.votingOpen2 || state.votingOpen);
             
             if (isAnyOpen) {
-                // Fetch singer name for the banner (default to singer 1)
-                const activeId = state.votingOpen2 && !state.votingOpen1 ? state.singer2 : state.singer1;
-                db.collection('participants').doc(activeId).get().then(pDoc => {
-                    if (pDoc.exists) {
-                        bannerSinger.textContent = pDoc.data().name.toUpperCase();
-                        voteBanner.style.display = 'block';
-                    }
-                });
+                const activeIds = [];
+                if (state.votingOpen1 && state.singer1) activeIds.push(state.singer1);
+                if (state.votingOpen2 && state.singer2) activeIds.push(state.singer2);
+                if (state.votingOpen && state.singer1 && !activeIds.includes(state.singer1)) activeIds.push(state.singer1);
+
+                if (activeIds.length > 0) {
+                    Promise.all(activeIds.map(id => db.collection('participants').doc(id).get())).then(docs => {
+                        const names = docs.filter(d => d.exists).map(d => d.data().name.toUpperCase());
+                        if (names.length > 0) {
+                            bannerSinger.textContent = names.join(' & ');
+                            voteBanner.style.display = 'block';
+                        }
+                    });
+                }
             } else {
                 voteBanner.style.display = 'none';
             }

@@ -1359,7 +1359,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audienceScoresUnsub) audienceScoresUnsub();
         audienceScoresUnsub = db.collection('live_votes').onSnapshot(snap => {
             const votes = [];
-            snap.forEach(doc => { if (doc.data().score) votes.push(doc.data().score); });
+            snap.forEach(doc => { 
+                const d = doc.data();
+                if (d.score && d.singerId === singerId) votes.push(d.score); 
+            });
             const avg = votes.length ? (votes.reduce((a, b) => a + b, 0) / votes.length) : 0;
             const el = document.getElementById('audience-avg-display');
             if (el) el.textContent = avg.toFixed(1);
@@ -1614,8 +1617,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await db.collection('live_state').doc('current').set({
                 round: round,
-                singer1_id: singerId,
-                singer2_id: "",
+                singer1: singerId,
+                singer2: "",
                 status: "on-air",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });

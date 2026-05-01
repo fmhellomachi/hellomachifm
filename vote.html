@@ -89,13 +89,75 @@
             display: none;
             margin-top: 20px;
         }
+
+        /* Duet Selector Styles */
+        .singer-selector {
+            display: none;
+            gap: 15px;
+            margin-bottom: 25px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .sel-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.4;
+            cursor: pointer;
+            transition: all 0.3s;
+            max-width: 100px;
+        }
+
+        .sel-item.active {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .sel-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            object-fit: contain;
+            background: #000;
+            margin-bottom: 8px;
+        }
+
+        .active .sel-img {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .sel-name {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
 
     <img src="logo.jpg" style="width: 80px; border-radius: 12px; margin-bottom: 20px; object-fit: contain; background: #000;">
     
-    <div id="live-voting-area" style="display:none; width: 100%; display:flex; flex-direction:column; align-items:center;">
+    <div id="live-voting-area" style="display:none; width: 100%; flex-direction:column; align-items:center;">
+        
+        <!-- Duet Selector -->
+        <div class="singer-selector" id="singer-selector">
+            <div class="sel-item active" id="sel-item-1" onclick="switchSinger(1)">
+                <img id="sel-img-1" src="logo.jpg" class="sel-img">
+                <div id="sel-name-1" class="sel-name">Singer 1</div>
+            </div>
+            <div class="sel-item" id="sel-item-2" onclick="switchSinger(2)">
+                <img id="sel-img-2" src="logo.jpg" class="sel-img">
+                <div id="sel-name-2" class="sel-name">Singer 2</div>
+            </div>
+        </div>
+
         <div class="vote-card">
             <img id="vote-singer-img" src="logo.jpg" class="singer-preview">
             <h3 style="margin:0; opacity:0.7;">VOTING FOR</h3>
@@ -135,47 +197,104 @@
     <script>
         let currentScore = 0;
         let activeSingerId = null;
+        let singer1Data = null;
+        let singer2Data = null;
         let voterId = localStorage.getItem('voter_id') || ('V' + Math.floor(Math.random() * 1000000));
         localStorage.setItem('voter_id', voterId);
 
-        db.collection('live_state').doc('current').onSnapshot(doc => {
+        db.collection('live_state').doc('current').onSnapshot(async doc => {
+            if (!doc.exists) {
+                document.getElementById('live-voting-area').style.display = 'none';
+                document.getElementById('no-live-area').style.display = 'block';
+                return;
+            }
             const state = doc.data();
             const votingArea = document.getElementById('live-voting-area');
             const noLiveArea = document.getElementById('no-live-area');
 
-            if (state && state.status === 'on-air' && state.votingOpen) {
+            if (state && state.status === 'on-air' && state.votingOpen && state.singer1) {
                 votingArea.style.display = 'flex';
                 noLiveArea.style.display = 'none';
-                activeSingerId = state.singer1; // Simplified for MVP: Vote for primary singer
-                loadSingerInfo(activeSingerId);
                 
-                // Reset if singer changed
-                if (localStorage.getItem('last_voted_singer') !== activeSingerId) {
-                    resetVoteUI();
+                // Load Singer 1
+                singer1Data = await loadSingerInfo(state.singer1);
+                
+                // Load Singer 2 if exists
+                if (state.singer2) {
+                    singer2Data = await loadSingerInfo(state.singer2);
+                    document.getElementById('singer-selector').style.display = 'flex';
+                    updateSelectorUI();
                 } else {
-                    showSuccess();
+                    singer2Data = null;
+                    document.getElementById('singer-selector').style.display = 'none';
                 }
+
+                // Default to singer 1 if no active singer yet or singer changed
+                if (!activeSingerId || (activeSingerId !== state.singer1 && activeSingerId !== state.singer2)) {
+                    activeSingerId = state.singer1;
+                    switchSinger(1);
+                } else {
+                    // Just refresh current view
+                    updateCurrentSingerDisplay();
+                }
+
             } else {
                 votingArea.style.display = 'none';
                 noLiveArea.style.display = 'block';
+                activeSingerId = null;
             }
         });
 
         async function loadSingerInfo(id) {
             const doc = await db.collection('participants').doc(id).get();
-            if (doc.exists) {
-                document.getElementById('vote-singer-name').textContent = doc.data().name;
-                document.getElementById('vote-singer-img').src = doc.data().photoBase64 || 'logo.jpg';
+            return doc.exists ? { id, ...doc.data() } : null;
+        }
+
+        function updateSelectorUI() {
+            if (singer1Data) {
+                document.getElementById('sel-img-1').src = singer1Data.photoBase64 || 'logo.jpg';
+                document.getElementById('sel-name-1').textContent = singer1Data.name;
+            }
+            if (singer2Data) {
+                document.getElementById('sel-img-2').src = singer2Data.photoBase64 || 'logo.jpg';
+                document.getElementById('sel-name-2').textContent = singer2Data.name;
+            }
+        }
+
+        function switchSinger(index) {
+            activeSingerId = (index === 1) ? singer1Data?.id : singer2Data?.id;
+            
+            // Update UI highlight
+            document.getElementById('sel-item-1').classList.toggle('active', index === 1);
+            document.getElementById('sel-item-2').classList.toggle('active', index === 2);
+            
+            updateCurrentSingerDisplay();
+        }
+
+        function updateCurrentSingerDisplay() {
+            const data = (activeSingerId === singer1Data?.id) ? singer1Data : singer2Data;
+            if (!data) return;
+
+            document.getElementById('vote-singer-name').textContent = data.name;
+            document.getElementById('vote-singer-img').src = data.photoBase64 || 'logo.jpg';
+
+            // Check if already voted for THIS singer
+            if (localStorage.getItem(`voted_${activeSingerId}`)) {
+                showSuccess();
+            } else {
+                resetVoteUI();
             }
         }
 
         function selectScore(s) {
             currentScore = s;
             document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            const btn = document.querySelector(`.score-btn:nth-child(${s})`);
+            if (btn) btn.classList.add('active');
         }
 
         async function castVote() {
+            if (!activeSingerId) return;
             if (currentScore === 0) {
                 alert("Please select a score first!");
                 return;
@@ -193,7 +312,7 @@
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                localStorage.setItem('last_voted_singer', activeSingerId);
+                localStorage.setItem(`voted_${activeSingerId}`, "true");
                 showSuccess();
             } catch (err) {
                 alert("Voting failed. Please try again.");
@@ -217,6 +336,7 @@
             currentScore = 0;
             document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('active'));
         }
+
     </script>
 </body>
 </html>

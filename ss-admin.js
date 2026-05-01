@@ -215,7 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabId === 'participants') fetchAdminData();
             if (tabId === 'cms') fetchCMS();
             if (tabId === 'admins') fetchAdminsList();
-            if (tabId === 'live-control') { fetchParticipantsForLive(); listenToLiveStats(); }
+            if (tabId === 'live-control') { 
+                fetchParticipantsForLive(); 
+                listenToLiveStats(); 
+                listenToLiveState(); 
+            }
             if (tabId === 'history') fetchHistory();
             if (tabId === 'wall-of-fame') fetchWofCandidates();
             if (tabId === 'leaderboard') calculateLeaderboard();
@@ -397,12 +401,81 @@ document.addEventListener('DOMContentLoaded', () => {
     let statsUnsub = null;
     function listenToLiveStats() {
         if (statsUnsub) statsUnsub();
-        statsUnsub = db.collection('live_votes').onSnapshot(snap => {
-            const count = snap.size;
-            let total = 0;
-            snap.forEach(doc => total += doc.data().score);
-            if(getEl('stat-total-votes')) getEl('stat-total-votes').textContent = count;
-            if(getEl('stat-avg-score')) getEl('stat-avg-score').textContent = count > 0 ? (total/count).toFixed(1) : "0.0";
+        statsUnsub = db.collection('live_votes').onSnapshot(async snap => {
+            try {
+                const stateDoc = await db.collection('live_state').doc('current').get();
+                if (!stateDoc.exists) return;
+                const state = stateDoc.data();
+                const s1Id = state.singer1;
+                const s2Id = state.singer2;
+
+                let c1 = 0, t1 = 0, c2 = 0, t2 = 0;
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.singerId === s1Id) { c1++; t1 += (parseFloat(d.score) || 0); }
+                    else if (s2Id && d.singerId === s2Id) { c2++; t2 += (parseFloat(d.score) || 0); }
+                });
+
+                // Update Singer 1 Stats
+                if (getEl('stat-total-votes-1')) getEl('stat-total-votes-1').textContent = c1;
+                if (getEl('stat-avg-score-1')) getEl('stat-avg-score-1').textContent = c1 > 0 ? (t1/c1).toFixed(1) : "0.0";
+                
+                // Fetch and update names if possible
+                if (s1Id) {
+                    db.collection('participants').doc(s1Id).get().then(d => {
+                        if (d.exists && getEl('singer-1-name-stat')) getEl('singer-1-name-stat').textContent = d.data().name;
+                    });
+                }
+
+                // Update Singer 2 Stats
+                const s2Box = getEl('singer-2-stats-box');
+                if (s2Id) {
+                    if (s2Box) s2Box.style.display = 'block';
+                    if (getEl('stat-total-votes-2')) getEl('stat-total-votes-2').textContent = c2;
+                    if (getEl('stat-avg-score-2')) getEl('stat-avg-score-2').textContent = c2 > 0 ? (t2/c2).toFixed(1) : "0.0";
+                    
+                    db.collection('participants').doc(s2Id).get().then(d => {
+                        if (d.exists && getEl('singer-2-name-stat')) getEl('singer-2-name-stat').textContent = d.data().name;
+                    });
+                } else {
+                    if (s2Box) s2Box.style.display = 'none';
+                }
+
+                // Overall total for legacy purposes if any
+                if (getEl('stat-total-votes')) getEl('stat-total-votes').textContent = snap.size;
+
+            } catch (err) { console.error("Stats listener error:", err); }
+        });
+    }
+    
+    function listenToLiveState() {
+        if (liveStateUnsub) liveStateUnsub();
+        liveStateUnsub = db.collection('live_state').doc('current').onSnapshot(doc => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            
+            // Update judge panel labels
+            const label = getEl('judge-singer-label');
+            const toggleS2 = document.querySelector('input[name="judge_singer_toggle"][value="singer2"]');
+            if (label) {
+                if (data.singer1) {
+                    const s1 = allLiveParticipants.find(p => p.id === data.singer1);
+                    const s2 = allLiveParticipants.find(p => p.id === data.singer2);
+                    label.innerHTML = `<i class="fa-solid fa-microphone-lines"></i> ON STAGE: <b style="color:var(--primary);">${s1 ? s1.name.toUpperCase() : 'UNKNOWN'}</b> ${s2 ? ` & <b style="color:var(--secondary);">${s2.name.toUpperCase()}</b>` : ''}`;
+                    
+                    if (toggleS2) {
+                        toggleS2.parentElement.style.display = s2 ? 'flex' : 'none';
+                    }
+                } else {
+                    label.innerHTML = `🎤 No singer on stage yet`;
+                }
+            }
+            
+            // Update Voting Controls UI
+            updateVotingUI(data.votingOpen1, 1);
+            updateVotingUI(data.votingOpen2, 2);
+            const s2Ctrl = getEl('singer-2-voting-ctrl');
+            if(s2Ctrl) s2Ctrl.style.display = data.singer2 ? 'block' : 'none';
         });
     }
 

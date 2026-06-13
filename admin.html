@@ -330,27 +330,61 @@
         }
 
         async function loadConfig() {
+            const defaults = {
+                stream_url: "https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3",
+                fallback_stream_url: "https://sonic-ca.instainternet.com/8022/stream",
+                logo_url: "https://hello-machi.github.io/hello-machi-portal/logo.jpg",
+                accent_color: "#D4AF37",
+                latest_version_code: 16,
+                apk_url: "https://github.com/fmhellomachi/hello-machi-backend/releases/download/V3/app-universal-release.apk",
+                update_message: "New update available! Tap to download the latest Hello Machi FM.",
+                status_message: "Synced via Cloud Panel",
+                whatsapp_number: "+91 9092363433",
+                whatsapp_message: "Hello Machi FM! 🎵",
+                request_song_message: "I'd like to request a song 🎵",
+                facebook_url: "https://www.facebook.com/hellomachifm",
+                instagram_url: "https://www.instagram.com/hellomachifm",
+                youtube_url: "https://www.youtube.com/@hellomachifm",
+                custom_link: "https://hellomachifm.vercel.app/api/config",
+                welcome_title: "HELLO MACHI FM",
+                welcome_greeting: "WELCOME TO",
+                programs: [
+                    {time:"06:00",endTime:"09:00",title:"Morning Vibes",rj:"RJ Malar"},
+                    {time:"09:00",endTime:"12:00",title:"Retro Hits",rj:"RJ Uthiran"},
+                    {time:"12:00",endTime:"16:00",title:"Midday Melodies",rj:"RJ Malar"},
+                    {time:"16:00",endTime:"20:00",title:"Evening Express",rj:"RJ Vijay"},
+                    {time:"20:00",endTime:"23:59",title:"Romantic Night",rj:"RJ Uthiran"},
+                    {time:"00:00",endTime:"06:00",title:"Iravin Madiyil",rj:"RJ Vijay"}
+                ]
+            };
+
             try {
                 const doc = await db.collection('cms').doc('config').get();
-                const cfg = doc.exists ? doc.data() : {};
-                document.getElementById('cfg-stream').value = cfg.stream_url || '';
-                document.getElementById('cfg-fallback').value = cfg.fallback_stream_url || '';
-                document.getElementById('cfg-logo').value = cfg.logo_url || '';
-                document.getElementById('cfg-accent').value = cfg.accent_color || '#D4AF37';
-                document.getElementById('cfg-version').value = cfg.latest_version_code || 1;
-                document.getElementById('cfg-apk').value = cfg.apk_url || '';
-                document.getElementById('cfg-update-msg').value = cfg.update_message || '';
-                document.getElementById('cfg-status-msg').value = cfg.status_message || '';
-                document.getElementById('cfg-wa-num').value = cfg.whatsapp_number || '';
-                document.getElementById('cfg-wa-msg').value = cfg.whatsapp_message || '';
-                document.getElementById('cfg-request-msg').value = cfg.request_song_message || '';
-                document.getElementById('cfg-fb').value = cfg.facebook_url || '';
-                document.getElementById('cfg-ig').value = cfg.instagram_url || '';
-                document.getElementById('cfg-yt').value = cfg.youtube_url || '';
-                document.getElementById('cfg-custom').value = cfg.custom_link || '';
-                document.getElementById('cfg-title').value = cfg.welcome_title || '';
-                document.getElementById('cfg-greeting').value = cfg.welcome_greeting || '';
-                programData = (cfg.programs && Array.isArray(cfg.programs)) ? cfg.programs.map(p => ({...p})) : [];
+                let cfg = doc.exists ? doc.data() : null;
+
+                if (!cfg || Object.keys(cfg).length === 0) {
+                    cfg = defaults;
+                }
+
+                document.getElementById('cfg-stream').value = cfg.stream_url || defaults.stream_url;
+                document.getElementById('cfg-fallback').value = cfg.fallback_stream_url || defaults.fallback_stream_url;
+                document.getElementById('cfg-logo').value = cfg.logo_url || defaults.logo_url;
+                document.getElementById('cfg-accent').value = cfg.accent_color || defaults.accent_color;
+                document.getElementById('cfg-version').value = cfg.latest_version_code || defaults.latest_version_code;
+                document.getElementById('cfg-apk').value = cfg.apk_url || defaults.apk_url;
+                document.getElementById('cfg-update-msg').value = cfg.update_message || defaults.update_message;
+                document.getElementById('cfg-status-msg').value = cfg.status_message || defaults.status_message;
+                document.getElementById('cfg-wa-num').value = cfg.whatsapp_number || defaults.whatsapp_number;
+                document.getElementById('cfg-wa-msg').value = cfg.whatsapp_message || defaults.whatsapp_message;
+                document.getElementById('cfg-request-msg').value = cfg.request_song_message || defaults.request_song_message;
+                document.getElementById('cfg-fb').value = cfg.facebook_url || defaults.facebook_url;
+                document.getElementById('cfg-ig').value = cfg.instagram_url || defaults.instagram_url;
+                document.getElementById('cfg-yt').value = cfg.youtube_url || defaults.youtube_url;
+                document.getElementById('cfg-custom').value = cfg.custom_link || defaults.custom_link;
+                document.getElementById('cfg-title').value = cfg.welcome_title || defaults.welcome_title;
+                document.getElementById('cfg-greeting').value = cfg.welcome_greeting || defaults.welcome_greeting;
+                programData = (cfg.programs && Array.isArray(cfg.programs) && cfg.programs.length > 0)
+                    ? cfg.programs.map(p => ({...p})) : defaults.programs.map(p => ({...p}));
                 renderPrograms();
             } catch (err) {
                 showConfigStatus('Error loading config: ' + err.message, 'error');
@@ -407,8 +441,21 @@
             };
 
             try {
+                // Save to Firestore (used by Vercel API → Android app)
                 await db.collection('cms').doc('config').set(config, { merge: true });
-                showConfigStatus('✅ Config saved successfully! The app will pick up changes on next refresh.', 'success');
+                showConfigStatus('✅ Firestore saved! Syncing to Render...', 'success');
+
+                // Also sync to Render's config.json (used by web portal)
+                try {
+                    await fetch('https://hello-machi-backend.onrender.com/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    });
+                    showConfigStatus('✅ Config saved to Firestore + Render synced successfully!', 'success');
+                } catch (renderErr) {
+                    showConfigStatus('⚠️ Saved to Firestore, but Render sync failed: ' + renderErr.message, 'error');
+                }
             } catch (err) {
                 showConfigStatus('Error saving config: ' + err.message, 'error');
             }

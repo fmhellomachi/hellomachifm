@@ -362,9 +362,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Update active show text on Now Playing HUD
-        const showEl = document.getElementById('hud-active-show-text');
-        if (showEl) {
-            showEl.textContent = `On Air: ${activeShowTitle.toUpperCase()} with ${activeShowRJ.toUpperCase()}`;
+        const hudProgramTitle = document.getElementById('hud-program-title');
+        const hudProgramRj = document.getElementById('hud-program-rj');
+        if (hudProgramTitle) {
+            hudProgramTitle.textContent = activeShowTitle.toUpperCase();
+        }
+        if (hudProgramRj) {
+            hudProgramRj.textContent = `WITH ${activeShowRJ.toUpperCase()}`;
         }
     }
 
@@ -377,15 +381,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data && data.title) {
                 // Update Homepage HUD
-                const hudTitle = document.getElementById('hud-track-title');
-                const hudArtist = document.getElementById('hud-track-artist');
                 const hudCover = document.getElementById('hud-cover-art');
                 const hudStatus = document.getElementById('hud-status-text');
+                const hudMarquee = document.getElementById('hud-track-marquee');
                 
-                if (hudTitle) hudTitle.textContent = data.title;
-                if (hudArtist) hudArtist.textContent = data.artist || 'LIVE TAMIL RADIO';
                 if (hudCover && data.cover_art) hudCover.src = data.cover_art;
                 if (hudStatus) hudStatus.textContent = `Live: "${data.title}" by ${data.artist || 'Machi RJ'}`;
+                if (hudMarquee) {
+                    const trackStr = `${data.title.toUpperCase()} - ${(data.artist || 'Hello Machi FM').toUpperCase()}`;
+                    hudMarquee.textContent = `NOW PLAYING: ${trackStr}   •   NOW PLAYING: ${trackStr}   •   `;
+                }
                 
                 // Update Floating Player HUD
                 const playerTitle = document.getElementById('now-playing-title');

@@ -54,14 +54,23 @@
                         <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
                             <img id="hud-cover-art" src="logo.jpg" alt="Cover Art" style="width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.1);">
                             <div style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
-                                <span id="hud-track-title" style="font-weight: 800; font-size: 1.1rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">HELLO MACHI FM</span>
-                                <span id="hud-track-artist" style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">LIVE TAMIL RADIO</span>
+                                <span id="hud-program-title" style="font-weight: 800; font-size: 1.1rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">LOADING SHOW...</span>
+                                <span id="hud-program-rj" style="font-size: 0.85rem; color: var(--primary); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">WITH MACHI TEAM</span>
                             </div>
                         </div>
-                        <!-- Dynamic Active Show Sub-indicator -->
-                        <div id="hud-active-show" style="font-size: 0.75rem; color: var(--primary); font-weight: bold; display: flex; align-items: center; gap: 6px; margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                            <i class="fa-solid fa-microphone-lines"></i> <span id="hud-active-show-text">On Air: Loading show...</span>
+                        
+                        <!-- Scrolling Song Marquee Box -->
+                        <div class="marquee-container" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 10px; font-size: 0.8rem; overflow: hidden; position: relative;">
+                            <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; width: 100%;">
+                                <span class="pulse" style="width:6px; height:6px; background: #FF3B30; border-radius: 50%; display: inline-block; flex-shrink: 0;"></span>
+                                <div class="marquee-scroll-container" style="overflow: hidden; white-space: nowrap; width: 100%;">
+                                    <span id="hud-track-marquee" style="display: inline-block; animation: marquee-scroll 15s linear infinite; padding-left: 100%; color: #fff; font-weight: 600;">
+                                        Hello Machi FM - Idhu Namma Area Machi
+                                    </span>
+                                </div>
+                            </div>
                         </div>
+
                         <div style="background: rgba(255, 255, 255, 0.02); border-radius: 12px; padding: 10px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; gap: 8px;">
                             <span class="pulse" style="width:6px; height:6px;"></span> <span id="hud-status-text">Streaming high-quality stereo audio.</span>
                         </div>

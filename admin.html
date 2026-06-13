@@ -47,6 +47,7 @@
             flex-direction: column;
             align-items: center;
             gap: 15px;
+            cursor: pointer;
         }
 
         .hub-card:hover {
@@ -62,6 +63,49 @@
         .btn-logout { margin-top: 40px; background: #222; color: white; border: none; padding: 10px 30px; border-radius: 50px; cursor: pointer; }
         .btn-back { margin-top: 10px; background: transparent; color: #888; border: 1px solid #444; padding: 10px 30px; border-radius: 50px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 0.8rem; }
         .btn-back:hover { color: white; border-color: white; }
+
+        /* Config Modal */
+        .config-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 30px 15px;
+        }
+        .config-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+        .config-modal {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            margin: auto;
+        }
+        .config-modal h2 { margin-bottom: 25px; }
+        .config-section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #222; }
+        .config-section h4 { color: var(--primary); font-size: 0.85rem; letter-spacing: 0.5px; margin-bottom: 15px; text-align: left; }
+        .config-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; text-align: left; }
+        .config-row label { font-size: 0.75rem; color: #888; font-weight: bold; letter-spacing: 0.3px; }
+        .config-row input, .config-row textarea {
+            width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #333;
+            background: #1a1a1a; color: white; outline: none; font-size: 0.9rem; box-sizing: border-box;
+        }
+        .config-row textarea { min-height: 60px; resize: vertical; }
+        .program-entry { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+        .program-entry input { flex: 1; min-width: 80px; padding: 8px 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: white; outline: none; font-size: 0.8rem; }
+        .program-entry button { background: #ff4d4d; border: none; color: white; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.8rem; }
+        .btn-add-program { background: #222; border: 1px dashed #555; color: #aaa; padding: 8px; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 5px; font-size: 0.8rem; }
+        .btn-add-program:hover { border-color: var(--primary); color: white; }
+        .config-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-save-config { flex: 1; padding: 14px; font-size: 1rem; font-weight: bold; background: var(--primary); color: black; border: none; cursor: pointer; border-radius: 50px; }
+        .btn-close-config { padding: 14px 25px; font-size: 1rem; background: #222; color: #888; border: 1px solid #444; cursor: pointer; border-radius: 50px; }
+        .btn-close-config:hover { color: white; border-color: white; }
+        #config-status { margin-top: 12px; font-size: 0.85rem; padding: 8px; border-radius: 8px; display: none; }
+        #config-status.success { display: block; background: rgba(40,167,69,0.15); color: #28a745; }
+        #config-status.error { display: block; background: rgba(255,77,77,0.15); color: #ff4d4d; }
 
         @media (max-width: 600px) {
             .hub-grid { grid-template-columns: 1fr; }
@@ -94,6 +138,12 @@
                 <p>Manage RJ shifts and daily programs.</p>
             </a>
 
+            <div class="hub-card" onclick="openConfigModal()">
+                <i class="fa-solid fa-sliders"></i>
+                <h3>Station Config</h3>
+                <p>Edit stream URLs, social links, and app settings.</p>
+            </div>
+
             <a href="#" class="hub-card" onclick="alert('Listeners analytics coming soon...')">
                 <i class="fa-solid fa-chart-line"></i>
                 <h3>Analytics</h3>
@@ -111,6 +161,58 @@
         </div>
     </div>
 
+    <!-- Config Modal -->
+    <div class="config-overlay" id="config-overlay">
+        <div class="config-modal">
+            <h2>📡 Station Config</h2>
+            <div id="config-status"></div>
+
+            <div class="config-section">
+                <h4>🔊 STREAM SETUP</h4>
+                <div class="config-row"><label>Live Stream URL (Primary)</label><input type="text" id="cfg-stream"></div>
+                <div class="config-row"><label>Fallback Stream URL (Secondary)</label><input type="text" id="cfg-fallback"></div>
+                <div class="config-row"><label>Logo URL</label><input type="text" id="cfg-logo"></div>
+                <div class="config-row"><label>Accent Color</label><input type="text" id="cfg-accent"></div>
+            </div>
+
+            <div class="config-section">
+                <h4>📱 APP & UPDATES</h4>
+                <div class="config-row"><label>Latest Version Code</label><input type="number" id="cfg-version"></div>
+                <div class="config-row"><label>APK Download URL</label><input type="text" id="cfg-apk"></div>
+                <div class="config-row"><label>Update Message</label><textarea id="cfg-update-msg"></textarea></div>
+                <div class="config-row"><label>Status Message</label><input type="text" id="cfg-status-msg"></div>
+            </div>
+
+            <div class="config-section">
+                <h4>📞 CONTACT & SOCIAL</h4>
+                <div class="config-row"><label>WhatsApp Number</label><input type="text" id="cfg-wa-num"></div>
+                <div class="config-row"><label>WhatsApp Message</label><input type="text" id="cfg-wa-msg"></div>
+                <div class="config-row"><label>Request Song Message</label><input type="text" id="cfg-request-msg"></div>
+                <div class="config-row"><label>Facebook URL</label><input type="text" id="cfg-fb"></div>
+                <div class="config-row"><label>Instagram URL</label><input type="text" id="cfg-ig"></div>
+                <div class="config-row"><label>YouTube URL</label><input type="text" id="cfg-yt"></div>
+                <div class="config-row"><label>Custom Link</label><input type="text" id="cfg-custom"></div>
+            </div>
+
+            <div class="config-section">
+                <h4>🎙️ WELCOME & BRANDING</h4>
+                <div class="config-row"><label>Welcome Title</label><input type="text" id="cfg-title"></div>
+                <div class="config-row"><label>Welcome Greeting</label><input type="text" id="cfg-greeting"></div>
+            </div>
+
+            <div class="config-section">
+                <h4>📅 PROGRAM SCHEDULE</h4>
+                <div id="cfg-programs-list"></div>
+                <button class="btn-add-program" onclick="addProgramEntry()">+ Add Show</button>
+            </div>
+
+            <div class="config-actions">
+                <button class="btn-close-config" onclick="closeConfigModal()">CANCEL</button>
+                <button class="btn-save-config" onclick="saveConfig()">SAVE & SYNC</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Login Screen -->
     <div id="login-screen" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px;">
         <div style="text-align: center; background: rgba(15, 15, 15, 0.95); padding: 40px 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.8);">
@@ -119,7 +221,7 @@
             
             <div style="margin-bottom: 15px; text-align: left;">
                 <label style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 5px; font-weight: bold; letter-spacing: 0.5px;">EMAIL ADDRESS</label>
-                <input type="email" id="login-email" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; outline: none; font-size: 1rem;" placeholder="e.g., admin@hellomachi.com">
+                <input type="email" id="login-email" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; outline: none; font-size: 1rem;" placeholder="Enter email">
             </div>
             
             <div style="margin-bottom: 25px; text-align: left;">
@@ -213,6 +315,111 @@
                 window.location.reload();
             });
         };
+
+        // --- Station Config ---
+        let programData = [];
+
+        function openConfigModal() {
+            document.getElementById('config-overlay').classList.add('open');
+            document.getElementById('config-status').style.display = 'none';
+            loadConfig();
+        }
+
+        function closeConfigModal() {
+            document.getElementById('config-overlay').classList.remove('open');
+        }
+
+        async function loadConfig() {
+            try {
+                const doc = await db.collection('cms').doc('config').get();
+                const cfg = doc.exists ? doc.data() : {};
+                document.getElementById('cfg-stream').value = cfg.stream_url || '';
+                document.getElementById('cfg-fallback').value = cfg.fallback_stream_url || '';
+                document.getElementById('cfg-logo').value = cfg.logo_url || '';
+                document.getElementById('cfg-accent').value = cfg.accent_color || '#D4AF37';
+                document.getElementById('cfg-version').value = cfg.latest_version_code || 1;
+                document.getElementById('cfg-apk').value = cfg.apk_url || '';
+                document.getElementById('cfg-update-msg').value = cfg.update_message || '';
+                document.getElementById('cfg-status-msg').value = cfg.status_message || '';
+                document.getElementById('cfg-wa-num').value = cfg.whatsapp_number || '';
+                document.getElementById('cfg-wa-msg').value = cfg.whatsapp_message || '';
+                document.getElementById('cfg-request-msg').value = cfg.request_song_message || '';
+                document.getElementById('cfg-fb').value = cfg.facebook_url || '';
+                document.getElementById('cfg-ig').value = cfg.instagram_url || '';
+                document.getElementById('cfg-yt').value = cfg.youtube_url || '';
+                document.getElementById('cfg-custom').value = cfg.custom_link || '';
+                document.getElementById('cfg-title').value = cfg.welcome_title || '';
+                document.getElementById('cfg-greeting').value = cfg.welcome_greeting || '';
+                programData = (cfg.programs && Array.isArray(cfg.programs)) ? cfg.programs.map(p => ({...p})) : [];
+                renderPrograms();
+            } catch (err) {
+                showConfigStatus('Error loading config: ' + err.message, 'error');
+            }
+        }
+
+        function renderPrograms() {
+            const list = document.getElementById('cfg-programs-list');
+            list.innerHTML = '';
+            programData.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'program-entry';
+                div.innerHTML = `
+                    <input type="text" value="${p.time || ''}" placeholder="Start" onchange="programData[${i}].time=this.value">
+                    <input type="text" value="${p.endTime || ''}" placeholder="End" onchange="programData[${i}].endTime=this.value">
+                    <input type="text" value="${p.title || ''}" placeholder="Title" onchange="programData[${i}].title=this.value">
+                    <input type="text" value="${p.rj || ''}" placeholder="RJ" onchange="programData[${i}].rj=this.value">
+                    <button onclick="removeProgram(${i})">✕</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addProgramEntry() {
+            programData.push({ time: '', endTime: '', title: '', rj: '' });
+            renderPrograms();
+        }
+
+        function removeProgram(i) {
+            programData.splice(i, 1);
+            renderPrograms();
+        }
+
+        async function saveConfig() {
+            const config = {
+                stream_url: document.getElementById('cfg-stream').value,
+                fallback_stream_url: document.getElementById('cfg-fallback').value,
+                logo_url: document.getElementById('cfg-logo').value,
+                accent_color: document.getElementById('cfg-accent').value,
+                latest_version_code: parseInt(document.getElementById('cfg-version').value) || 1,
+                apk_url: document.getElementById('cfg-apk').value,
+                update_message: document.getElementById('cfg-update-msg').value,
+                status_message: document.getElementById('cfg-status-msg').value,
+                whatsapp_number: document.getElementById('cfg-wa-num').value,
+                whatsapp_message: document.getElementById('cfg-wa-msg').value,
+                request_song_message: document.getElementById('cfg-request-msg').value,
+                facebook_url: document.getElementById('cfg-fb').value,
+                instagram_url: document.getElementById('cfg-ig').value,
+                youtube_url: document.getElementById('cfg-yt').value,
+                custom_link: document.getElementById('cfg-custom').value,
+                welcome_title: document.getElementById('cfg-title').value,
+                welcome_greeting: document.getElementById('cfg-greeting').value,
+                programs: programData.filter(p => p.title || p.time)
+            };
+
+            try {
+                await db.collection('cms').doc('config').set(config, { merge: true });
+                showConfigStatus('✅ Config saved successfully! The app will pick up changes on next refresh.', 'success');
+            } catch (err) {
+                showConfigStatus('Error saving config: ' + err.message, 'error');
+            }
+        }
+
+        function showConfigStatus(msg, type) {
+            const el = document.getElementById('config-status');
+            el.textContent = msg;
+            el.className = type;
+            el.style.display = 'block';
+        }
     </script>
 </body>
 </html>

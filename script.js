@@ -314,6 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentMin = istDate.getMinutes();
         const currentTimeVal = currentHour * 60 + currentMin;
 
+        let activeShowTitle = "Live Broadcast";
+        let activeShowRJ = "Machi Team";
+
         blocks.forEach((block, index) => {
             let isLive = false;
             
@@ -337,9 +340,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (startVal !== null) {
                 if (currentTimeVal >= startVal && currentTimeVal < endVal) {
                     isLive = true;
+                    activeShowTitle = block.title;
+                    activeShowRJ = block.rj || "Machi Team";
                 }
             } else if (index === 0) {
                 isLive = true; // Fallback for first item
+                activeShowTitle = block.title;
+                activeShowRJ = block.rj || "Machi Team";
             }
 
             const card = document.createElement('div');
@@ -353,6 +360,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             grid.appendChild(card);
         });
+
+        // Update active show text on Now Playing HUD
+        const showEl = document.getElementById('hud-active-show-text');
+        if (showEl) {
+            showEl.textContent = `On Air: ${activeShowTitle.toUpperCase()} with ${activeShowRJ.toUpperCase()}`;
+        }
     }
 
     loadCMSData();

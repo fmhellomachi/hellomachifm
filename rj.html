@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Machi FM | RJ Control Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-pink: #ff1493;
+            --accent-gold: #FFD700;
+            --bg-darker: #050508;
+            --bg-card: rgba(20, 20, 30, 0.6);
+            --border-glass: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            background: var(--bg-darker);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .rj-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .rj-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 20px 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .rj-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .rj-header-left img {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            border: 1px solid var(--primary-pink);
+        }
+
+        .rj-header-left h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+            font-weight: 900;
+        }
+
+        .rj-stats-badge {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .btn-pink { background: var(--primary-pink); color: white; }
+        .btn-pink:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 20, 147, 0.4); }
+        .btn-outline { background: transparent; border: 1px solid #444; color: #aaa; }
+        .btn-outline:hover { color: white; border-color: white; }
+
+        .rj-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 25px;
+        }
+
+        .rj-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 8 cols for requests / shoutouts, 4 cols for polls */
+        .panel-requests { grid-column: span 7; height: 600px; }
+        .panel-polls { grid-column: span 5; height: 600px; }
+
+        .panel-title {
+            font-size: 1.25rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .shoutout-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-right: 5px;
+        }
+
+        .shoutout-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .shoutout-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+
+        .shoutout-user { color: var(--accent-gold); font-weight: bold; font-family: 'Outfit', sans-serif; }
+        .shoutout-time { color: #555; }
+
+        .shoutout-message {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #ddd;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            background: rgba(0,0,0,0.3);
+            color: white;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        /* Active Poll Display */
+        .active-poll-box {
+            background: rgba(255, 215, 0, 0.03);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 18px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .poll-option-result {
+            margin-bottom: 12px;
+        }
+
+        .poll-option-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .poll-progress-bg {
+            background: rgba(255,255,255,0.05);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .poll-progress-fill {
+            background: var(--accent-gold);
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.4s ease;
+        }
+
+        @media (max-width: 900px) {
+            .rj-grid { grid-template-columns: 1fr; }
+            .panel-requests, .panel-polls { grid-column: span 12; height: auto; min-height: 400px; }
+            .rj-header { flex-direction: column; gap: 15px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Screen overlay (uses same structure as admin.html) -->
+    <div id="login-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; background: var(--bg-darker); display: flex; align-items: center; justify-content: center; padding: 20px;">
+        <div style="text-align: center; background: rgba(15, 15, 25, 0.95); padding: 40px 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.8);">
+            <img src="logo.jpg" style="width: 80px; height: 80px; border-radius: 12px; margin-bottom: 20px; object-fit: contain; background: #000; border: 1px solid #333;">
+            <h2 style="margin-bottom: 25px; font-weight: 900; letter-spacing: 1px; font-family: 'Outfit', sans-serif;">RJ PANEL LOGIN</h2>
+            
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 5px; font-weight: bold; letter-spacing: 0.5px;">EMAIL ADDRESS</label>
+                <input type="email" id="login-email" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; outline: none; font-size: 1rem;" placeholder="rj@hellomachi.com">
+            </div>
+            
+            <div style="margin-bottom: 25px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 5px; font-weight: bold; letter-spacing: 0.5px;">PASSWORD</label>
+                <input type="password" id="login-password" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; outline: none; font-size: 1rem;" placeholder="••••••••">
+            </div>
+
+            <button id="login-btn" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: bold; background: var(--accent-gold); color: black; border: none; cursor: pointer; border-radius: 50px; transition: 0.2s;">
+                SIGN IN
+            </button>
+            
+            <div id="login-error" style="color: #ff4d4d; font-size: 0.85rem; margin-top: 15px; display: none; background: rgba(255,0,0,0.1); padding: 8px; border-radius: 6px;"></div>
+        </div>
+    </div>
+
+    <!-- Main Jockey Dashboard -->
+    <div class="rj-container" id="rj-dashboard" style="display: none;">
+        <div class="rj-header">
+            <div class="rj-header-left">
+                <img src="logo.jpg" alt="Logo">
+                <div>
+                    <h1>ON-AIR STUDIO PANEL</h1>
+                    <div style="display: flex; gap: 10px; margin-top: 5px;">
+                        <span class="rj-stats-badge"><i class="fa-solid fa-signal"></i> Active Vibe</span>
+                        <span id="activeRJName" style="font-size: 0.75rem; color: #aaa; align-self: center;">Jockey</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a href="admin.html" class="btn-action btn-outline" id="admin-hub-link" style="display: none; text-decoration: none;">ADMIN HUB</a>
+                <button class="btn-action btn-outline" id="logout-btn">LOGOUT</button>
+            </div>
+        </div>
+
+        <div class="rj-grid">
+            <!-- Shoutouts list (Left 7 cols) -->
+            <div class="rj-panel panel-requests">
+                <div class="panel-title">
+                    <span>🎙 USER SHOUTOUTS & REQUESTS</span>
+                    <button class="btn-action btn-outline" style="padding: 5px 15px; font-size: 0.7rem;" id="clear-shoutouts-btn">CLEAR ALL</button>
+                </div>
+                <div class="shoutout-list" id="shoutoutsContainer">
+                    <div style="text-align: center; color: #666; margin-top: 50px;" id="no-shoutouts-msg">No shoutouts received yet. Listening live...</div>
+                </div>
+            </div>
+
+            <!-- Poll management (Right 5 cols) -->
+            <div class="rj-panel panel-polls">
+                <div class="panel-title">📊 MANAGE LIVE POLL</div>
+                
+                <!-- Poll Creator -->
+                <div id="poll-creator">
+                    <div class="form-group">
+                        <label>POLL QUESTION</label>
+                        <input type="text" id="poll-question" placeholder="e.g., Which RJ Vijay track next?">
+                    </div>
+                    <div class="form-group">
+                        <label>OPTION A</label>
+                        <input type="text" id="poll-opt1" placeholder="e.g., Rowdy Baby 💃">
+                    </div>
+                    <div class="form-group">
+                        <label>OPTION B</label>
+                        <input type="text" id="poll-opt2" placeholder="e.g., Arabic Kuthu 🕺">
+                    </div>
+                    <button class="btn-action btn-pink" id="create-poll-btn" style="width: 100%; padding: 12px; margin-top: 10px;">PUBLISH POLL</button>
+                </div>
+
+                <!-- Active Poll Status -->
+                <div id="active-poll-display" style="display: none; flex: 1; display: flex; flex-direction: column;">
+                    <div class="active-poll-box">
+                        <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--accent-gold);" id="active-poll-question">Active Poll Question</h4>
+                        <div id="poll-results-bars">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                    <button class="btn-action btn-outline" id="close-poll-btn" style="width: 100%; padding: 12px; margin-top: auto;">CLOSE CURRENT POLL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const login = document.getElementById('login-screen');
+        const dashboard = document.getElementById('rj-dashboard');
+        const loginError = document.getElementById('login-error');
+        const shoutoutsContainer = document.getElementById('shoutoutsContainer');
+        const noShoutoutsMsg = document.getElementById('no-shoutouts-msg');
+        
+        const pollCreator = document.getElementById('poll-creator');
+        const pollDisplay = document.getElementById('active-poll-display');
+        const activePollQuestion = document.getElementById('active-poll-question');
+        const pollResultsBars = document.getElementById('poll-results-bars');
+
+        let userRole = null;
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // Verify user role
+                db.collection('users').doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        const role = userData.role ? userData.role.toLowerCase() : '';
+                        userRole = role;
+
+                        if (role === 'rj' || role === 'admin') {
+                            login.style.display = 'none';
+                            dashboard.style.display = 'flex';
+                            document.getElementById('activeRJName').textContent = userData.name || 'Jockey';
+                            
+                            if (role === 'admin') {
+                                document.getElementById('admin-hub-link').style.display = 'block';
+                            }
+                            
+                            startListeners();
+                        } else {
+                            showError("Access Denied: Role not authorized for Jockey Panel.");
+                        }
+                    } else {
+                        showError("Access Denied: User UID not registered.");
+                    }
+                }).catch(err => {
+                    showError("Error checking role: " + err.message);
+                });
+            } else {
+                login.style.display = 'flex';
+                dashboard.style.display = 'none';
+            }
+        });
+
+        function showError(msg) {
+            loginError.textContent = msg;
+            loginError.style.display = 'block';
+            auth.signOut();
+        }
+
+        // --- Firebase Auth Login ---
+        document.getElementById('login-btn').onclick = () => {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                loginError.textContent = "Please fill in all fields.";
+                loginError.style.display = 'block';
+                return;
+            }
+            
+            loginError.style.display = 'none';
+            auth.signInWithEmailAndPassword(email, password).catch(err => {
+                loginError.textContent = "Authentication failed: " + err.message;
+                loginError.style.display = 'block';
+            });
+        };
+
+        document.getElementById('logout-btn').onclick = () => {
+            auth.signOut().then(() => window.location.reload());
+        };
+
+        // --- Active Listeners ---
+        let shoutoutUnsubscribe = null;
+        let pollUnsubscribe = null;
+
+        function startListeners() {
+            if (shoutoutUnsubscribe) shoutoutUnsubscribe();
+            if (pollUnsubscribe) pollUnsubscribe();
+
+            // 1. Shoutouts Stream
+            shoutoutUnsubscribe = db.collection('shoutouts')
+                .orderBy('timestamp', 'desc')
+                .limit(40)
+                .onSnapshot(snapshot => {
+                    shoutoutsContainer.innerHTML = '';
+                    if (snapshot.empty) {
+                        shoutoutsContainer.appendChild(noShoutoutsMsg);
+                        return;
+                    }
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const timeStr = data.timestamp ? new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+                        
+                        const card = document.createElement('div');
+                        card.className = 'shoutout-card';
+                        card.innerHTML = `
+                            <div class="shoutout-header">
+                                <span class="shoutout-user">${data.nickname || 'Anonymous'}</span>
+                                <span class="shoutout-time">${timeStr}</span>
+                            </div>
+                            <div class="shoutout-message">${data.message}</div>
+                        `;
+                        shoutoutsContainer.appendChild(card);
+                    });
+                }, err => {
+                    console.error("Shoutout subscribe error:", err);
+                });
+
+            // 2. Poll Status Stream
+            pollUnsubscribe = db.collection('polls').doc('active')
+                .onSnapshot(doc => {
+                    if (doc.exists && doc.data().status === 'active') {
+                        const data = doc.data();
+                        pollCreator.style.display = 'none';
+                        pollDisplay.style.display = 'flex';
+                        activePollQuestion.textContent = data.question;
+
+                        // Display Results with Progress Bars
+                        pollResultsBars.innerHTML = '';
+                        const votes = data.votes || {};
+                        const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+
+                        data.options.forEach(opt => {
+                            const count = votes[opt] || 0;
+                            const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                            
+                            const optDiv = document.createElement('div');
+                            optDiv.className = 'poll-option-result';
+                            optDiv.innerHTML = `
+                                <div class="poll-option-label">
+                                    <span>${opt}</span>
+                                    <strong>${count} votes (${pct}%)</strong>
+                                </div>
+                                <div class="poll-progress-bg">
+                                    <div class="poll-progress-fill" style="width: ${pct}%"></div>
+                                </div>
+                            `;
+                            pollResultsBars.appendChild(optDiv);
+                        });
+                    } else {
+                        pollCreator.style.display = 'block';
+                        pollDisplay.style.display = 'none';
+                    }
+                }, err => {
+                    console.error("Poll subscribe error:", err);
+                });
+        }
+
+        // --- Shoutout controls ---
+        document.getElementById('clear-shoutouts-btn').onclick = async () => {
+            if (!confirm("Are you sure you want to clear all requests?")) return;
+            try {
+                const snapshot = await db.collection('shoutouts').get();
+                const batch = db.batch();
+                snapshot.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            } catch (err) {
+                alert("Clear failed: " + err.message);
+            }
+        };
+
+        // --- Poll Controls ---
+        document.getElementById('create-poll-btn').onclick = async () => {
+            const question = document.getElementById('poll-question').value.trim();
+            const opt1 = document.getElementById('poll-opt1').value.trim();
+            const opt2 = document.getElementById('poll-opt2').value.trim();
+
+            if (!question || !opt1 || !opt2) {
+                alert("Please specify the question and both options.");
+                return;
+            }
+
+            const pollData = {
+                question: question,
+                options: [opt1, opt2],
+                votes: {
+                    [opt1]: 0,
+                    [opt2]: 0
+                },
+                status: 'active',
+                timestamp: Date.now()
+            };
+
+            try {
+                await db.collection('polls').doc('active').set(pollData);
+                document.getElementById('poll-question').value = '';
+                document.getElementById('poll-opt1').value = '';
+                document.getElementById('poll-opt2').value = '';
+            } catch (err) {
+                alert("Publish failed: " + err.message);
+            }
+        };
+
+        document.getElementById('close-poll-btn').onclick = async () => {
+            if (!confirm("Are you sure you want to close this poll?")) return;
+            try {
+                await db.collection('polls').doc('active').update({ status: 'closed' });
+            } catch (err) {
+                alert("Close failed: " + err.message);
+            }
+        };
+    </script>
+</body>
+</html>

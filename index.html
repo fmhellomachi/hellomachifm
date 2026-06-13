@@ -27,23 +27,9 @@
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#schedule">Schedule</a></li>
-                <li><a href="supersinger.html">Super Singer</a></li>
             </ul>
         </div>
     </nav>
-
-    <!-- Live Voting Notification -->
-    <div id="live-vote-banner" style="display:none; position:fixed; top:80px; left:50%; transform:translateX(-50%); z-index:900; width:90%; max-width:600px;">
-        <a href="vote.html" style="text-decoration:none;">
-            <div style="background:var(--secondary); padding:12px 25px; border-radius:50px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); animation: slideDown 0.5s ease-out;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="width:10px; height:10px; background:#ff0000; border-radius:50%; animation: pulse 1s infinite;"></div>
-                    <span style="color:white; font-weight:700; font-size:0.9rem;">LIVE PERFORMANCE: <span id="banner-singer-name">SINGING NOW</span></span>
-                </div>
-                <div style="background:white; color:var(--secondary); padding:5px 15px; border-radius:20px; font-weight:800; font-size:0.7rem;">VOTE NOW</div>
-            </div>
-        </a>
-    </div>
 
     <div id="app-content">
         <!-- Hero Section -->
@@ -56,20 +42,55 @@
                 <p class="hero-subtitle" id="hero-subtitle">Your exclusive destination for the finest Tamil hits.</p>
                 <div class="hero-actions">
                     <button class="btn btn-primary btn-glow" id="play-hero-btn"><i class="fa-solid fa-play"></i> LISTEN LIVE</button>
-                    <a href="https://wa.me/919092363433" target="_blank" class="btn btn-secondary"><i class="fa-brands fa-whatsapp"></i> REQUEST</a>
+                    <a href="https://wa.me/919092363433" target="_blank" class="btn btn-secondary"><i class="fa-brands fa-whatsapp"></i> MESSAGE US</a>
                 </div>
 
-                <!-- Super Singer Arena Card -->
-                <div class="arena-card-container">
-                    <div class="arena-card">
-                        <div class="arena-halo"></div>
-                        <div class="arena-badge">EVENT LIVE</div>
-                        <h2 class="arena-title">SUPER SINGER <br><span class="gradient-text">2026</span></h2>
-                        <p class="arena-subtitle">The search for Chennai's ultimate voice continues. Cast your vote or join the stage.</p>
-                        <a href="supersinger.html" class="btn btn-primary btn-glow">ENTER THE ARENA &rarr;</a>
-                        <div class="arena-glow-line"></div>
+                <!-- Live Interactive Hub Card -->
+                <div class="interactive-hub-container" style="margin-top: 50px; display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; width: 100%; max-width: 900px; text-align: left; perspective: 1000px;">
+                    
+                    <!-- Now Playing Live HUD -->
+                    <div class="interactive-card glass-hud" style="background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); position: relative; overflow: hidden; transition: transform 0.3s;">
+                        <div style="font-size: 0.7rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; text-transform: uppercase;"><i class="fa-solid fa-compact-disc fa-spin"></i> Now Playing HUD</div>
+                        <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
+                            <img id="hud-cover-art" src="logo.jpg" alt="Cover Art" style="width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <div style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                                <span id="hud-track-title" style="font-weight: 800; font-size: 1.1rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">HELLO MACHI FM</span>
+                                <span id="hud-track-artist" style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">LIVE TAMIL RADIO</span>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.02); border-radius: 12px; padding: 10px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; gap: 8px;">
+                            <span class="pulse" style="width:6px; height:6px;"></span> <span id="hud-status-text">Streaming high-quality stereo audio.</span>
+                        </div>
                     </div>
+
+                    <!-- Live Poll Widget -->
+                    <div class="interactive-card glass-poll" style="background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); position: relative; transition: transform 0.3s;">
+                        <div style="font-size: 0.7rem; font-weight: 800; color: #FFD700; letter-spacing: 2px; text-transform: uppercase;"><i class="fa-solid fa-square-poll-vertical"></i> Live Studio Poll</div>
+                        <div id="home-poll-container" style="flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 100px;">
+                            <div id="home-poll-empty" style="text-align: center; color: rgba(255,255,255,0.4); font-size: 0.85rem; line-height: 1.4;">
+                                No active poll at the moment. Stay tuned for the RJ's live updates!
+                            </div>
+                            <div id="home-poll-active" style="display: none; flex-direction: column; gap: 10px;">
+                                <h4 id="home-poll-question" style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 5px;">Question?</h4>
+                                <div id="home-poll-options" style="display: flex; flex-direction: column; gap: 8px;">
+                                    <!-- Options injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Direct Shoutout Sender -->
+                    <div class="interactive-card glass-shoutout" style="background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transition: transform 0.3s;">
+                        <div style="font-size: 0.7rem; font-weight: 800; color: #00E676; letter-spacing: 2px; text-transform: uppercase;"><i class="fa-solid fa-paper-plane"></i> Request or Shoutout</div>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <input type="text" id="home-shoutout-nickname" placeholder="Your Nickname" style="width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.3); color: white; outline: none; font-size: 0.85rem;" />
+                            <textarea id="home-shoutout-message" placeholder="Type song title or message to RJ..." rows="2" style="width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.3); color: white; outline: none; font-size: 0.85rem; resize: none;"></textarea>
+                            <button id="home-shoutout-send-btn" style="padding: 10px; font-size: 0.85rem; border: none; border-radius: 10px; font-weight: bold; width: 100%; background: #00E676; color: black; cursor: pointer; transition: 0.2s;">SEND LIVE TO RJ</button>
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
         </header>
 

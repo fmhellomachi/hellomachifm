@@ -357,38 +357,161 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadCMSData();
 
-    // --- Homepage Live Banner Logic ---
+    // --- Dynamic HUD & Now Playing Polling ---
+    async function pollNowPlaying() {
+        try {
+            const res = await fetch('/api/nowplaying');
+            const data = await res.json();
+            if (data && data.title) {
+                // Update Homepage HUD
+                const hudTitle = document.getElementById('hud-track-title');
+                const hudArtist = document.getElementById('hud-track-artist');
+                const hudCover = document.getElementById('hud-cover-art');
+                const hudStatus = document.getElementById('hud-status-text');
+                
+                if (hudTitle) hudTitle.textContent = data.title;
+                if (hudArtist) hudArtist.textContent = data.artist || 'LIVE TAMIL RADIO';
+                if (hudCover && data.cover_art) hudCover.src = data.cover_art;
+                if (hudStatus) hudStatus.textContent = `Live: "${data.title}" by ${data.artist || 'Machi RJ'}`;
+                
+                // Update Floating Player HUD
+                const playerTitle = document.getElementById('now-playing-title');
+                const diskImg = document.getElementById('player-disk-img');
+                
+                if (playerTitle) {
+                    playerTitle.textContent = data.title;
+                    playerTitle.style.display = 'block';
+                }
+                if (diskImg && data.cover_art) diskImg.src = data.cover_art;
+            }
+        } catch (e) {
+            console.error("Error fetching nowplaying metadata:", e);
+        }
+    }
     
-    const voteBanner = document.getElementById('live-vote-banner');
-    const bannerSinger = document.getElementById('banner-singer-name');
+    pollNowPlaying();
+    setInterval(pollNowPlaying, 20000);
 
-    if (voteBanner) {
-        db.collection('live_state').doc('current').onSnapshot(doc => {
-            if (!doc.exists) { voteBanner.style.display = 'none'; return; }
-            const state = doc.data();
-            
-            // Check if ANY singer's voting is open
-            const isAnyOpen = state.status === 'on-air' && (state.votingOpen1 || state.votingOpen2 || state.votingOpen);
-            
-            if (isAnyOpen) {
-                const activeIds = [];
-                if (state.votingOpen1 && state.singer1) activeIds.push(state.singer1);
-                if (state.votingOpen2 && state.singer2) activeIds.push(state.singer2);
-                if (state.votingOpen && state.singer1 && !activeIds.includes(state.singer1)) activeIds.push(state.singer1);
-
-                if (activeIds.length > 0) {
-                    Promise.all(activeIds.map(id => db.collection('participants').doc(id).get())).then(docs => {
-                        const names = docs.filter(d => d.exists).map(d => d.data().name.toUpperCase());
-                        if (names.length > 0) {
-                            bannerSinger.textContent = names.join(' & ');
-                            voteBanner.style.display = 'block';
+    // --- Live Studio Poll Listener ---
+    const homePollEmpty = document.getElementById('home-poll-empty');
+    const homePollActive = document.getElementById('home-poll-active');
+    const homePollQuestion = document.getElementById('home-poll-question');
+    const homePollOptions = document.getElementById('home-poll-options');
+    const homePollContainer = document.getElementById('home-poll-container');
+    
+    if (homePollContainer) {
+        db.collection('polls').doc('active').onSnapshot(doc => {
+            if (doc.exists && doc.data().status === 'active') {
+                const poll = doc.data();
+                const pollId = doc.id + '_' + poll.timestamp;
+                
+                if (homePollEmpty) homePollEmpty.style.display = 'none';
+                if (homePollActive) homePollActive.style.display = 'flex';
+                if (homePollQuestion) homePollQuestion.textContent = poll.question;
+                
+                if (homePollOptions) {
+                    homePollOptions.innerHTML = '';
+                    
+                    const hasVoted = localStorage.getItem('voted_poll_' + pollId);
+                    const votes = poll.votes || {};
+                    const total = Object.values(votes).reduce((a, b) => a + b, 0);
+                    
+                    poll.options.forEach(opt => {
+                        const count = votes[opt] || 0;
+                        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                        
+                        if (hasVoted) {
+                            const resultDiv = document.createElement('div');
+                            resultDiv.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin-bottom: 5px;";
+                            resultDiv.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #ccc;">
+                                    <span>${opt}</span>
+                                    <strong>${count} votes (${pct}%)</strong>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div style="background: #FFD700; height: 100%; width: ${pct}%; border-radius: 4px; transition: width 0.4s ease;"></div>
+                                </div>
+                            `;
+                            homePollOptions.appendChild(resultDiv);
+                        } else {
+                            const button = document.createElement('button');
+                            button.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; padding: 10px; cursor: pointer; text-align: left; font-size: 0.85rem; font-weight: bold; transition: all 0.2s; outline: none; margin-bottom: 5px;";
+                            button.textContent = opt;
+                            button.onmouseover = () => { button.style.background = 'rgba(255, 215, 0, 0.1)'; button.style.borderColor = '#FFD700'; };
+                            button.onmouseout = () => { button.style.background = 'rgba(255,255,255,0.05)'; button.style.borderColor = 'rgba(255,255,255,0.1)'; };
+                            
+                            button.onclick = async () => {
+                                try {
+                                    const pollRef = db.collection('polls').doc('active');
+                                    await db.runTransaction(async (transaction) => {
+                                        const freshDoc = await transaction.get(pollRef);
+                                        if (!freshDoc.exists) return;
+                                        
+                                        const currentVotes = freshDoc.data().votes || {};
+                                        const newVotes = { ...currentVotes };
+                                        newVotes[opt] = (newVotes[opt] || 0) + 1;
+                                        
+                                        transaction.update(pollRef, { votes: newVotes });
+                                    });
+                                    
+                                    localStorage.setItem('voted_poll_' + pollId, opt);
+                                    alert("🗳 Vote submitted successfully!");
+                                } catch (err) {
+                                    console.error("Vote transaction failed:", err);
+                                    alert("Failed to submit vote. Try again.");
+                                }
+                            };
+                            homePollOptions.appendChild(button);
                         }
                     });
                 }
             } else {
-                voteBanner.style.display = 'none';
+                if (homePollEmpty) homePollEmpty.style.display = 'block';
+                if (homePollActive) homePollActive.style.display = 'none';
             }
         });
+    }
+
+    // --- Live Shoutout Submission ---
+    const nicknameInput = document.getElementById('home-shoutout-nickname');
+    const messageInput = document.getElementById('home-shoutout-message');
+    const sendBtn = document.getElementById('home-shoutout-send-btn');
+    
+    if (nicknameInput) {
+        nicknameInput.value = localStorage.getItem('chat_username') || '';
+    }
+    
+    if (sendBtn) {
+        sendBtn.onclick = async () => {
+            const nickname = nicknameInput.value.trim() || 'Anonymous';
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                alert("Please write a request or message to send to the RJ!");
+                return;
+            }
+            
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'SENDING...';
+            
+            try {
+                await db.collection('shoutouts').add({
+                    nickname: nickname,
+                    message: message,
+                    timestamp: Date.now()
+                });
+                
+                localStorage.setItem('chat_username', nickname);
+                messageInput.value = '';
+                alert("🚀 Shoutout sent live to Studio Jockey!");
+            } catch (e) {
+                console.error("Error submitting shoutout:", e);
+                alert("Failed to send shoutout. Please check connection.");
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'SEND LIVE TO RJ';
+            }
+        };
     }
 
     // --- Persistent Navigation (SPA) ---

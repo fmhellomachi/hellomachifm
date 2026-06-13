@@ -52,6 +52,48 @@
             <button class="btn-save" onclick="saveHero()">PUBLISH HOMEPAGE CHANGES</button>
         </div>
 
+        <!-- App Settings Section -->
+        <div class="cms-card">
+            <h3><i class="fa-solid fa-mobile-screen-button"></i> App Settings & Updates</h3>
+            <div class="form-group">
+                <label>VLC Audio Stream URL</label>
+                <input type="text" id="cfg-stream-url" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label>Backup Audio Stream URL</label>
+                <input type="text" id="cfg-fallback-url" placeholder="https://...">
+            </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                <div>
+                    <label>Latest App Version Code</label>
+                    <input type="number" id="cfg-version-code" placeholder="16">
+                </div>
+                <div>
+                    <label>APK Download URL</label>
+                    <input type="text" id="cfg-apk-url" placeholder="https://...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Update Banner Message</label>
+                <input type="text" id="cfg-update-msg" placeholder="A new version of Hello Machi FM is available...">
+            </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div>
+                    <label>Status Message</label>
+                    <input type="text" id="cfg-status-msg" placeholder="Synced via Vercel">
+                </div>
+                <div>
+                    <label>Welcome Title</label>
+                    <input type="text" id="cfg-welcome-title" placeholder="HELLO MACHI FM">
+                </div>
+                <div>
+                    <label>Welcome Greeting</label>
+                    <input type="text" id="cfg-welcome-greeting" placeholder="இது நம்ம ஏரியா மச்சி">
+                </div>
+            </div>
+            <button class="btn-save" style="background:#ff9800; color:black;" onclick="saveAppSettings()">PUBLISH APP SETTINGS</button>
+        </div>
+
         <!-- Schedule Section -->
         <div class="cms-card">
             <h3><i class="fa-solid fa-calendar-alt"></i> Radio Program Schedule</h3>
@@ -126,6 +168,7 @@
         document.getElementById('logout-btn').onclick = () => auth.signOut();
 
         async function loadData() {
+            // Load homepage CMS data
             const doc = await db.collection('cms').doc('homepage').get();
             if (doc.exists) {
                 const data = doc.data();
@@ -133,6 +176,39 @@
                 document.getElementById('hero-subtitle').value = data.heroSubtitle || '';
                 scheduleBlocks = data.scheduleBlocks || [];
                 renderScheduleUI();
+            }
+
+            // Load App config data
+            const cfgDoc = await db.collection('cms').doc('config').get();
+            if (cfgDoc.exists) {
+                const cfg = cfgDoc.data();
+                document.getElementById('cfg-stream-url').value = cfg.stream_url || '';
+                document.getElementById('cfg-fallback-url').value = cfg.fallback_stream_url || '';
+                document.getElementById('cfg-version-code').value = cfg.latest_version_code || 16;
+                document.getElementById('cfg-apk-url').value = cfg.apk_url || '';
+                document.getElementById('cfg-update-msg').value = cfg.update_message || '';
+                document.getElementById('cfg-status-msg').value = cfg.status_message || '';
+                document.getElementById('cfg-welcome-title').value = cfg.welcome_title || '';
+                document.getElementById('cfg-welcome-greeting').value = cfg.welcome_greeting || '';
+            }
+        }
+
+        async function saveAppSettings() {
+            try {
+                const vCode = parseInt(document.getElementById('cfg-version-code').value, 10) || 16;
+                await db.collection('cms').doc('config').set({
+                    stream_url: document.getElementById('cfg-stream-url').value,
+                    fallback_stream_url: document.getElementById('cfg-fallback-url').value,
+                    latest_version_code: vCode,
+                    apk_url: document.getElementById('cfg-apk-url').value,
+                    update_message: document.getElementById('cfg-update-msg').value,
+                    status_message: document.getElementById('cfg-status-msg').value,
+                    welcome_title: document.getElementById('cfg-welcome-title').value,
+                    welcome_greeting: document.getElementById('cfg-welcome-greeting').value
+                }, { merge: true });
+                alert("App settings updated in Vercel Cloud Database! existing and new apps will reflect this update.");
+            } catch (e) {
+                alert("Save failed: " + e.message);
             }
         }
 

@@ -112,13 +112,26 @@
     </div>
 
     <!-- Login Screen -->
-    <div id="login-screen" style="flex: 1; display: flex; align-items: center; justify-content: center;">
-        <div style="text-align: center; background: #111; padding: 50px; border-radius: 30px; border: 1px solid #333;">
-            <img src="logo.jpg" style="width: 80px; height: 80px; border-radius: 12px; margin-bottom: 20px; object-fit: contain; background: #000;">
-            <h2 style="margin-bottom: 20px;">FM ADMIN LOGIN</h2>
-            <button id="login-btn" class="btn btn-primary" style="padding: 15px 40px; font-size: 1.2rem;">
-                <i class="fa-brands fa-google"></i> SIGN IN WITH GOOGLE
+    <div id="login-screen" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px;">
+        <div style="text-align: center; background: rgba(15, 15, 15, 0.95); padding: 40px 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.8);">
+            <img src="logo.jpg" style="width: 80px; height: 80px; border-radius: 12px; margin-bottom: 20px; object-fit: contain; background: #000; border: 1px solid #333;">
+            <h2 style="margin-bottom: 25px; font-weight: 900; letter-spacing: 1px;">FM STUDIO LOGIN</h2>
+            
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 5px; font-weight: bold; letter-spacing: 0.5px;">EMAIL ADDRESS</label>
+                <input type="email" id="login-email" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; outline: none; font-size: 1rem;" placeholder="e.g., admin@hellomachi.com">
+            </div>
+            
+            <div style="margin-bottom: 25px; text-align: left;">
+                <label style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 5px; font-weight: bold; letter-spacing: 0.5px;">PASSWORD</label>
+                <input type="password" id="login-password" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: white; outline: none; font-size: 1rem;" placeholder="••••••••">
+            </div>
+
+            <button id="login-btn" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: bold; background: #ff1493; color: white; border: none; cursor: pointer; border-radius: 50px; transition: 0.2s;">
+                SIGN IN
             </button>
+            
+            <div id="login-error" style="color: #ff4d4d; font-size: 0.85rem; margin-top: 15px; display: none; background: rgba(255,0,0,0.1); padding: 8px; border-radius: 6px;"></div>
         </div>
     </div>
 
@@ -133,46 +146,73 @@
         const login = document.getElementById('login-screen');
         const notice = document.getElementById('restriction-notice');
         const hubGrid = document.querySelector('.hub-grid');
-
-        // AUTHORIZED EMAILS LIST
-        const AUTHORIZED_EMAILS = [
-            'fmhellomachi@gmail.com',
-            'admin@hellomachi.com'
-        ];
+        const loginError = document.getElementById('login-error');
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                hub.style.display = 'block';
-                login.style.display = 'none';
-                
-                if (AUTHORIZED_EMAILS.includes(user.email.toLowerCase())) {
-                    notice.style.display = 'none';
-                    hubGrid.style.opacity = '1';
-                    hubGrid.style.pointerEvents = 'auto';
-                } else {
-                    notice.style.display = 'block';
-                    hubGrid.style.opacity = '0.2';
-                    hubGrid.style.pointerEvents = 'none';
-                }
+                // Fetch user role from Firestore to enforce user-level restrictions
+                db.collection('users').doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        const role = userData.role ? userData.role.toLowerCase() : '';
+                        
+                        if (role === 'admin') {
+                            hub.style.display = 'block';
+                            login.style.display = 'none';
+                            notice.style.display = 'none';
+                            hubGrid.style.opacity = '1';
+                            hubGrid.style.pointerEvents = 'auto';
+                        } else if (role === 'rj') {
+                            // RJs are redirected to the rj panel
+                            window.location.href = 'rj.html';
+                        } else {
+                            showAccessDenied("Account role ('" + role + "') is not authorized for Admin Hub.");
+                        }
+                    } else {
+                        showAccessDenied("UID is not registered in the system. Contact system administrator.");
+                    }
+                }).catch(err => {
+                    console.error("Firestore user role check error:", err);
+                    showAccessDenied("Error checking authorization: " + err.message);
+                });
             } else {
                 hub.style.display = 'none';
                 login.style.display = 'flex';
             }
         });
 
+        function showAccessDenied(msg) {
+            hub.style.display = 'block';
+            login.style.display = 'none';
+            notice.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ACCESS DENIED: ' + msg;
+            notice.style.display = 'block';
+            hubGrid.style.opacity = '0.2';
+            hubGrid.style.pointerEvents = 'none';
+        }
+
         document.getElementById('login-btn').onclick = () => {
-            console.log("Login clicked...");
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => {
-                if (error.code === 'auth/popup-blocked') {
-                    return auth.signInWithRedirect(provider);
-                }
-                console.error("Login Error:", error);
-                alert("Login failed: " + error.message);
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                loginError.textContent = "Please fill in all fields.";
+                loginError.style.display = 'block';
+                return;
+            }
+            
+            loginError.style.display = 'none';
+            auth.signInWithEmailAndPassword(email, password).catch(error => {
+                console.error("Login failed:", error);
+                loginError.textContent = "Authentication failed: " + error.message;
+                loginError.style.display = 'block';
             });
         };
 
-        document.getElementById('logout-btn').onclick = () => auth.signOut();
+        document.getElementById('logout-btn').onclick = () => {
+            auth.signOut().then(() => {
+                window.location.reload();
+            });
+        };
     </script>
 </body>
 </html>

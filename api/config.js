@@ -1,0 +1,91 @@
+module.exports = async (req, res) => {
+  // CORS Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Define defaults
+  const defaults = {
+    "stream_url": "https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3",
+    "fallback_stream_url": "https://sonic-ca.instainternet.com/8022/stream",
+    "latest_version_code": 16,
+    "apk_url": "https://github.com/fmhellomachi/hello-machi-backend/releases/download/V1/app-universal-release.apk",
+    "update_message": "New update available! Tap to download the latest Hello Machi FM.",
+    "whatsapp_number": "+91 9092363433",
+    "whatsapp_message": "Hello Machi FM! 🎵",
+    "facebook_url": "https://www.facebook.com/hellomachifm",
+    "instagram_url": "https://www.instagram.com/hellomachifm",
+    "youtube_url": "https://www.youtube.com/@hellomachifm",
+    "custom_link": "https://hellomachifm.vercel.app/api/config",
+    "logo_url": "https://hellomachifm.vercel.app/logo.jpg",
+    "accent_color": "#D4AF37",
+    "request_song_message": "I'd like to request a song 🎵",
+    "welcome_title": "HELLO MACHI FM",
+    "welcome_greeting": "இது நம்ம ஏரியா மச்சி",
+    "status_message": "Synced via Vercel Cloud",
+    "programs": [
+      { "time": "06:00", "endTime": "09:00", "title": "Morning Vibes", "rj": "RJ Malar" },
+      { "time": "09:00", "endTime": "12:00", "title": "Retro Hits", "rj": "RJ Uthiran" },
+      { "time": "12:00", "endTime": "16:00", "title": "Midday Melodies", "rj": "RJ Malar" },
+      { "time": "16:00", "endTime": "20:00", "title": "Evening Express", "rj": "RJ Vijay" },
+      { "time": "20:00", "endTime": "23:59", "title": "Romantic Night", "rj": "RJ Uthiran" },
+      { "time": "00:00", "endTime": "06:00", "title": "Iravin Madiyil", "rj": "RJ Vijay" }
+    ]
+  };
+
+  try {
+    const url = 'https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents/cms/config';
+    const response = await fetch(url);
+    if (!response.ok) {
+      // Return defaults if Firestore document doesn't exist yet
+      return res.status(200).json(defaults);
+    }
+
+    const doc = await response.json();
+    if (!doc.fields) {
+      return res.status(200).json(defaults);
+    }
+
+    const flatConfig = flattenFirestoreFields(doc.fields);
+    const finalConfig = { ...defaults, ...flatConfig };
+    res.status(200).json(finalConfig);
+
+  } catch (err) {
+    console.error("Config fetch error:", err);
+    res.status(200).json(defaults);
+  }
+};
+
+function flattenFirestoreFields(fields) {
+  const result = {};
+  if (!fields) return result;
+  for (const [key, value] of Object.entries(fields)) {
+    if (value.hasOwnProperty('stringValue')) {
+      result[key] = value.stringValue;
+    } else if (value.hasOwnProperty('integerValue')) {
+      result[key] = parseInt(value.integerValue, 10);
+    } else if (value.hasOwnProperty('doubleValue')) {
+      result[key] = parseFloat(value.doubleValue);
+    } else if (value.hasOwnProperty('booleanValue')) {
+      result[key] = value.booleanValue;
+    } else if (value.hasOwnProperty('arrayValue')) {
+      const arr = value.arrayValue.values || [];
+      result[key] = arr.map(item => {
+        if (item.hasOwnProperty('mapValue')) {
+          return flattenFirestoreFields(item.mapValue.fields);
+        } else if (item.hasOwnProperty('stringValue')) {
+          return item.stringValue;
+        }
+        return item;
+      });
+    } else if (value.hasOwnProperty('mapValue')) {
+      result[key] = flattenFirestoreFields(value.mapValue.fields);
+    }
+  }
+  return result;
+}

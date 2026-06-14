@@ -118,8 +118,52 @@
         }
 
         /* 8 cols for requests / shoutouts, 4 cols for polls */
-        .panel-requests { grid-column: span 7; height: 600px; }
-        .panel-polls { grid-column: span 5; height: 600px; }
+        .panel-polls { grid-column: span 7; height: 600px; }
+        .panel-reply { grid-column: span 5; height: 600px; }
+
+        .reply-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 14px;
+            flex-shrink: 0;
+        }
+        .reply-message { font-size: 0.9rem; color: #ddd; margin: 0 0 4px 0; }
+        .reply-nickname { color: var(--accent-gold); font-size: 0.8rem; font-weight: bold; }
+        .reply-time { color: #555; font-size: 0.7rem; }
+        .reply-input-area { display: flex; gap: 8px; margin-top: 10px; }
+        .reply-input {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            outline: none;
+        }
+        .reply-input:focus { border-color: var(--secondary); }
+        .reply-send-btn {
+            background: var(--secondary);
+            border: none;
+            color: black;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .reply-send-btn:hover { opacity: 0.8; }
+        .reply-badge {
+            color: var(--secondary);
+            font-size: 0.75rem;
+            margin-top: 6px;
+            padding: 4px 10px;
+            background: rgba(0, 230, 118, 0.1);
+            border-radius: 8px;
+            display: inline-block;
+        }
 
         .panel-title {
             font-size: 1.25rem;
@@ -131,45 +175,6 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             padding-bottom: 12px;
             font-weight: 700;
-        }
-
-        .shoutout-list {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            padding-right: 5px;
-        }
-
-        .shoutout-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 16px;
-            animation: slideIn 0.3s ease-out;
-            position: relative;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .shoutout-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.8rem;
-        }
-
-        .shoutout-user { color: var(--accent-gold); font-weight: bold; font-family: 'Outfit', sans-serif; }
-        .shoutout-time { color: #555; }
-
-        .shoutout-message {
-            font-size: 0.95rem;
-            line-height: 1.4;
-            color: #ddd;
         }
 
         .form-group {
@@ -232,7 +237,7 @@
 
         @media (max-width: 900px) {
             .rj-grid { grid-template-columns: 1fr; }
-            .panel-requests, .panel-polls { grid-column: span 12; height: auto; min-height: 400px; }
+            .panel-polls, .panel-reply { grid-column: span 12; height: auto; min-height: 400px; }
             .rj-header { flex-direction: column; gap: 15px; text-align: center; }
         }
     </style>
@@ -283,18 +288,7 @@
         </div>
 
         <div class="rj-grid">
-            <!-- Shoutouts list (Left 7 cols) -->
-            <div class="rj-panel panel-requests">
-                <div class="panel-title">
-                    <span>🎙 USER SHOUTOUTS & REQUESTS</span>
-                    <button class="btn-action btn-outline" style="padding: 5px 15px; font-size: 0.7rem;" id="clear-shoutouts-btn">CLEAR ALL</button>
-                </div>
-                <div class="shoutout-list" id="shoutoutsContainer">
-                    <div style="text-align: center; color: #666; margin-top: 50px;" id="no-shoutouts-msg">No shoutouts received yet. Listening live...</div>
-                </div>
-            </div>
-
-            <!-- Poll management (Right 5 cols) -->
+            <!-- Poll management -->
             <div class="rj-panel panel-polls">
                 <div class="panel-title">📊 MANAGE LIVE POLL</div>
                 
@@ -326,6 +320,14 @@
                     <button class="btn-action btn-outline" id="close-poll-btn" style="width: 100%; padding: 12px; margin-top: auto;">CLOSE CURRENT POLL</button>
                 </div>
             </div>
+
+            <!-- Shoutout Replies -->
+            <div class="rj-panel panel-reply">
+                <div class="panel-title">💬 REPLY TO SHOUTOUTS</div>
+                <div id="shoutout-reply-feed" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 5px;">
+                    <div style="text-align: center; color: #666; margin-top: 40px;">Loading shoutouts...</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -339,9 +341,6 @@
         const login = document.getElementById('login-screen');
         const dashboard = document.getElementById('rj-dashboard');
         const loginError = document.getElementById('login-error');
-        const shoutoutsContainer = document.getElementById('shoutoutsContainer');
-        const noShoutoutsMsg = document.getElementById('no-shoutouts-msg');
-        
         const pollCreator = document.getElementById('poll-creator');
         const pollDisplay = document.getElementById('active-poll-display');
         const activePollQuestion = document.getElementById('active-poll-question');
@@ -361,7 +360,8 @@
                         if (role === 'rj' || role === 'admin') {
                             login.style.display = 'none';
                             dashboard.style.display = 'flex';
-                            document.getElementById('activeRJName').textContent = userData.name || 'Jockey';
+                            rjName = userData.name || 'Jockey';
+                            document.getElementById('activeRJName').textContent = rjName;
                             
                             if (role === 'admin') {
                                 document.getElementById('admin-hub-link').style.display = 'block';
@@ -412,43 +412,15 @@
         };
 
         // --- Active Listeners ---
-        let shoutoutUnsubscribe = null;
         let pollUnsubscribe = null;
+        let replyUnsubscribe = null;
+        let rjName = '';
 
         function startListeners() {
-            if (shoutoutUnsubscribe) shoutoutUnsubscribe();
             if (pollUnsubscribe) pollUnsubscribe();
+            if (replyUnsubscribe) replyUnsubscribe();
 
-            // 1. Shoutouts Stream
-            shoutoutUnsubscribe = db.collection('shoutouts')
-                .orderBy('timestamp', 'desc')
-                .limit(40)
-                .onSnapshot(snapshot => {
-                    shoutoutsContainer.innerHTML = '';
-                    if (snapshot.empty) {
-                        shoutoutsContainer.appendChild(noShoutoutsMsg);
-                        return;
-                    }
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const timeStr = data.timestamp ? new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-                        
-                        const card = document.createElement('div');
-                        card.className = 'shoutout-card';
-                        card.innerHTML = `
-                            <div class="shoutout-header">
-                                <span class="shoutout-user">${data.nickname || 'Anonymous'}</span>
-                                <span class="shoutout-time">${timeStr}</span>
-                            </div>
-                            <div class="shoutout-message">${data.message}</div>
-                        `;
-                        shoutoutsContainer.appendChild(card);
-                    });
-                }, err => {
-                    console.error("Shoutout subscribe error:", err);
-                });
-
-            // 2. Poll Status Stream
+            // Poll Status Stream
             pollUnsubscribe = db.collection('polls').doc('active')
                 .onSnapshot(doc => {
                     if (doc.exists && doc.data().status === 'active') {
@@ -486,20 +458,85 @@
                 }, err => {
                     console.error("Poll subscribe error:", err);
                 });
+
+            // Shoutout Reply Stream
+            const replyFeed = document.getElementById('shoutout-reply-feed');
+            replyUnsubscribe = db.collection('shoutouts')
+                .orderBy('timestamp', 'desc')
+                .limit(30)
+                .onSnapshot(snap => {
+                    replyFeed.innerHTML = '';
+                    if (snap.empty) {
+                        replyFeed.innerHTML = '<div style="text-align: center; color: #666; margin-top: 40px;">No shoutouts yet.</div>';
+                        return;
+                    }
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        const docId = doc.id;
+                        const timeStr = data.timestamp
+                            ? new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                            : '';
+                        const card = document.createElement('div');
+                        card.className = 'reply-card';
+                        card.innerHTML = `
+                            <p class="reply-message">${escapeHtml(data.message || '')}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="reply-nickname">— ${escapeHtml(data.nickname || 'Anonymous')}</span>
+                                <span class="reply-time">${timeStr}</span>
+                            </div>
+                            ${data.reply ? `
+                                <div class="reply-badge">✍️ RJ: ${escapeHtml(data.reply)}</div>
+                            ` : `
+                                <div class="reply-input-area">
+                                    <input type="text" class="reply-input" placeholder="Type a reply..." data-id="${docId}">
+                                    <button class="reply-send-btn" data-id="${docId}">REPLY</button>
+                                </div>
+                            `}
+                        `;
+                        replyFeed.appendChild(card);
+                    });
+
+                    // Attach reply handlers
+                    replyFeed.querySelectorAll('.reply-send-btn').forEach(btn => {
+                        btn.onclick = async () => {
+                            const id = btn.dataset.id;
+                            const input = replyFeed.querySelector(`.reply-input[data-id="${id}"]`);
+                            const replyText = input.value.trim();
+                            if (!replyText) return;
+                            btn.disabled = true;
+                            btn.textContent = '...';
+                            try {
+                                await db.collection('shoutouts').doc(id).update({
+                                    reply: replyText,
+                                    replyTimestamp: Date.now(),
+                                    repliedBy: rjName || 'RJ'
+                                });
+                                input.value = '';
+                            } catch (err) {
+                                alert("Reply failed: " + err.message);
+                            }
+                            btn.disabled = false;
+                            btn.textContent = 'REPLY';
+                        };
+                    });
+                    replyFeed.querySelectorAll('.reply-input').forEach(inp => {
+                        inp.onkeydown = (e) => {
+                            if (e.key === 'Enter') {
+                                const btn = replyFeed.querySelector(`.reply-send-btn[data-id="${inp.dataset.id}"]`);
+                                if (btn) btn.click();
+                            }
+                        };
+                    });
+                }, err => {
+                    replyFeed.innerHTML = '<div style="text-align: center; color: #666; margin-top: 40px;">Failed to load shoutouts.</div>';
+                });
         }
 
-        // --- Shoutout controls ---
-        document.getElementById('clear-shoutouts-btn').onclick = async () => {
-            if (!confirm("Are you sure you want to clear all requests?")) return;
-            try {
-                const snapshot = await db.collection('shoutouts').get();
-                const batch = db.batch();
-                snapshot.forEach(doc => batch.delete(doc.ref));
-                await batch.commit();
-            } catch (err) {
-                alert("Clear failed: " + err.message);
-            }
-        };
+        function escapeHtml(str) {
+            const el = document.createElement('div');
+            el.textContent = str;
+            return el.innerHTML;
+        }
 
         // --- Poll Controls ---
         document.getElementById('create-poll-btn').onclick = async () => {

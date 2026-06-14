@@ -657,4 +657,49 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
         .catch(err => console.error('APK config fetch failed:', err));
+
+    // --- Public Shoutout Wall ---
+    const wallFeed = document.getElementById('shoutout-wall-feed');
+    if (wallFeed) {
+        db.collection('shoutouts')
+            .orderBy('timestamp', 'desc')
+            .limit(20)
+            .onSnapshot(snap => {
+                wallFeed.innerHTML = '';
+                if (snap.empty) {
+                    wallFeed.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.3); padding: 20px;">Be the first to send a shoutout!</div>';
+                    return;
+                }
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const time = data.timestamp
+                        ? new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '';
+                    const div = document.createElement('div');
+                    div.style.cssText = 'background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;';
+                    div.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: var(--primary); font-size: 0.85rem;">${escapeHtml(data.nickname || 'Anonymous')}</strong>
+                            <span style="color: rgba(255,255,255,0.3); font-size: 0.7rem;">${time}</span>
+                        </div>
+                        <p style="color: #ddd; font-size: 0.9rem; margin: 0;">${escapeHtml(data.message || '')}</p>
+                        ${data.reply ? `
+                            <div style="margin-top: 8px; padding: 10px 14px; background: rgba(0, 230, 118, 0.06); border-left: 3px solid var(--secondary); border-radius: 0 12px 12px 0;">
+                                <span style="color: var(--secondary); font-weight: bold; font-size: 0.75rem;">${escapeHtml(data.repliedBy || 'RJ')} replied</span>
+                                <p style="color: #eee; font-size: 0.85rem; margin: 4px 0 0 0;">${escapeHtml(data.reply)}</p>
+                            </div>
+                        ` : ''}
+                    `;
+                    wallFeed.appendChild(div);
+                });
+            }, err => {
+                wallFeed.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.3); padding: 20px;">Unable to load shoutouts.</div>';
+            });
+    }
+
+    function escapeHtml(str) {
+        const el = document.createElement('div');
+        el.textContent = str;
+        return el.innerHTML;
+    }
 });

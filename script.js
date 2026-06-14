@@ -400,8 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (hudCover && data.cover_art) hudCover.src = data.cover_art;
                 if (hudStatus) hudStatus.textContent = `Live: "${data.title}" by ${data.artist || 'Machi RJ'}`;
                 if (hudMarquee) {
-                    const trackStr = `${data.title.toUpperCase()} - ${(data.artist || 'Hello Machi FM').toUpperCase()}`;
-                    hudMarquee.textContent = `NOW PLAYING: ${trackStr}   •   NOW PLAYING: ${trackStr}   •   `;
+                    hudMarquee.textContent = `${data.title.toUpperCase()} — ${(data.artist || 'Hello Machi FM').toUpperCase()}`;
                 }
                 
                 // Update Floating Player HUD
@@ -444,7 +443,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (homePollEmpty) homePollEmpty.style.display = 'none';
                 if (homePollActive) homePollActive.style.display = 'flex';
                 if (homePollQuestion) homePollQuestion.textContent = poll.question;
-                if (heroPollQuestion) heroPollQuestion.textContent = poll.question;
                 
                 if (homePollOptions) {
                     homePollOptions.innerHTML = '';

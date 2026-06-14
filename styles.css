@@ -315,6 +315,7 @@ h1, h2, h3, h4, .logo span {
     font-size: clamp(2.5rem, 8vw, 6rem);
     font-weight: 900;
     margin-bottom: 0;
+    margin-top: 60px;
     line-height: 1;
     letter-spacing: -2px;
 }
@@ -1298,11 +1299,10 @@ footer {
     .section-header p { font-size: 0.8rem !important; }
     .interactive-hub-container { margin-top: 30px !important; }
     .hero-actions { margin-bottom: 0; }
-    .hero-title { font-size: 1.8rem; margin-bottom: 0; letter-spacing: normal; }
+    .hero-title { font-size: 1.8rem; margin-top: 30px; margin-bottom: 0; letter-spacing: normal; }
     .hero-title::after { display: none; }
     .hero-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
-    .live-badge { margin-bottom: 0; font-size: 0.55rem; padding: 3px 10px; }
-    .live-badge-spacer { height: 18px; }
+    .live-badge { font-size: 0.55rem; padding: 3px 10px; }
 }
 
 /* Detailed Footer */

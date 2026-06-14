@@ -49,30 +49,30 @@
                 <div class="interactive-hub-container" style="margin-top: 50px; display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; width: 100%; max-width: 900px; text-align: left; perspective: 1000px;">
                     
                     <!-- Now Playing Live HUD -->
-                    <div class="glass-card">
-                        <div class="glass-card-label" style="color: var(--primary);"><i class="fa-solid fa-compact-disc fa-spin"></i> Now Playing</div>
-                        <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
-                            <img id="hud-cover-art" src="logo.jpg" alt="Cover Art" style="width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div class="glass-card" style="border-color: rgba(255, 215, 0, 0.08); box-shadow: 0 0 40px rgba(255, 215, 0, 0.03);">
+                        <div class="glass-card-label" style="color: #FFD700;"><i class="fa-solid fa-compact-disc fa-spin"></i> Now Playing</div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <img id="hud-cover-art" src="logo.jpg" alt="Cover Art" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255, 215, 0, 0.1);">
                             <div style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
-                                <span id="hud-program-title" style="font-weight: 800; font-size: 1.1rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">LOADING SHOW...</span>
-                                <span id="hud-program-rj" style="font-size: 0.85rem; color: var(--primary); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">WITH MACHI TEAM</span>
+                                <span id="hud-program-title" style="font-weight: 800; font-size: 1rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">LOADING SHOW...</span>
+                                <span id="hud-program-rj" style="font-size: 0.8rem; color: var(--primary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">WITH MACHI TEAM</span>
                             </div>
                         </div>
                         
                         <!-- Scrolling Song Marquee Box -->
-                        <div class="marquee-container" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 10px; font-size: 0.8rem; overflow: hidden; position: relative;">
+                        <div class="marquee-container" style="background: rgba(255, 215, 0, 0.03); border: 1px solid rgba(255, 215, 0, 0.08); border-radius: 10px; padding: 8px 10px; font-size: 0.8rem; overflow: hidden;">
                             <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; width: 100%;">
-                                <span class="pulse" style="width:6px; height:6px; background: #FF3B30; border-radius: 50%; display: inline-block; flex-shrink: 0;"></span>
+                                <span class="pulse" style="width:5px; height:5px; background: #FFD700; border-radius: 50%; display: inline-block; flex-shrink: 0; box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);"></span>
                                 <div class="marquee-scroll-container" style="overflow: hidden; white-space: nowrap; width: 100%;">
-                                    <span id="hud-track-marquee" style="display: inline-block; animation: marquee-scroll 15s linear infinite; padding-left: 100%; color: #fff; font-weight: 600;">
-                                        Hello Machi FM - Idhu Namma Area Machi
+                                    <span id="hud-track-marquee">
+                                        Hello Machi FM — Idhu Namma Area Machi
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <div style="background: rgba(255, 255, 255, 0.02); border-radius: 12px; padding: 10px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; gap: 8px;">
-                            <span class="pulse" style="width:6px; height:6px;"></span> <span id="hud-status-text">Streaming high-quality stereo audio.</span>
+                        <div style="background: rgba(255, 255, 255, 0.02); border-radius: 8px; padding: 6px 10px; font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); display: flex; align-items: center; gap: 6px;">
+                            <span class="pulse" style="width:4px; height:4px;"></span> <span id="hud-status-text">Streaming high-quality stereo audio.</span>
                         </div>
                     </div>
 

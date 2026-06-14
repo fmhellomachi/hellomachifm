@@ -46,8 +46,21 @@
         </div>
 
         <div class="card">
-            <h2><i class="fa-solid fa-user-plus"></i> Add New User</h2>
-            <p style="color:#888; margin-bottom:15px;">Enter the Firebase Auth UID of an existing user and assign their role.</p>
+            <h2><i class="fa-solid fa-user-plus"></i> Create New User</h2>
+            <p style="color:#888; margin-bottom:15px;">Creates a Firebase Auth account and assigns role in one step.</p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:10px;">
+                <input type="email" id="create-email" placeholder="Email address">
+                <input type="password" id="create-password" placeholder="Password">
+                <select id="create-role">
+                    <option value="admin">Admin</option>
+                    <option value="rj">RJ</option>
+                    <option value="viewer">Viewer</option>
+                </select>
+                <button class="btn" onclick="createUser()">CREATE</button>
+            </div>
+            <hr style="border-color:#333; margin:25px 0;">
+            <h2><i class="fa-solid fa-key"></i> Assign Role to Existing User</h2>
+            <p style="color:#888; margin-bottom:15px;">If the user already exists in Firebase Auth, paste their UID here.</p>
             <div class="add-row">
                 <input type="text" id="new-user-uid" placeholder="Firebase Auth UID">
                 <select id="new-user-role">
@@ -114,6 +127,24 @@
                 });
             } catch (e) {
                 list.innerHTML = '<div style="color:#ff4d4d; text-align:center; padding:20px;">Error: ' + e.message + '</div>';
+            }
+        }
+
+        async function createUser() {
+            const email = document.getElementById('create-email').value.trim();
+            const password = document.getElementById('create-password').value;
+            const role = document.getElementById('create-role').value;
+            if (!email || !password) return alert('Email and password required.');
+            if (password.length < 6) return alert('Password must be at least 6 characters.');
+            try {
+                const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                await db.collection('users').doc(cred.user.uid).set({ role, email, name: '' }, { merge: true });
+                document.getElementById('create-email').value = '';
+                document.getElementById('create-password').value = '';
+                alert('User created! Email: ' + email + ' | Role: ' + role);
+                loadUsers();
+            } catch (e) {
+                alert('Error: ' + e.message);
             }
         }
 

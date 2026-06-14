@@ -278,6 +278,17 @@
                     rj: b.rj
                 }));
                 await db.collection('cms').doc('config').set({ programs }, { merge: true });
+
+                // Also push the full config to Render (used by the mobile app)
+                const cfgDoc = await db.collection('cms').doc('config').get();
+                if (cfgDoc.exists) {
+                    await fetch('https://hello-machi-backend.onrender.com/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(cfgDoc.data())
+                    });
+                }
+
                 alert("Schedule published & synced to app!");
             } catch (e) { alert(e.message); }
         }

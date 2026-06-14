@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (hudCover && data.cover_art) hudCover.src = data.cover_art;
                 if (hudStatus) hudStatus.textContent = `Live: "${data.title}" by ${data.artist || 'Machi RJ'}`;
                 if (hudMarquee) {
-                    hudMarquee.textContent = `${data.title.toUpperCase()} — ${(data.artist || 'Hello Machi FM').toUpperCase()}`;
+                    hudMarquee.textContent = `NOW PLAYING: ${data.title.toUpperCase()} — ${(data.artist || 'Hello Machi FM').toUpperCase()}`;
                 }
                 
                 // Update Floating Player HUD

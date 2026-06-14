@@ -268,7 +268,7 @@ h1, h2, h3, h4, .logo span {
     font-size: 0.65rem;
     font-weight: 800;
     letter-spacing: 2px;
-    margin-bottom: 14px;
+    margin-bottom: 24px;
     text-transform: uppercase;
 }
 
@@ -1276,7 +1276,7 @@ footer {
     .hero-title { font-size: 1.8rem; margin-bottom: 0; letter-spacing: normal; }
     .hero-title::after { display: none; }
     .hero-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
-    .live-badge { margin-bottom: 12px; font-size: 0.55rem; padding: 3px 10px; }
+    .live-badge { margin-bottom: 18px; font-size: 0.55rem; padding: 3px 10px; }
 }
 
 /* Detailed Footer */
@@ -1735,7 +1735,7 @@ footer {
 #hud-track-marquee {
     display: inline-block;
     white-space: nowrap;
-    animation: marquee-premium 45s linear infinite;
+    animation: marquee-premium 25s linear infinite;
     color: #FFD700;
     font-weight: 700;
     font-size: 0.8rem;

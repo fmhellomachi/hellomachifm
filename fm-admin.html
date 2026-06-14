@@ -270,14 +270,17 @@
         async function saveSchedule() {
             try {
                 await db.collection('cms').doc('homepage').update({ scheduleBlocks });
-                // Also sync to cms/config.programs so the mobile app (/api/config) gets the updates
+                // Also sync to cms/config so the mobile app gets the updates
                 const programs = scheduleBlocks.map(b => ({
                     time: b.time,
                     endTime: b.endTime,
                     title: b.title,
                     rj: b.rj
                 }));
-                await db.collection('cms').doc('config').set({ programs }, { merge: true });
+                await db.collection('cms').doc('config').set({
+                    programs,
+                    scheduleBlocks
+                }, { merge: true });
 
                 // Also push the full config to Render (used by the mobile app)
                 const cfgDoc = await db.collection('cms').doc('config').get();
@@ -286,7 +289,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(cfgDoc.data())
-                    });
+                    }).catch(() => {});
                 }
 
                 alert("Schedule published & synced to app!");

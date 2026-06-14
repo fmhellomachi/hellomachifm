@@ -473,20 +473,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             button.onclick = async () => {
                                 try {
                                     const pollRef = db.collection('polls').doc('active');
-                                    await db.runTransaction(async (transaction) => {
-                                        const freshDoc = await transaction.get(pollRef);
-                                        if (!freshDoc.exists) return;
-                                        const currentVotes = freshDoc.data().votes || {};
-                                        const newVotes = { ...currentVotes };
-                                        const key = String(idx);
-                                        newVotes[key] = (newVotes[key] || 0) + 1;
-                                        transaction.update(pollRef, { votes: newVotes });
+                                    await pollRef.update({
+                                        [`votes.${idx}`]: firebase.firestore.FieldValue.increment(1)
                                     });
                                     localStorage.setItem('voted_poll_' + pollId, idx);
                                     alert("🗳 Vote submitted successfully!");
                                 } catch (err) {
-                                    console.error("Vote transaction failed:", err);
-                                    alert("Failed to submit vote. Try again.");
+                                    console.error("Vote failed:", err.code, err.message);
+                                    alert("Vote error: " + (err.message || "Try again."));
                                 }
                             };
                             return button;

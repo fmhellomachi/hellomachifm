@@ -288,8 +288,12 @@ h1, h2, h3, h4, .logo span {
     font-size: 0.65rem;
     font-weight: 800;
     letter-spacing: 2px;
-    margin-bottom: 24px;
+    margin-bottom: 0;
     text-transform: uppercase;
+}
+
+.live-badge-spacer {
+    height: 24px;
 }
 
 .pulse {
@@ -1294,10 +1298,11 @@ footer {
     .section-header p { font-size: 0.8rem !important; }
     .interactive-hub-container { margin-top: 30px !important; }
     .hero-actions { margin-bottom: 0; }
-    .hero-title { font-size: 1.8rem; margin-top: 10px; margin-bottom: 0; letter-spacing: normal; }
+    .hero-title { font-size: 1.8rem; margin-bottom: 0; letter-spacing: normal; }
     .hero-title::after { display: none; }
     .hero-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
-    .live-badge { padding-bottom: 30px; margin-bottom: 0; font-size: 0.55rem; padding: 3px 10px 30px; }
+    .live-badge { margin-bottom: 0; font-size: 0.55rem; padding: 3px 10px; }
+    .live-badge-spacer { height: 18px; }
 }
 
 /* Detailed Footer */

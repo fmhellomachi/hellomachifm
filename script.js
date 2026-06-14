@@ -476,12 +476,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const snap = await pollRef.get();
                                     if (!snap.exists) return;
                                     const votes = snap.data().votes || {};
-                                    votes[String(idx)] = (votes[String(idx)] || 0) + 1;
+                                    votes[opt] = (votes[opt] || 0) + 1;
                                     await pollRef.update({ votes });
-                                    localStorage.setItem('voted_poll_' + pollId, idx);
+                                    localStorage.setItem('voted_poll_' + pollId, opt);
                                     alert("🗳 Vote submitted successfully!");
                                 } catch (err) {
-                                    console.error("Vote failed:", err.code, err.message);
+                                    console.error("Vote failed:", err);
                                     alert("Vote error: " + (err.message || "Try again."));
                                 }
                             };

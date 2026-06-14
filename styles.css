@@ -966,7 +966,6 @@ footer {
 
 @media (max-width: 768px) {
     .hero-title { font-size: 3.5rem; }
-    .floating-player { flex-direction: column; gap: 20px; padding: 20px; border-radius: 20px; }
     .volume-wrapper { display: none; }
 }
 
@@ -1220,14 +1219,36 @@ footer {
     .hero-subtitle { font-size: 1rem; padding: 0 10px; }
     .hero-actions { flex-direction: column; gap: 15px; }
     
-    /* Sleek Mobile Player */
-    .floating-player-wrapper { 
-        bottom: 0; 
-        width: 100%; 
-        display: flex; 
-        justify-content: center; 
-        padding: 0;
+    .floating-player-wrapper {
+        bottom: 10px;
+        width: 96%;
+        left: 2%;
+        transform: none;
     }
+    .floating-player {
+        height: 75px;
+        padding: 0 15px;
+        border-radius: 20px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .disk-control-wrapper {
+        width: 80px; height: 80px;
+        margin-right: 5px;
+    }
+    .retro-visualizer {
+        margin: 0 5px;
+        gap: 3px;
+        height: 30px;
+        flex: 1;
+    }
+    .vis-block-col { width: 12px; }
+    .player-controls-right { width: 70px; }
+    .volume-slider { width: 60px; }
+
+    body { padding-bottom: 100px; }
 }
 
 /* Detailed Footer */
@@ -1494,6 +1515,145 @@ footer {
 @media (max-width: 360px) {
     .disk-control-wrapper { width: 50px; height: 50px; }
     .volume-slider { width: 35px; }
+}
+
+/* Interactive hub cards — prevent overflow on tiny screens */
+.interactive-hub-container {
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)) !important;
+}
+@media (max-width: 400px) {
+    .interactive-hub-container {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    .interactive-hub-container > div {
+        padding: 18px !important;
+    }
+    .hero { padding-top: 120px; }
+}
+@media (max-width: 320px) {
+    .interactive-hub-container {
+        max-width: 100vw !important;
+        overflow: hidden !important;
+    }
+}
+
+/* Prevent horizontal scroll from marquee on any screen */
+.marquee-scroll-container {
+    overflow: hidden;
+    max-width: 100%;
+}
+#hud-track-marquee {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Section headers scale on mobile */
+@media (max-width: 480px) {
+    .section-header h2 { font-size: 1.8rem !important; }
+    .section-header p { font-size: 0.9rem !important; }
+}
+
+/* --- PREMIUM GLASS CARDS --- */
+.glass-card {
+    background: rgba(20, 20, 30, 0.5);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 24px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+}
+.glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+.glass-card-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.glass-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.3);
+    color: white;
+    outline: none;
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s;
+}
+.glass-input:focus {
+    border-color: rgba(255,255,255,0.2);
+}
+
+.btn-shoutout-send {
+    padding: 11px;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    width: 100%;
+    background: #00E676;
+    color: black;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+    letter-spacing: 0.5px;
+}
+.btn-shoutout-send:hover {
+    opacity: 0.85;
+    transform: scale(1.01);
+}
+
+/* --- PREMIUM SHOUTOUT WALL SCROLLBAR --- */
+#shoutout-wall-feed::-webkit-scrollbar {
+    width: 4px;
+}
+#shoutout-wall-feed::-webkit-scrollbar-track {
+    background: transparent;
+}
+#shoutout-wall-feed::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+}
+
+/* --- APP DOWNLOAD BANNER --- */
+.app-download-banner .btn-primary {
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
+}
+.app-download-banner .btn-primary:hover {
+    box-shadow: 0 0 40px var(--primary-glow);
+    background: var(--primary);
+    color: black;
+}
+
+@media (max-width: 480px) {
+    .app-download-banner .container {
+        flex-direction: column;
+        text-align: center;
+    }
 }
 
 

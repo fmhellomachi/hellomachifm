@@ -49,8 +49,8 @@
                 <div class="interactive-hub-container" style="margin-top: 50px; display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; width: 100%; max-width: 900px; text-align: left; perspective: 1000px;">
                     
                     <!-- Now Playing Live HUD -->
-                    <div class="interactive-card glass-hud" style="background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); position: relative; overflow: hidden; transition: transform 0.3s;">
-                        <div style="font-size: 0.7rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; text-transform: uppercase;"><i class="fa-solid fa-compact-disc fa-spin"></i> Now Playing HUD</div>
+                    <div class="glass-card">
+                        <div class="glass-card-label" style="color: var(--primary);"><i class="fa-solid fa-compact-disc fa-spin"></i> Now Playing</div>
                         <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
                             <img id="hud-cover-art" src="logo.jpg" alt="Cover Art" style="width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.1);">
                             <div style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
@@ -77,8 +77,8 @@
                     </div>
 
                     <!-- Live Poll Widget -->
-                    <div id="home-poll-card" class="interactive-card glass-poll" style="background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); position: relative; transition: transform 0.3s;">
-                        <div style="font-size: 0.7rem; font-weight: 800; color: #FFD700; letter-spacing: 2px; text-transform: uppercase;"><i class="fa-solid fa-square-poll-vertical"></i> Live Studio Poll</div>
+                    <div id="home-poll-card" class="glass-card">
+                        <div class="glass-card-label" style="color: #FFD700;"><i class="fa-solid fa-square-poll-vertical"></i> Live Studio Poll</div>
                         <div id="home-poll-container" style="flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 100px;">
                             <div id="home-poll-empty" style="text-align: center; color: rgba(255,255,255,0.4); font-size: 0.85rem; line-height: 1.4;">
                                 No active poll at the moment. Stay tuned for the RJ's live updates!
@@ -93,28 +93,12 @@
                     </div>
 
                     <!-- Direct Shoutout Sender -->
-                    <div class="interactive-card glass-shoutout" style="background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transition: transform 0.3s;">
-                        <div style="font-size: 0.7rem; font-weight: 800; color: #00E676; letter-spacing: 2px; text-transform: uppercase;"><i class="fa-solid fa-paper-plane"></i> Request or Shoutout</div>
+                    <div class="glass-card">
+                        <div class="glass-card-label" style="color: #00E676;"><i class="fa-solid fa-paper-plane"></i> Request or Shoutout</div>
                         <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <input type="text" id="home-shoutout-nickname" placeholder="Your Nickname" style="width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.3); color: white; outline: none; font-size: 0.85rem;" />
-                            <textarea id="home-shoutout-message" placeholder="Type song title or message to RJ..." rows="2" style="width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.3); color: white; outline: none; font-size: 0.85rem; resize: none;"></textarea>
-                            <button id="home-shoutout-send-btn" style="padding: 10px; font-size: 0.85rem; border: none; border-radius: 10px; font-weight: bold; width: 100%; background: #00E676; color: black; cursor: pointer; transition: 0.2s;">SEND LIVE TO RJ</button>
-                        </div>
-                    </div>
-
-                    <!-- Download App Card -->
-                    <div class="interactive-card glass-download" style="background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transition: transform 0.3s;">
-                        <div style="font-size: 0.7rem; font-weight: 800; color: #D4AF37; letter-spacing: 2px; text-transform: uppercase;"><i class="fa-brands fa-android"></i> Android App</div>
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;">
-                            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #D4AF37, #FFD700); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fa-brands fa-android" style="color: black; font-size: 2rem;"></i>
-                            </div>
-                            <h3 style="font-size: 1rem; font-weight: 700; color: #fff; margin: 0;">Get the Official App</h3>
-                            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5); margin: 0;">Listen anywhere, anytime.</p>
-                            <a id="apk-download-link" href="#" target="_blank" class="btn btn-primary" style="padding: 12px 30px; font-size: 0.9rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
-                                <i class="fa-brands fa-android"></i> DOWNLOAD APK
-                            </a>
-                            <span id="apk-version" style="font-size: 0.7rem; color: rgba(255,255,255,0.3);">v1.0</span>
+                            <input type="text" id="home-shoutout-nickname" placeholder="Your Nickname" class="glass-input" />
+                            <textarea id="home-shoutout-message" placeholder="Type song title or message to RJ..." rows="2" class="glass-input" style="resize: none;"></textarea>
+                            <button id="home-shoutout-send-btn" class="btn-shoutout-send">SEND LIVE TO RJ</button>
                         </div>
                     </div>
 
@@ -130,7 +114,7 @@
                     <h2>LISTENER <span class="gradient-text">SHOUTOUTS</span></h2>
                     <p>Messages from our family.</p>
                 </div>
-                <div id="shoutout-wall-feed" style="display: flex; flex-direction: column; gap: 12px;">
+                <div id="shoutout-wall-feed" style="display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;">
                     <div style="text-align: center; color: rgba(255,255,255,0.3); padding: 20px;">Loading shoutouts...</div>
                 </div>
             </div>
@@ -179,6 +163,23 @@
                             <p>Evening Express</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- App Download Banner -->
+        <section class="app-download-banner" style="padding: 70px 0; background: linear-gradient(135deg, #0a0a12 0%, #1a0a20 50%, #0a0a12 100%); position: relative; overflow: hidden;">
+            <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 100%, rgba(255, 20, 147, 0.08) 0%, transparent 60%); pointer-events: none;"></div>
+            <div class="container" style="display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-wrap: wrap; position: relative; z-index: 1;">
+                <div style="flex: 1; min-width: 250px;">
+                    <h2 style="font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; margin: 0 0 8px;">Take Us <span class="gradient-text">Everywhere</span></h2>
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.95rem; margin: 0;">Download the official Hello Machi FM app for uninterrupted Tamil hits.</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <a id="apk-download-link" href="#" target="_blank" class="btn btn-primary btn-glow" style="padding: 16px 40px; font-size: 1rem; text-decoration: none; gap: 12px;">
+                        <i class="fa-brands fa-android" style="font-size: 1.3rem;"></i> DOWNLOAD APK
+                    </a>
+                    <span id="apk-version" style="font-size: 0.85rem; color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.03); padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">v1.0</span>
                 </div>
             </div>
         </section>

@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
   const defaults = {
     "stream_url": "https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3",
     "fallback_stream_url": "https://sonic-ca.instainternet.com/8022/stream",
-    "latest_version_code": 16,
+    "latest_version_code": 17,
     "apk_url": "https://github.com/fmhellomachi/hello-machi-backend/releases/download/V1/app-universal-release.apk",
     "update_message": "New update available! Tap to download the latest Hello Machi FM.",
     "whatsapp_number": "+91 9092363433",
@@ -50,7 +50,24 @@ module.exports = async (req, res) => {
       }
     }
 
-    const finalConfig = { ...defaults, ...flatConfig };
+    let finalConfig = { ...defaults, ...flatConfig };
+
+    // Auto-detect latest version from GitHub releases
+    try {
+      const ghRes = await fetch('https://api.github.com/repos/fmhellomachi/hello-machi-backend/releases/latest');
+      if (ghRes.ok) {
+        const ghData = await ghRes.json();
+        const tag = ghData.tag_name || '';
+        const match = tag.match(/(\d+)/);
+        if (match) {
+          const ghVersion = parseInt(match[1], 10);
+          finalConfig.latest_version_code = ghVersion;
+          finalConfig.apk_url = `https://github.com/fmhellomachi/hello-machi-backend/releases/download/${tag}/app-universal-release.apk`;
+        }
+      }
+    } catch (ghErr) {
+      console.error("GitHub release fetch error (non-fatal):", ghErr);
+    }
 
     // If programs is empty/missing, fallback to scheduleBlocks from homepage
     if (!finalConfig.programs || finalConfig.programs.length === 0) {

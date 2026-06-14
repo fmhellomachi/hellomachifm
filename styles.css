@@ -1263,7 +1263,7 @@ footer {
     body { padding-bottom: 100px; }
 
     /* Tighter mobile spacing */
-    .hero { padding-top: 80px; }
+    .hero { padding-top: 60px; }
     .schedule-section { padding: 40px 0; }
     .rj-intro-section { padding: 40px 0 !important; }
     .shoutout-wall { padding: 30px 0 !important; }
@@ -1561,7 +1561,7 @@ footer {
     .interactive-hub-container > div {
         padding: 18px !important;
     }
-    .hero { padding-top: 120px; }
+    .hero { padding-top: 60px; }
 }
 @media (max-width: 320px) {
     .interactive-hub-container {

@@ -410,7 +410,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (playerTitle) {
                     playerTitle.textContent = data.title;
-                    playerTitle.style.display = 'block';
                 }
                 if (diskImg && data.cover_art) diskImg.src = data.cover_art;
             }
@@ -434,7 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
         db.collection('polls').doc('active').onSnapshot(doc => {
             const hasActivePoll = doc.exists && doc.data().status === 'active';
             
-            // Hide the entire card when no poll is active
             if (homePollCard) {
                 homePollCard.style.display = hasActivePoll ? 'flex' : 'none';
             }
@@ -446,22 +444,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (homePollEmpty) homePollEmpty.style.display = 'none';
                 if (homePollActive) homePollActive.style.display = 'flex';
                 if (homePollQuestion) homePollQuestion.textContent = poll.question;
+                if (heroPollQuestion) heroPollQuestion.textContent = poll.question;
                 
                 if (homePollOptions) {
                     homePollOptions.innerHTML = '';
-                    
                     const hasVoted = localStorage.getItem('voted_poll_' + pollId);
                     const votes = poll.votes || {};
                     const total = Object.values(votes).reduce((a, b) => a + b, 0);
                     
-                    poll.options.forEach(opt => {
-                        const count = votes[opt] || 0;
-                        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                        
+                    function createVoteBtn(opt, pct, count, hasVoted) {
                         if (hasVoted) {
-                            const resultDiv = document.createElement('div');
-                            resultDiv.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin-bottom: 5px;";
-                            resultDiv.innerHTML = `
+                            const div = document.createElement('div');
+                            div.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin-bottom: 5px;";
+                            div.innerHTML = `
                                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #ccc;">
                                     <span>${opt}</span>
                                     <strong>${count} votes (${pct}%)</strong>
@@ -470,28 +465,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div style="background: #FFD700; height: 100%; width: ${pct}%; border-radius: 4px; transition: width 0.4s ease;"></div>
                                 </div>
                             `;
-                            homePollOptions.appendChild(resultDiv);
+                            return div;
                         } else {
                             const button = document.createElement('button');
                             button.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; padding: 10px; cursor: pointer; text-align: left; font-size: 0.85rem; font-weight: bold; transition: all 0.2s; outline: none; margin-bottom: 5px;";
                             button.textContent = opt;
                             button.onmouseover = () => { button.style.background = 'rgba(255, 215, 0, 0.1)'; button.style.borderColor = '#FFD700'; };
                             button.onmouseout = () => { button.style.background = 'rgba(255,255,255,0.05)'; button.style.borderColor = 'rgba(255,255,255,0.1)'; };
-                            
                             button.onclick = async () => {
                                 try {
                                     const pollRef = db.collection('polls').doc('active');
                                     await db.runTransaction(async (transaction) => {
                                         const freshDoc = await transaction.get(pollRef);
                                         if (!freshDoc.exists) return;
-                                        
                                         const currentVotes = freshDoc.data().votes || {};
                                         const newVotes = { ...currentVotes };
                                         newVotes[opt] = (newVotes[opt] || 0) + 1;
-                                        
                                         transaction.update(pollRef, { votes: newVotes });
                                     });
-                                    
                                     localStorage.setItem('voted_poll_' + pollId, opt);
                                     alert("🗳 Vote submitted successfully!");
                                 } catch (err) {
@@ -499,8 +490,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                     alert("Failed to submit vote. Try again.");
                                 }
                             };
-                            homePollOptions.appendChild(button);
+                            return button;
                         }
+                    }
+                    
+                    // Render in hub card
+                    poll.options.forEach(opt => {
+                        const count = votes[opt] || 0;
+                        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                        homePollOptions.appendChild(createVoteBtn(opt, pct, count, hasVoted));
                     });
                 }
             } else {

@@ -52,16 +52,17 @@ module.exports = async (req, res) => {
 
     let finalConfig = { ...defaults, ...flatConfig };
 
-    // Auto-detect latest version from GitHub releases
+    // Auto-detect latest version from GitHub (overrides Firestore)
     try {
       const ghRes = await fetch('https://api.github.com/repos/fmhellomachi/hello-machi-backend/releases/latest');
       if (ghRes.ok) {
         const ghData = await ghRes.json();
         const tag = ghData.tag_name || '';
-        const match = tag.match(/(\d+)/);
+        const match = tag.match(/(\d+)\.(\d+)/);
         if (match) {
-          const ghVersion = parseInt(match[1], 10);
+          const ghVersion = parseInt(match[1], 10) * 1000 + parseInt(match[2], 10);
           finalConfig.latest_version_code = ghVersion;
+          finalConfig.latest_version_name = tag.replace(/^v/, '');
           finalConfig.apk_url = `https://github.com/fmhellomachi/hello-machi-backend/releases/download/${tag}/app-universal-release.apk`;
         }
       }

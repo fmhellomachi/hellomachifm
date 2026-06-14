@@ -621,4 +621,19 @@ document.addEventListener('DOMContentLoaded', () => {
             navbar.style.boxShadow = 'none';
         }
     });
+
+    // --- Fetch APK Download Config from API ---
+    fetch('/api/config')
+        .then(r => r.json())
+        .then(cfg => {
+            const link = document.getElementById('apk-download-link');
+            const ver = document.getElementById('apk-version');
+            if (link && cfg.apk_url) {
+                link.href = cfg.apk_url;
+            }
+            if (ver && cfg.latest_version_code) {
+                ver.textContent = 'v' + cfg.latest_version_code;
+            }
+        })
+        .catch(err => console.error('APK config fetch failed:', err));
 });

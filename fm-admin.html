@@ -270,7 +270,15 @@
         async function saveSchedule() {
             try {
                 await db.collection('cms').doc('homepage').update({ scheduleBlocks });
-                alert("Schedule published!");
+                // Also sync to cms/config.programs so the mobile app (/api/config) gets the updates
+                const programs = scheduleBlocks.map(b => ({
+                    time: b.time,
+                    endTime: b.endTime,
+                    title: b.title,
+                    rj: b.rj
+                }));
+                await db.collection('cms').doc('config').set({ programs }, { merge: true });
+                alert("Schedule published & synced to app!");
             } catch (e) { alert(e.message); }
         }
     </script>

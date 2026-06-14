@@ -361,34 +361,35 @@
             try {
                 const doc = await db.collection('cms').doc('config').get();
                 let cfg = doc.exists ? doc.data() : null;
-
-                if (!cfg || Object.keys(cfg).length === 0) {
-                    cfg = defaults;
-                }
-
-                document.getElementById('cfg-stream').value = cfg.stream_url || defaults.stream_url;
-                document.getElementById('cfg-fallback').value = cfg.fallback_stream_url || defaults.fallback_stream_url;
-                document.getElementById('cfg-logo').value = cfg.logo_url || defaults.logo_url;
-                document.getElementById('cfg-accent').value = cfg.accent_color || defaults.accent_color;
-                document.getElementById('cfg-version').value = cfg.latest_version_code || defaults.latest_version_code;
-                document.getElementById('cfg-apk').value = cfg.apk_url || defaults.apk_url;
-                document.getElementById('cfg-update-msg').value = cfg.update_message || defaults.update_message;
-                document.getElementById('cfg-status-msg').value = cfg.status_message || defaults.status_message;
-                document.getElementById('cfg-wa-num').value = cfg.whatsapp_number || defaults.whatsapp_number;
-                document.getElementById('cfg-wa-msg').value = cfg.whatsapp_message || defaults.whatsapp_message;
-                document.getElementById('cfg-request-msg').value = cfg.request_song_message || defaults.request_song_message;
-                document.getElementById('cfg-fb').value = cfg.facebook_url || defaults.facebook_url;
-                document.getElementById('cfg-ig').value = cfg.instagram_url || defaults.instagram_url;
-                document.getElementById('cfg-yt').value = cfg.youtube_url || defaults.youtube_url;
-                document.getElementById('cfg-custom').value = cfg.custom_link || defaults.custom_link;
-                document.getElementById('cfg-title').value = cfg.welcome_title || defaults.welcome_title;
-                document.getElementById('cfg-greeting').value = cfg.welcome_greeting || defaults.welcome_greeting;
-                programData = (cfg.programs && Array.isArray(cfg.programs) && cfg.programs.length > 0)
-                    ? cfg.programs.map(p => ({...p})) : defaults.programs.map(p => ({...p}));
-                renderPrograms();
+                if (!cfg || Object.keys(cfg).length === 0) cfg = defaults;
+                populateConfigForm(cfg, defaults);
             } catch (err) {
-                showConfigStatus('Error loading config: ' + err.message, 'error');
+                console.error("Firestore load failed, using defaults:", err);
+                populateConfigForm(defaults, defaults);
             }
+        }
+
+        function populateConfigForm(cfg, defaults) {
+            document.getElementById('cfg-stream').value = cfg.stream_url || defaults.stream_url;
+            document.getElementById('cfg-fallback').value = cfg.fallback_stream_url || defaults.fallback_stream_url;
+            document.getElementById('cfg-logo').value = cfg.logo_url || defaults.logo_url;
+            document.getElementById('cfg-accent').value = cfg.accent_color || defaults.accent_color;
+            document.getElementById('cfg-version').value = cfg.latest_version_code || defaults.latest_version_code;
+            document.getElementById('cfg-apk').value = cfg.apk_url || defaults.apk_url;
+            document.getElementById('cfg-update-msg').value = cfg.update_message || defaults.update_message;
+            document.getElementById('cfg-status-msg').value = cfg.status_message || defaults.status_message;
+            document.getElementById('cfg-wa-num').value = cfg.whatsapp_number || defaults.whatsapp_number;
+            document.getElementById('cfg-wa-msg').value = cfg.whatsapp_message || defaults.whatsapp_message;
+            document.getElementById('cfg-request-msg').value = cfg.request_song_message || defaults.request_song_message;
+            document.getElementById('cfg-fb').value = cfg.facebook_url || defaults.facebook_url;
+            document.getElementById('cfg-ig').value = cfg.instagram_url || defaults.instagram_url;
+            document.getElementById('cfg-yt').value = cfg.youtube_url || defaults.youtube_url;
+            document.getElementById('cfg-custom').value = cfg.custom_link || defaults.custom_link;
+            document.getElementById('cfg-title').value = cfg.welcome_title || defaults.welcome_title;
+            document.getElementById('cfg-greeting').value = cfg.welcome_greeting || defaults.welcome_greeting;
+            programData = (cfg.programs && Array.isArray(cfg.programs) && cfg.programs.length > 0)
+                ? cfg.programs.map(p => ({...p})) : defaults.programs.map(p => ({...p}));
+            renderPrograms();
         }
 
         function renderPrograms() {

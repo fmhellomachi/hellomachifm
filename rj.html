@@ -434,8 +434,10 @@
                         const votes = data.votes || {};
                         const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
 
-                        data.options.forEach(opt => {
-                            const count = votes[opt] || 0;
+                        data.options.forEach((opt, idx) => {
+                            const isNewFormat = Object.keys(votes).length === 0 || Object.keys(votes).every(k => /^\d+$/.test(k));
+                            const key = isNewFormat ? String(idx) : opt;
+                            const count = votes[key] || 0;
                             const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
                             
                             const optDiv = document.createElement('div');

@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (hudCover && data.cover_art) hudCover.src = data.cover_art;
                 if (hudStatus) hudStatus.textContent = `Live: "${data.title}" by ${data.artist || 'Machi RJ'}`;
                 if (hudMarquee) {
-                    hudMarquee.textContent = `NOW PLAYING: ${data.title.toUpperCase()} — ${(data.artist || 'Hello Machi FM').toUpperCase()}`;
+                    hudMarquee.innerHTML = `<span class="marquee-prefix">NOW PLAYING</span> ${data.title.toUpperCase()} — ${(data.artist || 'Hello Machi FM').toUpperCase()}`;
                 }
                 
                 // Update Floating Player HUD
@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const votes = poll.votes || {};
                     const total = Object.values(votes).reduce((a, b) => a + b, 0);
                     
-                    function createVoteBtn(opt, pct, count, hasVoted) {
+                    function createVoteBtn(opt, pct, count, hasVoted, pollId, idx) {
                         if (hasVoted) {
                             const div = document.createElement('div');
                             div.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin-bottom: 5px;";
@@ -478,10 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                         if (!freshDoc.exists) return;
                                         const currentVotes = freshDoc.data().votes || {};
                                         const newVotes = { ...currentVotes };
-                                        newVotes[opt] = (newVotes[opt] || 0) + 1;
+                                        const key = String(idx);
+                                        newVotes[key] = (newVotes[key] || 0) + 1;
                                         transaction.update(pollRef, { votes: newVotes });
                                     });
-                                    localStorage.setItem('voted_poll_' + pollId, opt);
+                                    localStorage.setItem('voted_poll_' + pollId, idx);
                                     alert("🗳 Vote submitted successfully!");
                                 } catch (err) {
                                     console.error("Vote transaction failed:", err);
@@ -493,10 +494,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     // Render in hub card
-                    poll.options.forEach(opt => {
-                        const count = votes[opt] || 0;
+                    poll.options.forEach((opt, idx) => {
+                        const isNewFormat = Object.keys(votes).length === 0 || Object.keys(votes).every(k => /^\d+$/.test(k));
+                        const key = isNewFormat ? String(idx) : opt;
+                        const count = votes[key] || 0;
                         const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                        homePollOptions.appendChild(createVoteBtn(opt, pct, count, hasVoted));
+                        homePollOptions.appendChild(createVoteBtn(opt, pct, count, hasVoted, pollId, idx));
                     });
                 }
             } else {

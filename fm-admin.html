@@ -174,23 +174,30 @@
         const provider = new firebase.auth.GoogleAuthProvider();
         let scheduleBlocks = [];
 
-        const AUTHORIZED_EMAILS = [
-            'fmhellomachi@gmail.com',
-            'admin@hellomachi.com'
-        ];
-
         auth.onAuthStateChanged(user => {
             if (user) {
-                const email = user.email.toLowerCase();
-                if (AUTHORIZED_EMAILS.includes(email)) {
-                    document.getElementById('admin-user-display').textContent = `Admin: ${email}`;
-                    document.getElementById('logout-btn').style.display = 'block';
-                    document.getElementById('login-btn').style.display = 'none';
-                    loadData();
-                } else {
-                    alert("Unauthorized access attempt by: " + email);
+                db.collection('users').doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        const role = userData.role ? userData.role.toLowerCase() : '';
+                        if (role === 'admin') {
+                            document.getElementById('admin-user-display').textContent = `Admin: ${user.email}`;
+                            document.getElementById('logout-btn').style.display = 'block';
+                            document.getElementById('login-btn').style.display = 'none';
+                            loadData();
+                        } else {
+                            alert("Access Denied: Your account role ('" + role + "') is not authorized.");
+                            auth.signOut();
+                        }
+                    } else {
+                        alert("Access Denied: Your account is not registered in the system.");
+                        auth.signOut();
+                    }
+                }).catch(err => {
+                    console.error("Role check error:", err);
+                    alert("Authorization error. Please contact admin.");
                     auth.signOut();
-                }
+                });
             } else {
                 document.getElementById('admin-user-display').textContent = "Unauthorized - Please Login";
                 document.getElementById('login-btn').style.display = 'block';

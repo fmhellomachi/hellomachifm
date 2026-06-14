@@ -166,20 +166,35 @@
 <script src="firebase-config.js"></script>
 <script>
 const ROUND_ORDER = ['Round 1','Round 2','Round 3','Semi-Final','Final Round','Grand Finale','Optional Round','Winner','Runner Up 1','Runner Up 2'];
-const AUTHORIZED_EMAILS = ['fmhellomachi@gmail.com', 'admin@hellomachi.com'];
 
 let isAdmin = false;
 
 firebase.auth().onAuthStateChanged(user => {
-    if (user && AUTHORIZED_EMAILS.includes(user.email)) {
-        isAdmin = true;
-        document.getElementById('auth-btn').innerHTML = `<i class="fa-solid fa-unlock"></i> Logged in as Admin`;
+    if (user) {
+        db.collection('users').doc(user.uid).get().then(doc => {
+            if (doc.exists) {
+                const role = (doc.data().role || '').toLowerCase();
+                isAdmin = (role === 'admin');
+            }
+            updateAuthUI();
+            render();
+        }).catch(() => {
+            isAdmin = false;
+            updateAuthUI();
+            render();
+        });
     } else {
         isAdmin = false;
-        document.getElementById('auth-btn').innerHTML = `<i class="fa-solid fa-lock"></i> Admin Login`;
+        updateAuthUI();
+        render();
     }
-    render();
 });
+
+function updateAuthUI() {
+    document.getElementById('auth-btn').innerHTML = isAdmin
+        ? '<i class="fa-solid fa-unlock"></i> Logged in as Admin'
+        : '<i class="fa-solid fa-lock"></i> Admin Login';
+}
 
 async function handleAuth() {
     if (isAdmin) {

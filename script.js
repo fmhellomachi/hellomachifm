@@ -263,13 +263,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Website CMS Logic ---
+    function sanitizeHTML(str) {
+        if (!str) return '';
+        const el = document.createElement('div');
+        el.textContent = str;
+        let safe = el.innerHTML;
+        // Allow only basic inline tags: <br>, <span>, <strong>, <em>, <b>, <i>
+        safe = safe.replace(/&lt;(\/?(?:br|span|strong|em|b|i)(?:\s[^&gt]*)?)&gt;/gi, '<$1>');
+        // Strip anything that looks like an event handler
+        safe = safe.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
+        return safe;
+    }
+
     async function loadCMSData() {
         const grid = document.getElementById('schedule-grid');
         try {
             db.collection('cms').doc('homepage').onSnapshot(doc => {
                 if (doc.exists) {
                     const data = doc.data();
-                    if (data.heroTitle) document.getElementById('hero-title').innerHTML = data.heroTitle;
+                    if (data.heroTitle) document.getElementById('hero-title').innerHTML = sanitizeHTML(data.heroTitle);
                     if (data.heroSubtitle) document.getElementById('hero-subtitle').textContent = data.heroSubtitle;
                     
                     if (data.scheduleBlocks && data.scheduleBlocks.length > 0) {

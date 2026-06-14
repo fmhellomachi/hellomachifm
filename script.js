@@ -644,8 +644,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(cfg => {
             const link = document.getElementById('apk-download-link');
             const ver = document.getElementById('apk-version');
+            const navLink = document.getElementById('nav-apk-link');
             if (link && cfg.apk_url) {
                 link.href = cfg.apk_url;
+            }
+            if (navLink && cfg.apk_url) {
+                navLink.href = cfg.apk_url;
             }
             if (ver && cfg.latest_version_code) {
                 ver.textContent = 'v' + cfg.latest_version_code;

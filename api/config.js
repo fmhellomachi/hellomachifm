@@ -39,20 +39,44 @@ module.exports = async (req, res) => {
   };
 
   try {
-    const url = 'https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents/cms/config';
-    const response = await fetch(url);
-    if (!response.ok) {
-      // Return defaults if Firestore document doesn't exist yet
-      return res.status(200).json(defaults);
+    const configUrl = 'https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents/cms/config';
+    const configRes = await fetch(configUrl);
+    let flatConfig = {};
+
+    if (configRes.ok) {
+      const doc = await configRes.json();
+      if (doc.fields) {
+        flatConfig = flattenFirestoreFields(doc.fields);
+      }
     }
 
-    const doc = await response.json();
-    if (!doc.fields) {
-      return res.status(200).json(defaults);
-    }
-
-    const flatConfig = flattenFirestoreFields(doc.fields);
     const finalConfig = { ...defaults, ...flatConfig };
+
+    // If programs is empty/missing, fallback to scheduleBlocks from homepage
+    if (!finalConfig.programs || finalConfig.programs.length === 0) {
+      try {
+        const hpUrl = 'https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents/cms/homepage';
+        const hpRes = await fetch(hpUrl);
+        if (hpRes.ok) {
+          const hpDoc = await hpRes.json();
+          if (hpDoc.fields) {
+            const hpData = flattenFirestoreFields(hpDoc.fields);
+            if (hpData.scheduleBlocks && hpData.scheduleBlocks.length > 0) {
+              finalConfig.programs = hpData.scheduleBlocks.map(b => ({
+                time: b.time,
+                endTime: b.endTime,
+                title: b.title,
+                rj: b.rj || ''
+              }));
+              finalConfig.scheduleBlocks = hpData.scheduleBlocks;
+            }
+          }
+        }
+      } catch (hpErr) {
+        console.error("Homepage fallback fetch error:", hpErr);
+      }
+    }
+
     res.status(200).json(finalConfig);
 
   } catch (err) {

@@ -21,6 +21,7 @@
         .add-row { display: grid; grid-template-columns: 1fr 1fr 2fr 1fr 2fr auto; gap: 10px; margin-top: 20px; }
         @media (max-width: 768px) {
             .add-row { grid-template-columns: 1fr; }
+            .form-group[style*="grid"] { grid-template-columns: 1fr !important; }
         }
     </style>
 </head>

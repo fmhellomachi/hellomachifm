@@ -428,10 +428,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const homePollQuestion = document.getElementById('home-poll-question');
     const homePollOptions = document.getElementById('home-poll-options');
     const homePollContainer = document.getElementById('home-poll-container');
+    const homePollCard = document.getElementById('home-poll-card');
     
     if (homePollContainer) {
         db.collection('polls').doc('active').onSnapshot(doc => {
-            if (doc.exists && doc.data().status === 'active') {
+            const hasActivePoll = doc.exists && doc.data().status === 'active';
+            
+            // Hide the entire card when no poll is active
+            if (homePollCard) {
+                homePollCard.style.display = hasActivePoll ? 'flex' : 'none';
+            }
+            
+            if (hasActivePoll) {
                 const poll = doc.data();
                 const pollId = doc.id + '_' + poll.timestamp;
                 
@@ -498,6 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 if (homePollEmpty) homePollEmpty.style.display = 'block';
                 if (homePollActive) homePollActive.style.display = 'none';
+                if (homePollCard) homePollCard.style.display = 'none';
             }
         });
     }

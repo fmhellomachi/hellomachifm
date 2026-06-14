@@ -1297,7 +1297,7 @@ footer {
     .hero-title { font-size: 1.8rem; margin-top: 10px; margin-bottom: 0; letter-spacing: normal; }
     .hero-title::after { display: none; }
     .hero-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
-    .live-badge { margin-bottom: 30px; font-size: 0.55rem; padding: 3px 10px; }
+    .live-badge { padding-bottom: 30px; margin-bottom: 0; font-size: 0.55rem; padding: 3px 10px 30px; }
 }
 
 /* Detailed Footer */

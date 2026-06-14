@@ -93,6 +93,9 @@
                 </div>
             </div>
             <button class="btn-save" style="background:#ff9800; color:black;" onclick="saveAppSettings()">PUBLISH APP SETTINGS</button>
+            <div id="live-api-status" style="margin-top: 12px; padding: 10px 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.8rem; color: #888;">
+                Loading live API status...
+            </div>
         </div>
 
         <!-- Branding & Social Section -->
@@ -256,6 +259,24 @@
                 scheduleBlocks = cfg.programs || cfg.scheduleBlocks || [];
             }
             renderScheduleUI();
+
+            // Also fetch live API status to show auto-detected values from GitHub
+            try {
+                const apiRes = await fetch('/api/config');
+                if (apiRes.ok) {
+                    const apiCfg = await apiRes.json();
+                    const liveStatus = document.getElementById('live-api-status');
+                    if (liveStatus) {
+                        liveStatus.innerHTML = `
+                            🤖 <b>Live API Response</b> (auto-detected from GitHub)<br>
+                            📦 Version: <b>${apiCfg.latest_version_code}</b> &nbsp;|&nbsp; 
+                            🔗 <a href="${apiCfg.apk_url}" target="_blank" style="color: #FFD700;">APK URL</a>
+                        `;
+                    }
+                }
+            } catch (e) {
+                console.error("Live API fetch error:", e);
+            }
         }
 
         async function saveAppSettings() {

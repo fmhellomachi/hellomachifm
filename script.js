@@ -476,7 +476,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const snap = await pollRef.get();
                                     if (!snap.exists) return;
                                     const votes = snap.data().votes || {};
-                                    votes[opt] = (votes[opt] || 0) + 1;
+                                    const key = String(idx);
+                                    votes[key] = (votes[key] || 0) + 1;
                                     await pollRef.update({ votes });
                                     localStorage.setItem('voted_poll_' + pollId, opt);
                                     alert("🗳 Vote submitted successfully!");
@@ -491,8 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Render in hub card
                     poll.options.forEach((opt, idx) => {
-                        const isNewFormat = Object.keys(votes).length === 0 || Object.keys(votes).every(k => /^\d+$/.test(k));
-                        const key = isNewFormat ? String(idx) : opt;
+                        const key = String(idx);
                         const count = votes[key] || 0;
                         const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                         homePollOptions.appendChild(createVoteBtn(opt, pct, count, hasVoted, pollId, idx));

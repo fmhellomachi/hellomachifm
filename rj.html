@@ -298,15 +298,18 @@
                         <label>POLL QUESTION</label>
                         <input type="text" id="poll-question" placeholder="e.g., Which RJ Vijay track next?">
                     </div>
-                    <div class="form-group">
-                        <label>OPTION A</label>
-                        <input type="text" id="poll-opt1" placeholder="e.g., Rowdy Baby 💃">
+                    <div id="poll-options-container">
+                        <div class="form-group">
+                            <label>OPTION 1</label>
+                            <input type="text" class="poll-opt-input" placeholder="e.g., Rowdy Baby 💃">
+                        </div>
+                        <div class="form-group">
+                            <label>OPTION 2</label>
+                            <input type="text" class="poll-opt-input" placeholder="e.g., Arabic Kuthu 🕺">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>OPTION B</label>
-                        <input type="text" id="poll-opt2" placeholder="e.g., Arabic Kuthu 🕺">
-                    </div>
-                    <button class="btn-action btn-pink" id="create-poll-btn" style="width: 100%; padding: 12px; margin-top: 10px;">PUBLISH POLL</button>
+                    <button class="btn-action btn-outline" id="add-poll-opt-btn" style="width: 100%; padding: 8px; margin-top: 5px; font-size: 0.8rem;">+ ADD OPTION</button>
+                    <button class="btn-action btn-pink" id="create-poll-btn" style="width: 100%; padding: 12px; margin-top: 8px;">PUBLISH POLL</button>
                 </div>
 
                 <!-- Active Poll Status -->
@@ -435,9 +438,7 @@
                         const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
 
                         data.options.forEach((opt, idx) => {
-                            const isNewFormat = Object.keys(votes).length === 0 || Object.keys(votes).every(k => /^\d+$/.test(k));
-                            const key = isNewFormat ? String(idx) : opt;
-                            const count = votes[key] || 0;
+                            const count = votes[String(idx)] || 0;
                             const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
                             
                             const optDiv = document.createElement('div');
@@ -541,23 +542,37 @@
         }
 
         // --- Poll Controls ---
+        document.getElementById('add-poll-opt-btn').onclick = () => {
+            const container = document.getElementById('poll-options-container');
+            const inputs = container.querySelectorAll('.poll-opt-input');
+            const next = inputs.length + 1;
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `<label>OPTION ${next}</label><input type="text" class="poll-opt-input" placeholder="Option ${next}">`;
+            container.appendChild(div);
+        };
+
         document.getElementById('create-poll-btn').onclick = async () => {
             const question = document.getElementById('poll-question').value.trim();
-            const opt1 = document.getElementById('poll-opt1').value.trim();
-            const opt2 = document.getElementById('poll-opt2').value.trim();
+            const inputs = document.querySelectorAll('.poll-opt-input');
+            const options = [];
+            inputs.forEach(inp => {
+                const v = inp.value.trim();
+                if (v) options.push(v);
+            });
 
-            if (!question || !opt1 || !opt2) {
-                alert("Please specify the question and both options.");
+            if (!question || options.length < 2) {
+                alert("Please specify the question and at least 2 options.");
                 return;
             }
 
+            const votes = {};
+            options.forEach((_, idx) => { votes[String(idx)] = 0; });
+
             const pollData = {
                 question: question,
-                options: [opt1, opt2],
-                votes: {
-                    [opt1]: 0,
-                    [opt2]: 0
-                },
+                options: options,
+                votes: votes,
                 status: 'active',
                 timestamp: Date.now()
             };
@@ -565,8 +580,7 @@
             try {
                 await db.collection('polls').doc('active').set(pollData);
                 document.getElementById('poll-question').value = '';
-                document.getElementById('poll-opt1').value = '';
-                document.getElementById('poll-opt2').value = '';
+                document.querySelectorAll('.poll-opt-input').forEach(inp => inp.value = '');
             } catch (err) {
                 alert("Publish failed: " + err.message);
             }

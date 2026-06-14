@@ -1294,7 +1294,7 @@ footer {
     .section-header p { font-size: 0.8rem !important; }
     .interactive-hub-container { margin-top: 30px !important; }
     .hero-actions { margin-bottom: 0; }
-    .hero-title { font-size: 1.8rem; margin-bottom: 0; letter-spacing: normal; }
+    .hero-title { font-size: 1.8rem; margin-top: 10px; margin-bottom: 0; letter-spacing: normal; }
     .hero-title::after { display: none; }
     .hero-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
     .live-badge { margin-bottom: 30px; font-size: 0.55rem; padding: 3px 10px; }

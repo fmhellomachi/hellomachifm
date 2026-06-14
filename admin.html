@@ -454,11 +454,14 @@
                         body: JSON.stringify(config)
                     });
                     showConfigStatus('✅ Config saved to Firestore + Render synced successfully!', 'success');
+                    alert('✅ Config saved & synced successfully!');
                 } catch (renderErr) {
                     showConfigStatus('⚠️ Saved to Firestore, but Render sync failed: ' + renderErr.message, 'error');
+                    alert('⚠️ Saved to Firestore, but Render sync failed.');
                 }
             } catch (err) {
                 showConfigStatus('Error saving config: ' + err.message, 'error');
+                alert('Error saving config: ' + err.message);
             }
         }
 

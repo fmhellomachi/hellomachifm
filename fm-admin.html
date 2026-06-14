@@ -94,6 +94,54 @@
             <button class="btn-save" style="background:#ff9800; color:black;" onclick="saveAppSettings()">PUBLISH APP SETTINGS</button>
         </div>
 
+        <!-- Branding & Social Section -->
+        <div class="cms-card">
+            <h3><i class="fa-solid fa-palette"></i> Branding & Social Links</h3>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label>Logo URL</label>
+                    <input type="text" id="cfg-logo" placeholder="https://...logo.jpg">
+                </div>
+                <div>
+                    <label>Accent Color</label>
+                    <input type="text" id="cfg-accent" placeholder="#D4AF37">
+                </div>
+            </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label>WhatsApp Number</label>
+                    <input type="text" id="cfg-wa-num" placeholder="+91 9092363433">
+                </div>
+                <div>
+                    <label>WhatsApp Message</label>
+                    <input type="text" id="cfg-wa-msg" placeholder="Hello Machi FM! 🎵">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Request Song Message</label>
+                <input type="text" id="cfg-request-msg" placeholder="I'd like to request a song 🎵">
+            </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                <div>
+                    <label>Facebook URL</label>
+                    <input type="text" id="cfg-fb" placeholder="https://facebook.com/...">
+                </div>
+                <div>
+                    <label>Instagram URL</label>
+                    <input type="text" id="cfg-ig" placeholder="https://instagram.com/...">
+                </div>
+                <div>
+                    <label>YouTube URL</label>
+                    <input type="text" id="cfg-yt" placeholder="https://youtube.com/...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Custom Link (used by app)</label>
+                <input type="text" id="cfg-custom" placeholder="https://...">
+            </div>
+            <button class="btn-save" style="background:#D4AF37; color:black;" onclick="saveBranding()">PUBLISH BRANDING & SOCIAL</button>
+        </div>
+
         <!-- Schedule Section -->
         <div class="cms-card">
             <h3><i class="fa-solid fa-calendar-alt"></i> Radio Program Schedule</h3>
@@ -174,11 +222,9 @@
                 const data = doc.data();
                 document.getElementById('hero-title').value = data.heroTitle || '';
                 document.getElementById('hero-subtitle').value = data.heroSubtitle || '';
-                scheduleBlocks = data.scheduleBlocks || [];
-                renderScheduleUI();
             }
 
-            // Load App config data
+            // Load App config data (single source of truth for schedule)
             const cfgDoc = await db.collection('cms').doc('config').get();
             if (cfgDoc.exists) {
                 const cfg = cfgDoc.data();
@@ -190,7 +236,18 @@
                 document.getElementById('cfg-status-msg').value = cfg.status_message || '';
                 document.getElementById('cfg-welcome-title').value = cfg.welcome_title || '';
                 document.getElementById('cfg-welcome-greeting').value = cfg.welcome_greeting || '';
+                document.getElementById('cfg-logo').value = cfg.logo_url || '';
+                document.getElementById('cfg-accent').value = cfg.accent_color || '';
+                document.getElementById('cfg-wa-num').value = cfg.whatsapp_number || '';
+                document.getElementById('cfg-wa-msg').value = cfg.whatsapp_message || '';
+                document.getElementById('cfg-request-msg').value = cfg.request_song_message || '';
+                document.getElementById('cfg-fb').value = cfg.facebook_url || '';
+                document.getElementById('cfg-ig').value = cfg.instagram_url || '';
+                document.getElementById('cfg-yt').value = cfg.youtube_url || '';
+                document.getElementById('cfg-custom').value = cfg.custom_link || '';
+                scheduleBlocks = cfg.programs || cfg.scheduleBlocks || [];
             }
+            renderScheduleUI();
         }
 
         async function saveAppSettings() {
@@ -206,9 +263,45 @@
                     welcome_title: document.getElementById('cfg-welcome-title').value,
                     welcome_greeting: document.getElementById('cfg-welcome-greeting').value
                 }, { merge: true });
-                alert("App settings updated in Vercel Cloud Database! existing and new apps will reflect this update.");
+                await syncToRender();
+                alert("App settings updated! Apps will reflect this update.");
             } catch (e) {
                 alert("Save failed: " + e.message);
+            }
+        }
+
+        async function saveBranding() {
+            try {
+                await db.collection('cms').doc('config').set({
+                    logo_url: document.getElementById('cfg-logo').value,
+                    accent_color: document.getElementById('cfg-accent').value,
+                    whatsapp_number: document.getElementById('cfg-wa-num').value,
+                    whatsapp_message: document.getElementById('cfg-wa-msg').value,
+                    request_song_message: document.getElementById('cfg-request-msg').value,
+                    facebook_url: document.getElementById('cfg-fb').value,
+                    instagram_url: document.getElementById('cfg-ig').value,
+                    youtube_url: document.getElementById('cfg-yt').value,
+                    custom_link: document.getElementById('cfg-custom').value
+                }, { merge: true });
+                await syncToRender();
+                alert("Branding & social links saved and synced!");
+            } catch (e) {
+                alert("Save failed: " + e.message);
+            }
+        }
+
+        async function syncToRender() {
+            try {
+                const cfgDoc = await db.collection('cms').doc('config').get();
+                if (cfgDoc.exists) {
+                    await fetch('https://hello-machi-backend.onrender.com/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(cfgDoc.data())
+                    });
+                }
+            } catch (e) {
+                console.error("Render sync failed:", e);
             }
         }
 
@@ -269,29 +362,23 @@
 
         async function saveSchedule() {
             try {
-                await db.collection('cms').doc('homepage').update({ scheduleBlocks });
-                // Also sync to cms/config so the mobile app gets the updates
                 const programs = scheduleBlocks.map(b => ({
                     time: b.time,
                     endTime: b.endTime,
                     title: b.title,
                     rj: b.rj
                 }));
+
+                // Save to cms/config (primary - used by mobile app & website API)
                 await db.collection('cms').doc('config').set({
                     programs,
                     scheduleBlocks
                 }, { merge: true });
 
-                // Also push the full config to Render (used by the mobile app)
-                const cfgDoc = await db.collection('cms').doc('config').get();
-                if (cfgDoc.exists) {
-                    await fetch('https://hello-machi-backend.onrender.com/config', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(cfgDoc.data())
-                    }).catch(() => {});
-                }
+                // Also sync to cms/homepage (used by website schedule grid)
+                await db.collection('cms').doc('homepage').set({ scheduleBlocks }, { merge: true });
 
+                await syncToRender();
                 alert("Schedule published & synced to app!");
             } catch (e) { alert(e.message); }
         }

@@ -268,7 +268,7 @@ h1, h2, h3, h4, .logo span {
     font-size: 0.7rem;
     font-weight: 800;
     letter-spacing: 3px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     text-transform: uppercase;
     box-shadow: 0 0 20px rgba(255, 20, 147, 0.05);
 }
@@ -1277,7 +1277,7 @@ footer {
     .hero-title { font-size: 2.5rem; margin-bottom: 12px; }
     .hero-title::after { width: 40px; margin: 12px auto 0; }
     .hero-subtitle { font-size: 0.9rem; margin-bottom: 24px; }
-    .live-badge { margin-bottom: 14px; font-size: 0.65rem; padding: 5px 14px; }
+    .live-badge { margin-bottom: 10px; font-size: 0.65rem; padding: 5px 14px; }
 }
 
 /* Detailed Footer */

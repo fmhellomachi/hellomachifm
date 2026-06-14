@@ -291,7 +291,7 @@ h1, h2, h3, h4, .logo span {
 .hero-title {
     font-size: clamp(3rem, 8vw, 6rem);
     font-weight: 900;
-    margin-bottom: 16px;
+    margin-bottom: 0;
     line-height: 1;
     letter-spacing: -2px;
     position: relative;
@@ -299,17 +299,17 @@ h1, h2, h3, h4, .logo span {
 .hero-title::after {
     content: '';
     display: block;
-    width: 60px;
-    height: 3px;
+    width: 50px;
+    height: 2px;
     background: linear-gradient(to right, var(--primary), transparent);
-    margin: 16px auto 0;
+    margin: 10px auto 12px;
     border-radius: 2px;
 }
 
 .hero-subtitle {
     font-size: 1.1rem;
     color: rgba(255,255,255,0.45);
-    margin-bottom: 32px;
+    margin-bottom: 28px;
     max-width: 500px;
     font-weight: 400;
 }
@@ -701,7 +701,7 @@ h1, h2, h3, h4, .logo span {
 .player-controls-right {
     flex: 1; display: flex; flex-direction: column; gap: 5px;
 }
-.player-controls-right h4 { display: none; } /* HIDDEN AS REQUESTED */
+.player-controls-right h4 { display: none; } /* HIDDEN ON DESKTOP, visible on mobile */
 .volume-group { display: flex; align-items: center; gap: 10px; }
 .volume-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #333; border-radius: 5px; }
 .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #fff; border-radius: 50%; }
@@ -1261,6 +1261,25 @@ footer {
     .player-controls-right { width: 70px; }
     .volume-slider { width: 60px; }
 
+    /* Mobile player title + volume stack */
+    .player-controls-right h4 {
+        display: block;
+        font-size: 0.55rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 70px;
+        margin: 0;
+        color: rgba(255,255,255,0.7);
+    }
+    .player-controls-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+    .volume-group { width: 100%; }
+
     body { padding-bottom: 100px; }
 
     /* Tighter mobile spacing */
@@ -1274,10 +1293,10 @@ footer {
     .section-header p { font-size: 0.8rem !important; }
     .interactive-hub-container { margin-top: 30px !important; }
     .hero-actions { margin-bottom: 0; }
-    .hero-title { font-size: 2.5rem; margin-bottom: 12px; }
-    .hero-title::after { width: 40px; margin: 12px auto 0; }
-    .hero-subtitle { font-size: 0.9rem; margin-bottom: 24px; }
-    .live-badge { margin-bottom: 10px; font-size: 0.65rem; padding: 5px 14px; }
+    .hero-title { font-size: 2rem; margin-bottom: 0; }
+    .hero-title::after { width: 30px; margin: 8px auto 8px; }
+    .hero-subtitle { font-size: 0.85rem; margin-bottom: 20px; }
+    .live-badge { margin-bottom: 10px; font-size: 0.6rem; padding: 4px 12px; }
 }
 
 /* Detailed Footer */
@@ -1527,14 +1546,27 @@ footer {
 
     /* USABLE Volume Slider */
     .player-controls-right {
-        width: 85px; /* WIDER FOR USABILITY */
+        width: 85px;
         padding-left: 5px;
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
     }
+    .player-controls-right h4 {
+        display: block;
+        font-size: 0.55rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 85px;
+        margin: 0;
+        color: rgba(255,255,255,0.7);
+    }
+    .volume-group { width: 100%; }
     .volume-slider { 
         width: 70px; 
-        height: 8px; /* Thicker track */
+        height: 8px;
     }
     .volume-slider::-webkit-slider-thumb {
         width: 20px; height: 20px; /* GIANT THUMB FOR TOUCH */

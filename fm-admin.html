@@ -68,15 +68,23 @@
                 <label>HLS Stream URL (Data Saver)</label>
                 <input type="text" id="cfg-hls-url" placeholder="https://.../live.m3u8">
             </div>
-            <div class="form-group" style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                 <div>
-                    <label>Latest App Version Code</label>
-                    <input type="number" id="cfg-version-code" placeholder="16">
+                    <label>Version Name (shown to users)</label>
+                    <input type="text" id="cfg-version-name" placeholder="27.33">
+                </div>
+                <div>
+                    <label>Version Code (internal number)</label>
+                    <input type="number" id="cfg-version-code" placeholder="27033">
                 </div>
                 <div>
                     <label>APK Download URL</label>
                     <input type="text" id="cfg-apk-url" placeholder="https://...">
                 </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <button type="button" id="sync-github-btn" style="background:#222; color:#FFD700; border:1px solid #FFD700; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.8rem;" onclick="syncFromGitHub()">⬇ Sync from GitHub</button>
+                <div id="gh-version-display" style="font-size:0.75rem; color:#888; align-self:center;"></div>
             </div>
             <div class="form-group">
                 <label>Update Banner Message</label>
@@ -246,7 +254,8 @@
                 document.getElementById('cfg-stream-url').value = cfg.stream_url || '';
                 document.getElementById('cfg-fallback-url').value = cfg.fallback_stream_url || '';
                 document.getElementById('cfg-hls-url').value = cfg.hls_stream_url || '';
-                document.getElementById('cfg-version-code').value = cfg.latest_version_code || 16;
+                document.getElementById('cfg-version-name').value = cfg.latest_version_name || '';
+                document.getElementById('cfg-version-code').value = cfg.latest_version_code || 27033;
                 document.getElementById('cfg-apk-url').value = cfg.apk_url || '';
                 document.getElementById('cfg-update-msg').value = cfg.update_message || '';
                 document.getElementById('cfg-status-msg').value = cfg.status_message || '';
@@ -272,11 +281,19 @@
                     const apiCfg = await apiRes.json();
                     const liveStatus = document.getElementById('live-api-status');
                     if (liveStatus) {
+                        const verName = apiCfg.latest_version_name ? `v${apiCfg.latest_version_name}` : `code ${apiCfg.latest_version_code}`;
                         liveStatus.innerHTML = `
-                            🤖 <b>Live API Response</b> (auto-detected from GitHub)<br>
-                            📦 Version: <b>${apiCfg.latest_version_code}</b> &nbsp;|&nbsp; 
+                            🤖 <b>GitHub Release</b> (auto-detected)<br>
+                            📦 <b>${verName}</b> &nbsp;|&nbsp;
                             🔗 <a href="${apiCfg.apk_url}" target="_blank" style="color: #FFD700;">APK URL</a>
+                            &nbsp;|&nbsp;
+                            <a href="#" onclick="syncFromGitHub(); return false;" style="color: #FFD700; text-decoration: underline;">Use this version</a>
                         `;
+                    }
+                    // Show GitHub version info next to sync button
+                    const ghDisplay = document.getElementById('gh-version-display');
+                    if (ghDisplay && apiCfg.latest_version_name) {
+                        ghDisplay.innerHTML = `Last release: <b style="color:#FFD700;">v${apiCfg.latest_version_name}</b> (code: ${apiCfg.latest_version_code})`;
                     }
                 }
             } catch (e) {
@@ -284,14 +301,32 @@
             }
         }
 
+        async function syncFromGitHub() {
+            try {
+                const apiRes = await fetch('/api/config?t=' + Date.now());
+                if (!apiRes.ok) throw new Error('API fetch failed');
+                const apiCfg = await apiRes.json();
+                document.getElementById('cfg-version-name').value = apiCfg.latest_version_name || '';
+                document.getElementById('cfg-version-code').value = apiCfg.latest_version_code || '';
+                document.getElementById('cfg-apk-url').value = apiCfg.apk_url || '';
+                const verName = apiCfg.latest_version_name ? `v${apiCfg.latest_version_name}` : `code ${apiCfg.latest_version_code}`;
+                alert(`✅ Synced from GitHub!\nVersion: ${verName}\nAPK URL: ${apiCfg.apk_url}`);
+            } catch (e) {
+                alert('❌ Failed to fetch from GitHub: ' + e.message);
+            }
+        }
+
         async function saveAppSettings() {
             try {
-                const vCode = parseInt(document.getElementById('cfg-version-code').value, 10) || 16;
+                const freshDoc = await db.collection('cms').doc('config').get();
+                const fresh = freshDoc.exists ? freshDoc.data() : {};
                 await db.collection('cms').doc('config').set({
+                    ...fresh,
                     stream_url: document.getElementById('cfg-stream-url').value,
                     fallback_stream_url: document.getElementById('cfg-fallback-url').value,
                     hls_stream_url: document.getElementById('cfg-hls-url').value,
-                    latest_version_code: vCode,
+                    latest_version_name: document.getElementById('cfg-version-name').value,
+                    latest_version_code: parseInt(document.getElementById('cfg-version-code').value, 10) || 27033,
                     apk_url: document.getElementById('cfg-apk-url').value,
                     update_message: document.getElementById('cfg-update-msg').value,
                     status_message: document.getElementById('cfg-status-msg').value,
@@ -307,7 +342,10 @@
 
         async function saveBranding() {
             try {
+                const freshDoc = await db.collection('cms').doc('config').get();
+                const fresh = freshDoc.exists ? freshDoc.data() : {};
                 await db.collection('cms').doc('config').set({
+                    ...fresh,
                     logo_url: document.getElementById('cfg-logo').value,
                     accent_color: document.getElementById('cfg-accent').value,
                     whatsapp_number: document.getElementById('cfg-wa-num').value,

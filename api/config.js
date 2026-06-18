@@ -14,8 +14,9 @@ module.exports = async (req, res) => {
     "stream_url": "https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3",
     "fallback_stream_url": "https://sonic-ca.instainternet.com/8022/stream",
     "hls_stream_url": "https://hellomachifm.duckdns.org/hls/hello_machi_fm/live.m3u8",
-    "latest_version_code": 17,
-    "apk_url": "https://github.com/fmhellomachi/hello-machi-backend/releases/download/V1/app-universal-release.apk",
+    "latest_version_code": 27033,
+    "latest_version_name": "27.33",
+    "apk_url": "https://github.com/fmhellomachi/hello-machi-backend/releases/download/V27.33/app-universal-release.apk",
     "update_message": "New update available! Tap to download the latest Hello Machi FM.",
     "whatsapp_number": "+91 9092363433",
     "whatsapp_message": "Hello Machi FM! 🎵",
@@ -72,8 +73,9 @@ module.exports = async (req, res) => {
         console.error("GitHub release fetch error (non-fatal):", ghErr);
     }
 
-    // Merge: defaults → GitHub → Firestore (Firestore/admin values win)
-    let finalConfig = { ...defaults, ...ghValues, ...flatConfig };
+    // Merge: defaults → Firestore → GitHub (GitHub auto-detect wins for version/apk)
+    // This prevents stale admin saves from overriding the actual latest release
+    let finalConfig = { ...defaults, ...flatConfig, ...ghValues };
 
     // If programs is empty/missing, fallback to scheduleBlocks from homepage
     if (!finalConfig.programs || finalConfig.programs.length === 0) {

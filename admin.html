@@ -190,8 +190,13 @@
 
             <div class="config-section">
                 <h4>📱 APP & UPDATES</h4>
-                <div class="config-row"><label>Latest Version Code</label><input type="number" id="cfg-version"></div>
+                <div class="config-row"><label>Version Name (shown to users)</label><input type="text" id="cfg-version-name" placeholder="27.33"></div>
+                <div class="config-row"><label>Version Code (internal number)</label><input type="number" id="cfg-version" placeholder="27033"></div>
                 <div class="config-row"><label>APK Download URL</label><input type="text" id="cfg-apk"></div>
+                <div class="config-row" style="border:none; padding-top:0;">
+                    <div id="gh-version-display-admin" style="font-size:0.8rem; color:#888;"></div>
+                    <button type="button" onclick="syncFromGitHubAdmin()" style="background:#222; color:#FFD700; border:1px solid #FFD700; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.75rem; margin-top:4px;">⬇ Sync from GitHub</button>
+                </div>
                 <div class="config-row"><label>Update Message</label><textarea id="cfg-update-msg"></textarea></div>
                 <div class="config-row"><label>Status Message</label><input type="text" id="cfg-status-msg"></div>
             </div>
@@ -381,6 +386,20 @@
                 console.error("Firestore load failed, using defaults:", err);
                 populateConfigForm(defaults, defaults);
             }
+
+            // Show GitHub auto-detected version
+            try {
+                const apiRes = await fetch('/api/config?t=' + Date.now());
+                if (apiRes.ok) {
+                    const apiCfg = await apiRes.json();
+                    const ghDisplay = document.getElementById('gh-version-display-admin');
+                    if (ghDisplay && apiCfg.latest_version_name) {
+                        ghDisplay.innerHTML = `Last release: <b style="color:#FFD700;">v${apiCfg.latest_version_name}</b> (code: ${apiCfg.latest_version_code}) &nbsp; <a href="#" onclick="syncFromGitHubAdmin(); return false;" style="color:#FFD700; font-size:0.75rem;">use</a>`;
+                    }
+                }
+            } catch (e) {
+                console.error("GitHub API fetch error:", e);
+            }
         }
 
         function populateConfigForm(cfg, defaults) {
@@ -389,6 +408,7 @@
             document.getElementById('cfg-hls').value = cfg.hls_stream_url || defaults.hls_stream_url;
             document.getElementById('cfg-logo').value = cfg.logo_url || defaults.logo_url;
             document.getElementById('cfg-accent').value = cfg.accent_color || defaults.accent_color;
+            document.getElementById('cfg-version-name').value = cfg.latest_version_name || defaults.latest_version_name || '';
             document.getElementById('cfg-version').value = cfg.latest_version_code || defaults.latest_version_code;
             document.getElementById('cfg-apk').value = cfg.apk_url || defaults.apk_url;
             document.getElementById('cfg-update-msg').value = cfg.update_message || defaults.update_message;
@@ -435,31 +455,37 @@
         }
 
         async function saveConfig() {
-            const config = {
-                stream_url: document.getElementById('cfg-stream').value,
-                fallback_stream_url: document.getElementById('cfg-fallback').value,
-                hls_stream_url: document.getElementById('cfg-hls').value,
-                logo_url: document.getElementById('cfg-logo').value,
-                accent_color: document.getElementById('cfg-accent').value,
-                latest_version_code: parseInt(document.getElementById('cfg-version').value) || 1,
-                apk_url: document.getElementById('cfg-apk').value,
-                update_message: document.getElementById('cfg-update-msg').value,
-                status_message: document.getElementById('cfg-status-msg').value,
-                whatsapp_number: document.getElementById('cfg-wa-num').value,
-                whatsapp_message: document.getElementById('cfg-wa-msg').value,
-                request_song_message: document.getElementById('cfg-request-msg').value,
-                facebook_url: document.getElementById('cfg-fb').value,
-                instagram_url: document.getElementById('cfg-ig').value,
-                youtube_url: document.getElementById('cfg-yt').value,
-                custom_link: document.getElementById('cfg-custom').value,
-                welcome_title: document.getElementById('cfg-title').value,
-                welcome_greeting: document.getElementById('cfg-greeting').value,
-                programs: programData.filter(p => p.title || p.time)
-            };
-
             try {
+                // Read fresh data from Firestore first to avoid stale overwrites
+                const freshDoc = await db.collection('cms').doc('config').get();
+                const fresh = freshDoc.exists ? freshDoc.data() : {};
+
+                const merged = {
+                    ...fresh,
+                    stream_url: document.getElementById('cfg-stream').value,
+                    fallback_stream_url: document.getElementById('cfg-fallback').value,
+                    hls_stream_url: document.getElementById('cfg-hls').value,
+                    logo_url: document.getElementById('cfg-logo').value,
+                    accent_color: document.getElementById('cfg-accent').value,
+                    latest_version_name: document.getElementById('cfg-version-name').value,
+                    latest_version_code: parseInt(document.getElementById('cfg-version').value) || 27033,
+                    apk_url: document.getElementById('cfg-apk').value,
+                    update_message: document.getElementById('cfg-update-msg').value,
+                    status_message: document.getElementById('cfg-status-msg').value,
+                    whatsapp_number: document.getElementById('cfg-wa-num').value,
+                    whatsapp_message: document.getElementById('cfg-wa-msg').value,
+                    request_song_message: document.getElementById('cfg-request-msg').value,
+                    facebook_url: document.getElementById('cfg-fb').value,
+                    instagram_url: document.getElementById('cfg-ig').value,
+                    youtube_url: document.getElementById('cfg-yt').value,
+                    custom_link: document.getElementById('cfg-custom').value,
+                    welcome_title: document.getElementById('cfg-title').value,
+                    welcome_greeting: document.getElementById('cfg-greeting').value,
+                    programs: programData.filter(p => p.title || p.time)
+                };
+
                 // Save to Firestore (used by Vercel API → Android app)
-                await db.collection('cms').doc('config').set(config, { merge: true });
+                await db.collection('cms').doc('config').set(merged, { merge: true });
                 showConfigStatus('✅ Firestore saved! Syncing to Render...', 'success');
 
                 // Also sync to Render's config.json (used by web portal)
@@ -467,7 +493,7 @@
                     await fetch('https://hello-machi-backend.onrender.com/config', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(config)
+                        body: JSON.stringify(merged)
                     });
                     showConfigStatus('✅ Config saved to Firestore + Render synced successfully!', 'success');
                     alert('✅ Config saved & synced successfully!');
@@ -486,6 +512,21 @@
             el.textContent = msg;
             el.className = type;
             el.style.display = 'block';
+        }
+
+        async function syncFromGitHubAdmin() {
+            try {
+                const apiRes = await fetch('/api/config?t=' + Date.now());
+                if (!apiRes.ok) throw new Error('API fetch failed');
+                const apiCfg = await apiRes.json();
+                document.getElementById('cfg-version-name').value = apiCfg.latest_version_name || '';
+                document.getElementById('cfg-version').value = apiCfg.latest_version_code || '';
+                document.getElementById('cfg-apk').value = apiCfg.apk_url || '';
+                const verName = apiCfg.latest_version_name ? `v${apiCfg.latest_version_name}` : `code ${apiCfg.latest_version_code}`;
+                alert(`✅ Synced from GitHub!\nVersion: ${verName}\nAPK URL: ${apiCfg.apk_url}`);
+            } catch (e) {
+                alert('❌ Failed to fetch from GitHub: ' + e.message);
+            }
         }
     </script>
 </body>

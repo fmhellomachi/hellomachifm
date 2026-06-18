@@ -183,6 +183,7 @@
                 <h4>🔊 STREAM SETUP</h4>
                 <div class="config-row"><label>Live Stream URL (Primary)</label><input type="text" id="cfg-stream"></div>
                 <div class="config-row"><label>Fallback Stream URL (Secondary)</label><input type="text" id="cfg-fallback"></div>
+                <div class="config-row"><label>HLS Stream URL (Data Saver)</label><input type="text" id="cfg-hls"></div>
                 <div class="config-row"><label>Logo URL</label><input type="text" id="cfg-logo"></div>
                 <div class="config-row"><label>Accent Color</label><input type="text" id="cfg-accent"></div>
             </div>
@@ -345,6 +346,7 @@
             const defaults = {
                 stream_url: "https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3",
                 fallback_stream_url: "https://sonic-ca.instainternet.com/8022/stream",
+                hls_stream_url: "https://hellomachifm.duckdns.org/hls/hello_machi_fm/live.m3u8",
                 logo_url: "https://hello-machi.github.io/hello-machi-portal/logo.jpg",
                 accent_color: "#D4AF37",
                 latest_version_code: 16,
@@ -384,6 +386,7 @@
         function populateConfigForm(cfg, defaults) {
             document.getElementById('cfg-stream').value = cfg.stream_url || defaults.stream_url;
             document.getElementById('cfg-fallback').value = cfg.fallback_stream_url || defaults.fallback_stream_url;
+            document.getElementById('cfg-hls').value = cfg.hls_stream_url || defaults.hls_stream_url;
             document.getElementById('cfg-logo').value = cfg.logo_url || defaults.logo_url;
             document.getElementById('cfg-accent').value = cfg.accent_color || defaults.accent_color;
             document.getElementById('cfg-version').value = cfg.latest_version_code || defaults.latest_version_code;
@@ -435,6 +438,7 @@
             const config = {
                 stream_url: document.getElementById('cfg-stream').value,
                 fallback_stream_url: document.getElementById('cfg-fallback').value,
+                hls_stream_url: document.getElementById('cfg-hls').value,
                 logo_url: document.getElementById('cfg-logo').value,
                 accent_color: document.getElementById('cfg-accent').value,
                 latest_version_code: parseInt(document.getElementById('cfg-version').value) || 1,

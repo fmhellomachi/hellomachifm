@@ -13,6 +13,7 @@ module.exports = async (req, res) => {
   const defaults = {
     "stream_url": "https://hellomachifm.duckdns.org/listen/hello_machi_fm/radio.mp3",
     "fallback_stream_url": "https://sonic-ca.instainternet.com/8022/stream",
+    "hls_stream_url": "https://hellomachifm.duckdns.org/hls/hello_machi_fm/live.m3u8",
     "latest_version_code": 17,
     "apk_url": "https://github.com/fmhellomachi/hello-machi-backend/releases/download/V1/app-universal-release.apk",
     "update_message": "New update available! Tap to download the latest Hello Machi FM.",
@@ -50,25 +51,29 @@ module.exports = async (req, res) => {
       }
     }
 
-    let finalConfig = { ...defaults, ...flatConfig };
-
-    // Auto-detect latest version from GitHub (overrides Firestore)
+    // Auto-detect latest version from GitHub (used as base, overridable by Firestore)
+    let ghValues = {};
     try {
-      const ghRes = await fetch('https://api.github.com/repos/fmhellomachi/hello-machi-backend/releases/latest');
-      if (ghRes.ok) {
-        const ghData = await ghRes.json();
-        const tag = ghData.tag_name || '';
-        const match = tag.match(/(\d+)\.(\d+)/);
-        if (match) {
-          const ghVersion = parseInt(match[1], 10) * 1000 + parseInt(match[2], 10);
-          finalConfig.latest_version_code = ghVersion;
-          finalConfig.latest_version_name = tag.replace(/^v/, '');
-          finalConfig.apk_url = `https://github.com/fmhellomachi/hello-machi-backend/releases/download/${tag}/app-universal-release.apk`;
+        const ghRes = await fetch('https://api.github.com/repos/fmhellomachi/hello-machi-backend/releases/latest');
+        if (ghRes.ok) {
+            const ghData = await ghRes.json();
+            const tag = ghData.tag_name || '';
+            const match = tag.match(/(\d+)\.(\d+)/);
+            if (match) {
+                const ghVersion = parseInt(match[1], 10) * 1000 + parseInt(match[2], 10);
+                ghValues = {
+                    latest_version_code: ghVersion,
+                    latest_version_name: tag.replace(/^v/, ''),
+                    apk_url: `https://github.com/fmhellomachi/hello-machi-backend/releases/download/${tag}/app-universal-release.apk`
+                };
+            }
         }
-      }
     } catch (ghErr) {
-      console.error("GitHub release fetch error (non-fatal):", ghErr);
+        console.error("GitHub release fetch error (non-fatal):", ghErr);
     }
+
+    // Merge: defaults → GitHub → Firestore (Firestore/admin values win)
+    let finalConfig = { ...defaults, ...ghValues, ...flatConfig };
 
     // If programs is empty/missing, fallback to scheduleBlocks from homepage
     if (!finalConfig.programs || finalConfig.programs.length === 0) {

@@ -23,7 +23,7 @@ module.exports = async (req, res) => {
       artist = "Idhu Namma Area Machi";
     }
 
-    // Dynamic iTunes Cover Art Lookup by song title + artist
+    // Search iTunes first for high-quality cover art, fall back to Azuracast's own art
     let coverArt = "https://hellomachifm.vercel.app/logo.jpg";
     if (title && title !== "Hello Machi FM" && title !== "Machi Live Radio") {
       try {
@@ -34,7 +34,6 @@ module.exports = async (req, res) => {
           if (itunesData.results && itunesData.results.length > 0) {
             const artworkUrl = itunesData.results[0].artworkUrl100 || "";
             if (artworkUrl) {
-              // Replace with 600x600 for premium high-resolution cover art
               coverArt = artworkUrl.replace("100x100bb", "600x600bb");
             }
           }
@@ -42,6 +41,17 @@ module.exports = async (req, res) => {
       } catch (itunesErr) {
         console.error("iTunes Search API error:", itunesErr);
       }
+    }
+
+    // Fall back to Azuracast's own art if iTunes didn't find anything
+    if (coverArt === "https://hellomachifm.vercel.app/logo.jpg" && song.art) {
+      coverArt = song.art;
+    }
+
+    // Add a cache-busting query param to force image refresh when song changes
+    if (coverArt && !coverArt.includes('logo.jpg')) {
+      const separator = coverArt.includes('?') ? '&' : '?';
+      coverArt += separator + '_t=' + (data.now_playing?.sh_id || Date.now());
     }
 
     res.status(200).json({

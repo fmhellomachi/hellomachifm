@@ -64,6 +64,10 @@
                 <label>Backup Audio Stream URL</label>
                 <input type="text" id="cfg-fallback-url" placeholder="https://...">
             </div>
+            <div class="form-group">
+                <label>HLS Stream URL (Data Saver)</label>
+                <input type="text" id="cfg-hls-url" placeholder="https://.../live.m3u8">
+            </div>
             <div class="form-group" style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
                 <div>
                     <label>Latest App Version Code</label>
@@ -241,6 +245,7 @@
                 const cfg = cfgDoc.data();
                 document.getElementById('cfg-stream-url').value = cfg.stream_url || '';
                 document.getElementById('cfg-fallback-url').value = cfg.fallback_stream_url || '';
+                document.getElementById('cfg-hls-url').value = cfg.hls_stream_url || '';
                 document.getElementById('cfg-version-code').value = cfg.latest_version_code || 16;
                 document.getElementById('cfg-apk-url').value = cfg.apk_url || '';
                 document.getElementById('cfg-update-msg').value = cfg.update_message || '';
@@ -285,6 +290,7 @@
                 await db.collection('cms').doc('config').set({
                     stream_url: document.getElementById('cfg-stream-url').value,
                     fallback_stream_url: document.getElementById('cfg-fallback-url').value,
+                    hls_stream_url: document.getElementById('cfg-hls-url').value,
                     latest_version_code: vCode,
                     apk_url: document.getElementById('cfg-apk-url').value,
                     update_message: document.getElementById('cfg-update-msg').value,

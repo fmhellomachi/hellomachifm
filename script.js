@@ -473,12 +473,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             button.onclick = async () => {
                                 try {
                                     const pollRef = db.collection('polls').doc('active');
-                                    const snap = await pollRef.get();
-                                    if (!snap.exists) return;
-                                    const votes = snap.data().votes || {};
                                     const key = String(idx);
-                                    votes[key] = (votes[key] || 0) + 1;
-                                    await pollRef.update({ votes });
+                                    const updateField = {};
+                                    updateField[`votes.${key}`] = firebase.firestore.FieldValue.increment(1);
+                                    await pollRef.update(updateField);
                                     localStorage.setItem('voted_poll_' + pollId, opt);
                                     alert("🗳 Vote submitted successfully!");
                                 } catch (err) {

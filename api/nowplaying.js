@@ -57,7 +57,8 @@ module.exports = async (req, res) => {
     res.status(200).json({
       title: title,
       artist: artist,
-      cover_art: coverArt
+      cover_art: coverArt,
+      is_request: !!data.now_playing?.is_request
     });
   } catch (err) {
     console.error("Azuracast API proxy fetch error:", err);

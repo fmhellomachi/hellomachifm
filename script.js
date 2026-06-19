@@ -387,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCMSData();
 
     // --- Dynamic HUD & Now Playing Polling ---
+    let lastLoadedTitle = "";
     async function pollNowPlaying() {
         try {
             const res = await fetch('/api/nowplaying');
@@ -411,6 +412,52 @@ document.addEventListener('DOMContentLoaded', () => {
                     playerTitle.textContent = data.title;
                 }
                 if (diskImg && data.cover_art) diskImg.src = data.cover_art;
+
+                // Handle Dedication HUD Matching
+                const dedBanner = document.getElementById('hud-dedication-banner');
+                if (dedBanner) {
+                    const isRequest = data.is_request || false;
+                    const cleanTitle = data.title.toLowerCase().replace(/_/g, " ").replace(/[\-()\[\]]/g, " ").trim();
+                    
+                    if (isRequest && cleanTitle && cleanTitle !== "hello machi fm") {
+                        // Fetch dedication details from firestore
+                        db.collection('requests')
+                            .orderBy('timestamp', 'desc')
+                            .limit(50)
+                            .get()
+                            .then(snapshot => {
+                                let bestMatch = null;
+                                snapshot.forEach(doc => {
+                                    const req = doc.data();
+                                    const reqTitle = (req.title || "").toLowerCase().replace(/_/g, " ").replace(/[\-()\[\]]/g, " ").trim();
+                                    if (reqTitle && (cleanTitle.includes(reqTitle) || reqTitle.includes(cleanTitle))) {
+                                        if (!bestMatch || req.timestamp > bestMatch.timestamp) {
+                                            bestMatch = req;
+                                        }
+                                    }
+                                });
+
+                                if (bestMatch) {
+                                    document.getElementById('hud-dedicate-from').textContent = bestMatch.nickname || 'A Listener';
+                                    document.getElementById('hud-dedicate-to').textContent = bestMatch.recipient || 'Loved One';
+                                    
+                                    let msg = bestMatch.dedication || bestMatch.raw_message || '🎵 Dedicated Song';
+                                    if (msg.includes("Msg: ")) msg = msg.substring(msg.indexOf("Msg: ") + 5);
+                                    document.getElementById('hud-dedicate-message').textContent = `"${msg}"`;
+                                    
+                                    dedBanner.style.display = 'block';
+                                } else {
+                                    dedBanner.style.display = 'none';
+                                }
+                            })
+                            .catch(err => {
+                                console.error("Firestore dedication load error:", err);
+                                dedBanner.style.display = 'none';
+                            });
+                    } else {
+                        dedBanner.style.display = 'none';
+                    }
+                }
             }
         } catch (e) {
             console.error("Error fetching nowplaying metadata:", e);
@@ -692,6 +739,90 @@ document.addEventListener('DOMContentLoaded', () => {
             }, err => {
                 wallFeed.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.3); padding: 20px;">Unable to load shoutouts.</div>';
             });
+    }
+
+    // --- Tab Selector Logic ---
+    const tabShoutout = document.getElementById('tab-shoutout');
+    const tabDedicate = document.getElementById('tab-dedicate');
+    const panelShoutout = document.getElementById('panel-shoutout');
+    const panelDedicate = document.getElementById('panel-dedicate');
+
+    if (tabShoutout && tabDedicate && panelShoutout && panelDedicate) {
+        tabShoutout.onclick = () => {
+            tabShoutout.classList.add('active');
+            tabShoutout.style.color = '#00E676';
+            tabShoutout.style.borderBottomColor = '#00E676';
+
+            tabDedicate.classList.remove('active');
+            tabDedicate.style.color = 'rgba(255,255,255,0.4)';
+            tabDedicate.style.borderBottomColor = 'transparent';
+
+            panelShoutout.style.display = 'flex';
+            panelDedicate.style.display = 'none';
+        };
+
+        tabDedicate.onclick = () => {
+            tabDedicate.classList.add('active');
+            tabDedicate.style.color = '#FFD700';
+            tabDedicate.style.borderBottomColor = '#FFD700';
+
+            tabShoutout.classList.remove('active');
+            tabShoutout.style.color = 'rgba(255,255,255,0.4)';
+            tabShoutout.style.borderBottomColor = 'transparent';
+
+            panelShoutout.style.display = 'none';
+            panelDedicate.style.display = 'flex';
+        };
+    }
+
+    // --- Song Dedication Submission ---
+    const dedicateTitle = document.getElementById('dedicate-song-title');
+    const dedicateArtist = document.getElementById('dedicate-song-artist');
+    const dedicateFrom = document.getElementById('dedicate-from');
+    const dedicateTo = document.getElementById('dedicate-to');
+    const dedicateMsg = document.getElementById('dedicate-message');
+    const dedicateSendBtn = document.getElementById('home-dedicate-send-btn');
+
+    if (dedicateSendBtn) {
+        dedicateSendBtn.onclick = async () => {
+            const title = dedicateTitle.value.trim();
+            const artist = dedicateArtist.value.trim();
+            const from = dedicateFrom.value.trim() || 'A Listener';
+            const to = dedicateTo.value.trim() || 'Loved One';
+            const message = dedicateMsg.value.trim();
+
+            if (!title) {
+                alert("Please enter the song title!");
+                return;
+            }
+
+            dedicateSendBtn.disabled = true;
+            dedicateSendBtn.textContent = 'SUBMITTING...';
+
+            try {
+                // Same structure as Mobile App
+                await db.collection('requests').add({
+                    title: title,
+                    artist: artist || 'Machi FM Artist',
+                    nickname: from,
+                    recipient: to,
+                    dedication: message ? `From: ${from} To: ${to} Msg: ${message}` : `From: ${from} To: ${to}`,
+                    raw_message: message,
+                    timestamp: Date.now()
+                });
+
+                alert("💝 Song dedicated successfully! It will show live on air when played.");
+                dedicateTitle.value = '';
+                dedicateArtist.value = '';
+                dedicateMsg.value = '';
+            } catch (err) {
+                console.error("Error submitting dedication:", err);
+                alert("Failed to submit dedication. Please check connection.");
+            } finally {
+                dedicateSendBtn.disabled = false;
+                dedicateSendBtn.textContent = 'SUBMIT DEDICATION';
+            }
+        };
     }
 
     function escapeHtml(str) {

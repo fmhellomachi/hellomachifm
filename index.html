@@ -72,7 +72,25 @@
                             </div>
                         </div>
 
-                        <div style="background: rgba(255, 255, 255, 0.02); border-radius: 8px; padding: 6px 10px; font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); display: flex; align-items: center; gap: 6px;">
+                        <!-- Premium Web Dedication Banner -->
+                        <div id="hud-dedication-banner" style="display: none; background: linear-gradient(90deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 105, 180, 0.08) 50%, transparent 100%); border-left: 3dp solid #FFD700; border-radius: 4px 10px 10px 4px; padding: 10px; margin-top: 4px; border: 1px solid rgba(255, 215, 0, 0.15); box-shadow: 0 4px 15px rgba(255, 215, 0, 0.04);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; font-weight: 800; color: #FFD700; letter-spacing: 0.15rem; margin-bottom: 4px;">
+                                <span>💝 DEDICATED SONG</span>
+                                <span id="hud-dedication-heart" style="animation: pulse 1s infinite alternate; font-size: 0.75rem;">❤️</span>
+                            </div>
+                            <div style="font-size: 0.85rem; font-weight: 800; margin-bottom: 2px;">
+                                <span id="hud-dedicate-from" style="color: #FFD700; text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);">Someone</span> 
+                                <span style="color: #FFD700;"> ➜ </span> 
+                                <span id="hud-dedicate-to" style="color: #FF69B4; text-shadow: 0 0 6px rgba(255, 105, 180, 0.3);">Loved One</span>
+                            </div>
+                            <div style="overflow: hidden; white-space: nowrap; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px; margin-top: 2px;">
+                                <div class="marquee-scroll-container" style="overflow: hidden; white-space: nowrap; width: 100%;">
+                                    <span id="hud-dedicate-message" style="color: rgba(255,255,255,0.85); font-size: 0.75rem; font-style: italic; font-weight: 500;">"Wishing you the best..."</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: rgba(255, 255, 255, 0.02); border-radius: 8px; padding: 6px 10px; font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); display: flex; align-items: center; gap: 6px; margin-top: 4px;">
                             <span class="pulse" style="width:4px; height:4px;"></span> <span id="hud-status-text">Streaming high-quality stereo audio.</span>
                         </div>
                     </div>
@@ -93,13 +111,34 @@
                         </div>
                     </div>
 
-                    <!-- Direct Shoutout Sender -->
-                    <div class="glass-card">
-                        <div class="glass-card-label" style="color: #00E676;"><i class="fa-solid fa-paper-plane"></i> Request or Shoutout</div>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Upgraded Request/Dedication Hub -->
+                    <div class="glass-card" style="border-color: rgba(0, 230, 118, 0.08); display: flex; flex-direction: column;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                            <button id="tab-shoutout" class="tab-btn active" style="flex: 1; background: none; border: none; color: #00E676; font-weight: 800; font-size: 0.8rem; cursor: pointer; padding: 6px 0; outline: none; border-bottom: 2px solid #00E676; transition: all 0.3s;">
+                                <i class="fa-solid fa-paper-plane"></i> SHOUTOUT
+                            </button>
+                            <button id="tab-dedicate" class="tab-btn" style="flex: 1; background: none; border: none; color: rgba(255,255,255,0.4); font-weight: 800; font-size: 0.8rem; cursor: pointer; padding: 6px 0; outline: none; border-bottom: 2px solid transparent; transition: all 0.3s;">
+                                <i class="fa-solid fa-heart"></i> DEDICATE SONG
+                            </button>
+                        </div>
+
+                        <!-- Panel 1: Shoutout Form -->
+                        <div id="panel-shoutout" style="display: flex; flex-direction: column; gap: 10px;">
                             <input type="text" id="home-shoutout-nickname" placeholder="Your Nickname" class="glass-input" />
-                            <textarea id="home-shoutout-message" placeholder="Type song title or message to RJ..." rows="2" class="glass-input" style="resize: none;"></textarea>
+                            <textarea id="home-shoutout-message" placeholder="Type message to RJ..." rows="2" class="glass-input" style="resize: none;"></textarea>
                             <button id="home-shoutout-send-btn" class="btn-shoutout-send">SEND LIVE TO RJ</button>
+                        </div>
+
+                        <!-- Panel 2: Dedicate Song Form -->
+                        <div id="panel-dedicate" style="display: none; flex-direction: column; gap: 10px;">
+                            <input type="text" id="dedicate-song-title" placeholder="Song Title" class="glass-input" />
+                            <input type="text" id="dedicate-song-artist" placeholder="Artist Name" class="glass-input" />
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <input type="text" id="dedicate-from" placeholder="From (Your Name)" class="glass-input" />
+                                <input type="text" id="dedicate-to" placeholder="To (Loved One)" class="glass-input" />
+                            </div>
+                            <textarea id="dedicate-message" placeholder="Write dedication message..." rows="2" class="glass-input" style="resize: none;"></textarea>
+                            <button id="home-dedicate-send-btn" class="btn-shoutout-send" style="background: linear-gradient(135deg, #FF69B4 0%, #FFD700 100%); color: #000; border-color: transparent;">SUBMIT DEDICATION</button>
                         </div>
                     </div>
 

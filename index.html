@@ -43,6 +43,7 @@
                 <p class="hero-subtitle" id="hero-subtitle">Your exclusive destination for the finest Tamil hits.</p>
                 <div class="hero-actions">
                     <button class="btn btn-primary btn-glow" id="play-hero-btn"><i class="fa-solid fa-play"></i> LISTEN LIVE</button>
+                    <a href="dedicate.html" class="btn btn-primary" style="background: linear-gradient(135deg, #FF69B4 0%, #FFD700 100%); border: none; color: #000; font-weight: 800;"><i class="fa-solid fa-heart"></i> DEDICATE</a>
                     <a href="https://wa.me/919092363433" target="_blank" class="btn btn-secondary"><i class="fa-brands fa-whatsapp"></i> MESSAGE US</a>
                 </div>
 
@@ -111,34 +112,15 @@
                         </div>
                     </div>
 
-                    <!-- Upgraded Request/Dedication Hub -->
+                    <!-- Shoutout Card -->
                     <div class="glass-card" style="border-color: rgba(0, 230, 118, 0.08); display: flex; flex-direction: column;">
-                        <div style="display: flex; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
-                            <button id="tab-shoutout" class="tab-btn active" style="flex: 1; background: none; border: none; color: #00E676; font-weight: 800; font-size: 0.8rem; cursor: pointer; padding: 6px 0; outline: none; border-bottom: 2px solid #00E676; transition: all 0.3s;">
-                                <i class="fa-solid fa-paper-plane"></i> SHOUTOUT
-                            </button>
-                            <button id="tab-dedicate" class="tab-btn" style="flex: 1; background: none; border: none; color: rgba(255,255,255,0.4); font-weight: 800; font-size: 0.8rem; cursor: pointer; padding: 6px 0; outline: none; border-bottom: 2px solid transparent; transition: all 0.3s;">
-                                <i class="fa-solid fa-heart"></i> DEDICATE SONG
-                            </button>
+                        <div style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                            <span style="font-weight: 800; font-size: 0.8rem; color: #00E676;"><i class="fa-solid fa-paper-plane"></i> SHOUTOUT</span>
                         </div>
-
-                        <!-- Panel 1: Shoutout Form -->
                         <div id="panel-shoutout" style="display: flex; flex-direction: column; gap: 10px;">
                             <input type="text" id="home-shoutout-nickname" placeholder="Your Nickname" class="glass-input" />
                             <textarea id="home-shoutout-message" placeholder="Type message to RJ..." rows="2" class="glass-input" style="resize: none;"></textarea>
                             <button id="home-shoutout-send-btn" class="btn-shoutout-send">SEND LIVE TO RJ</button>
-                        </div>
-
-                        <!-- Panel 2: Dedicate Song Form -->
-                        <div id="panel-dedicate" style="display: none; flex-direction: column; gap: 10px;">
-                            <input type="text" id="dedicate-song-title" placeholder="Song Title" class="glass-input" />
-                            <input type="text" id="dedicate-song-artist" placeholder="Artist Name" class="glass-input" />
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <input type="text" id="dedicate-from" placeholder="From (Your Name)" class="glass-input" />
-                                <input type="text" id="dedicate-to" placeholder="To (Loved One)" class="glass-input" />
-                            </div>
-                            <textarea id="dedicate-message" placeholder="Write dedication message..." rows="2" class="glass-input" style="resize: none;"></textarea>
-                            <button id="home-dedicate-send-btn" class="btn-shoutout-send" style="background: linear-gradient(135deg, #FF69B4 0%, #FFD700 100%); color: #000; border-color: transparent;">SUBMIT DEDICATION</button>
                         </div>
                     </div>
 

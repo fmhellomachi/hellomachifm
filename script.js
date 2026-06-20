@@ -387,6 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCMSData();
 
     // --- Dynamic HUD & Now Playing Polling ---
+    // NOTE: All Firestore data (poll + dedications) is fetched via the cached
+    // Vercel /api/nowplaying endpoint — NO direct Firestore reads from the browser.
     let lastLoadedTitle = "";
     async function pollNowPlaying() {
         try {
@@ -408,147 +410,135 @@ document.addEventListener('DOMContentLoaded', () => {
                 const playerTitle = document.getElementById('now-playing-title');
                 const diskImg = document.getElementById('player-disk-img');
                 
-                if (playerTitle) {
-                    playerTitle.textContent = data.title;
-                }
+                if (playerTitle) playerTitle.textContent = data.title;
                 if (diskImg && data.cover_art) diskImg.src = data.cover_art;
 
-                // Handle Dedication HUD Matching
+                // Handle Dedication HUD — use recent_requests from Vercel cache (no Firestore reads)
                 const dedBanner = document.getElementById('hud-dedication-banner');
                 if (dedBanner) {
                     const isRequest = data.is_request || false;
-                    const cleanTitle = data.title.toLowerCase().replace(/_/g, " ").replace(/[\-()\[\]]/g, " ").trim();
+                    const cleanTitle = data.title.toLowerCase().replace(/_/g, ' ').replace(/[-()[\]]/g, ' ').trim();
                     
-                    if (isRequest && cleanTitle && cleanTitle !== "hello machi fm") {
-                        // Fetch dedication details from firestore
-                        db.collection('requests')
-                            .orderBy('timestamp', 'desc')
-                            .limit(50)
-                            .get()
-                            .then(snapshot => {
-                                let bestMatch = null;
-                                snapshot.forEach(doc => {
-                                    const req = doc.data();
-                                    const reqTitle = (req.title || "").toLowerCase().replace(/_/g, " ").replace(/[\-()\[\]]/g, " ").trim();
-                                    if (reqTitle && (cleanTitle.includes(reqTitle) || reqTitle.includes(cleanTitle))) {
-                                        if (!bestMatch || req.timestamp > bestMatch.timestamp) {
-                                            bestMatch = req;
-                                        }
-                                    }
-                                });
-
-                                if (bestMatch) {
-                                    document.getElementById('hud-dedicate-from').textContent = bestMatch.nickname || 'A Listener';
-                                    document.getElementById('hud-dedicate-to').textContent = bestMatch.recipient || 'Loved One';
-                                    
-                                    let msg = bestMatch.dedication || bestMatch.raw_message || '🎵 Dedicated Song';
-                                    if (msg.includes("Msg: ")) msg = msg.substring(msg.indexOf("Msg: ") + 5);
-                                    document.getElementById('hud-dedicate-message').textContent = `"${msg}"`;
-                                    
-                                    dedBanner.style.display = 'block';
-                                } else {
-                                    dedBanner.style.display = 'none';
-                                }
-                            })
-                            .catch(err => {
-                                console.error("Firestore dedication load error:", err);
-                                dedBanner.style.display = 'none';
-                            });
+                    if (isRequest && cleanTitle && cleanTitle !== 'hello machi fm' && Array.isArray(data.recent_requests)) {
+                        let bestMatch = null;
+                        let bestTime = 0;
+                        data.recent_requests.forEach(item => {
+                            const fields = item.document && item.document.fields;
+                            if (!fields) return;
+                            const reqTitle = (fields.title && fields.title.stringValue || '').toLowerCase().replace(/_/g, ' ').replace(/[-()[\]]/g, ' ').trim();
+                            if (!reqTitle || (!cleanTitle.includes(reqTitle) && !reqTitle.includes(cleanTitle))) return;
+                            const ts = fields.timestamp && (fields.timestamp.doubleValue || fields.timestamp.integerValue) || 0;
+                            if (ts > bestTime) { bestTime = ts; bestMatch = fields; }
+                        });
+                        if (bestMatch) {
+                            const fromEl = document.getElementById('hud-dedicate-from');
+                            const toEl = document.getElementById('hud-dedicate-to');
+                            const msgEl = document.getElementById('hud-dedicate-message');
+                            if (fromEl) fromEl.textContent = (bestMatch.nickname && bestMatch.nickname.stringValue) || 'A Listener';
+                            if (toEl) toEl.textContent = (bestMatch.recipient && bestMatch.recipient.stringValue) || 'Loved One';
+                            if (msgEl) {
+                                let msg = (bestMatch.raw_message && bestMatch.raw_message.stringValue) || (bestMatch.dedication && bestMatch.dedication.stringValue) || '🎵 Dedicated Song';
+                                if (msg.includes('Msg: ')) msg = msg.substring(msg.indexOf('Msg: ') + 5);
+                                msgEl.textContent = `"${msg}"`;
+                            }
+                            dedBanner.style.display = 'block';
+                        } else {
+                            dedBanner.style.display = 'none';
+                        }
                     } else {
                         dedBanner.style.display = 'none';
                     }
                 }
+
+                // Handle Poll — use active_poll from Vercel cache (no onSnapshot needed)
+                updatePollUI(data.active_poll);
             }
         } catch (e) {
-            console.error("Error fetching nowplaying metadata:", e);
+            console.error('Error fetching nowplaying metadata:', e);
         }
     }
     
     pollNowPlaying();
     setInterval(pollNowPlaying, 20000);
 
-    // --- Live Studio Poll Listener ---
-    const homePollEmpty = document.getElementById('home-poll-empty');
-    const homePollActive = document.getElementById('home-poll-active');
-    const homePollQuestion = document.getElementById('home-poll-question');
-    const homePollOptions = document.getElementById('home-poll-options');
-    const homePollContainer = document.getElementById('home-poll-container');
-    const homePollCard = document.getElementById('home-poll-card');
-    
-    if (homePollContainer) {
-        db.collection('polls').doc('active').onSnapshot(doc => {
-            const hasActivePoll = doc.exists && doc.data().status === 'active';
-            
-            if (homePollCard) {
-                homePollCard.style.display = hasActivePoll ? 'flex' : 'none';
-            }
-            
-            if (hasActivePoll) {
-                const poll = doc.data();
-                const pollId = doc.id + '_' + poll.timestamp;
-                
-                if (homePollEmpty) homePollEmpty.style.display = 'none';
-                if (homePollActive) homePollActive.style.display = 'flex';
-                if (homePollQuestion) homePollQuestion.textContent = poll.question;
-                
-                if (homePollOptions) {
-                    homePollOptions.innerHTML = '';
-                    const hasVoted = localStorage.getItem('voted_poll_' + pollId);
-                    const votes = poll.votes || {};
-                    const total = Object.values(votes).reduce((a, b) => a + b, 0);
-                    
-                    function createVoteBtn(opt, pct, count, hasVoted, pollId, idx) {
-                        if (hasVoted) {
-                            const div = document.createElement('div');
-                            div.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin-bottom: 5px;";
-                            div.innerHTML = `
-                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #ccc;">
-                                    <span>${opt}</span>
-                                    <strong>${count} votes (${pct}%)</strong>
-                                </div>
-                                <div style="background: rgba(255,255,255,0.05); height: 8px; border-radius: 4px; overflow: hidden;">
-                                    <div style="background: #FFD700; height: 100%; width: ${pct}%; border-radius: 4px; transition: width 0.4s ease;"></div>
-                                </div>
-                            `;
-                            return div;
-                        } else {
-                            const button = document.createElement('button');
-                            button.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; padding: 10px; cursor: pointer; text-align: left; font-size: 0.85rem; font-weight: bold; transition: all 0.2s; outline: none; margin-bottom: 5px;";
-                            button.textContent = opt;
-                            button.onmouseover = () => { button.style.background = 'rgba(255, 215, 0, 0.1)'; button.style.borderColor = '#FFD700'; };
-                            button.onmouseout = () => { button.style.background = 'rgba(255,255,255,0.05)'; button.style.borderColor = 'rgba(255,255,255,0.1)'; };
-                            button.onclick = async () => {
-                                try {
-                                    const pollRef = db.collection('polls').doc('active');
-                                    const key = String(idx);
-                                    const updateField = {};
-                                    updateField[`votes.${key}`] = firebase.firestore.FieldValue.increment(1);
-                                    await pollRef.update(updateField);
-                                    localStorage.setItem('voted_poll_' + pollId, opt);
-                                    alert("🗳 Vote submitted successfully!");
-                                } catch (err) {
-                                    console.error("Vote failed:", err);
-                                    alert("Vote error: " + (err.message || "Try again."));
-                                }
-                            };
-                            return button;
+    // --- Poll UI — updated from Vercel /api/nowplaying cache (no Firestore onSnapshot) ---
+    function updatePollUI(activePollRaw) {
+        const homePollEmpty = document.getElementById('home-poll-empty');
+        const homePollActive = document.getElementById('home-poll-active');
+        const homePollQuestion = document.getElementById('home-poll-question');
+        const homePollOptions = document.getElementById('home-poll-options');
+        const homePollCard = document.getElementById('home-poll-card');
+
+        // Parse Firestore REST format fields
+        const fields = activePollRaw && activePollRaw.fields;
+        const status = fields && fields.status && fields.status.stringValue;
+        const hasActivePoll = !!fields && status === 'active';
+
+        if (homePollCard) homePollCard.style.display = hasActivePoll ? 'flex' : 'none';
+
+        if (!hasActivePoll) {
+            if (homePollEmpty) homePollEmpty.style.display = 'block';
+            if (homePollActive) homePollActive.style.display = 'none';
+            return;
+        }
+
+        const question = fields.question && fields.question.stringValue || '';
+        const rawOptions = fields.options && fields.options.arrayValue && fields.options.arrayValue.values || [];
+        const options = rawOptions.map(v => v.stringValue || '');
+        const rawVotes = fields.votes && fields.votes.mapValue && fields.votes.mapValue.fields || {};
+        const votes = {};
+        Object.keys(rawVotes).forEach(k => { votes[k] = parseInt(rawVotes[k].integerValue || 0); });
+        const total = Object.values(votes).reduce((a, b) => a + b, 0);
+        const tsRaw = fields.timestamp && (fields.timestamp.integerValue || fields.timestamp.doubleValue) || Date.now();
+        const pollId = 'active_' + tsRaw;
+
+        if (homePollEmpty) homePollEmpty.style.display = 'none';
+        if (homePollActive) homePollActive.style.display = 'flex';
+        if (homePollQuestion) homePollQuestion.textContent = question;
+
+        if (homePollOptions) {
+            homePollOptions.innerHTML = '';
+            const hasVoted = localStorage.getItem('voted_poll_' + pollId);
+
+            options.forEach((opt, idx) => {
+                const key = String(idx);
+                const count = votes[key] || 0;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+
+                if (hasVoted) {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-bottom:5px;';
+                    div.innerHTML = `
+                        <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#ccc;">
+                            <span>${opt}</span><strong>${count} votes (${pct}%)</strong>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.05);height:8px;border-radius:4px;overflow:hidden;">
+                            <div style="background:#FFD700;height:100%;width:${pct}%;border-radius:4px;transition:width 0.4s ease;"></div>
+                        </div>`;
+                    homePollOptions.appendChild(div);
+                } else {
+                    const button = document.createElement('button');
+                    button.style.cssText = 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:white;padding:10px;cursor:pointer;text-align:left;font-size:0.85rem;font-weight:bold;transition:all 0.2s;outline:none;margin-bottom:5px;width:100%;';
+                    button.textContent = opt;
+                    button.onmouseover = () => { button.style.background = 'rgba(255,215,0,0.1)'; button.style.borderColor = '#FFD700'; };
+                    button.onmouseout = () => { button.style.background = 'rgba(255,255,255,0.05)'; button.style.borderColor = 'rgba(255,255,255,0.1)'; };
+                    button.onclick = async () => {
+                        try {
+                            // Vote write is the ONE allowed direct Firestore call (write-only, user-triggered)
+                            const updateField = {};
+                            updateField[`votes.${key}`] = firebase.firestore.FieldValue.increment(1);
+                            await db.collection('polls').doc('active').update(updateField);
+                            localStorage.setItem('voted_poll_' + pollId, opt);
+                            alert('🗳 Vote submitted! Results will update shortly.');
+                        } catch (err) {
+                            console.error('Vote failed:', err);
+                            alert('Vote error: ' + (err.message || 'Try again.'));
                         }
-                    }
-                    
-                    // Render in hub card
-                    poll.options.forEach((opt, idx) => {
-                        const key = String(idx);
-                        const count = votes[key] || 0;
-                        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                        homePollOptions.appendChild(createVoteBtn(opt, pct, count, hasVoted, pollId, idx));
-                    });
+                    };
+                    homePollOptions.appendChild(button);
                 }
-            } else {
-                if (homePollEmpty) homePollEmpty.style.display = 'block';
-                if (homePollActive) homePollActive.style.display = 'none';
-                if (homePollCard) homePollCard.style.display = 'none';
-            }
-        });
+            });
+        }
     }
 
     // --- Live Shoutout Submission ---

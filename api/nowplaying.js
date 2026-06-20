@@ -1,3 +1,10 @@
+// Global caching variables for Firestore to prevent quota limits
+let cachedPoll = null;
+let lastPollFetch = 0;
+
+let cachedRequests = null;
+let lastRequestsFetch = 0;
+
 module.exports = async (req, res) => {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -54,11 +61,53 @@ module.exports = async (req, res) => {
       coverArt += separator + '_t=' + (data.now_playing?.sh_id || Date.now());
     }
 
+    const is_request = !!data.now_playing?.is_request;
+    const now = Date.now();
+
+    // Fetch Active Poll from Firestore (cache for 60 seconds)
+    if (now - lastPollFetch > 60000) {
+      try {
+        const pRes = await fetch("https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents/polls/active?key=AIzaSyDcU-Gh0FjHeRHVy5A4ezE9H3-94u6aIb4");
+        if (pRes.ok) cachedPoll = await pRes.json();
+      } catch (e) {
+        console.error("Poll fetch error:", e);
+      }
+      lastPollFetch = now;
+    }
+
+    // Fetch Recent Requests from Firestore if song is a request (cache for 60 seconds)
+    if (is_request) {
+      if (now - lastRequestsFetch > 60000) {
+        try {
+          const reqJson = {
+            structuredQuery: {
+              from: [{ collectionId: "requests" }],
+              orderBy: [{ field: { fieldPath: "timestamp" }, direction: "DESCENDING" }],
+              limit: 5
+            }
+          };
+          const dRes = await fetch("https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents:runQuery?key=AIzaSyDcU-Gh0FjHeRHVy5A4ezE9H3-94u6aIb4", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reqJson)
+          });
+          if (dRes.ok) cachedRequests = await dRes.json();
+        } catch (e) {
+          console.error("Requests fetch error:", e);
+        }
+        lastRequestsFetch = now;
+      }
+    } else {
+      cachedRequests = null; // Clear cache if not a request
+    }
+
     res.status(200).json({
       title: title,
       artist: artist,
       cover_art: coverArt,
-      is_request: !!data.now_playing?.is_request
+      is_request: is_request,
+      active_poll: cachedPoll,
+      recent_requests: cachedRequests
     });
   } catch (err) {
     console.error("Azuracast API proxy fetch error:", err);

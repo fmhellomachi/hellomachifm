@@ -358,14 +358,9 @@
         let cooldownEnd = parseInt(localStorage.getItem('dedicate_cooldown')) || 0;
 
         async function searchSongs(query) {
-            if (!query || query.length < 2) {
-                resultsCount.textContent = 'Type at least 2 characters to search';
-                songList.innerHTML = '';
-                return;
-            }
             searchBtn.disabled = true;
-            searchBtn.textContent = 'Searching...';
-            resultsCount.textContent = 'Searching...';
+            searchBtn.textContent = query.trim() ? 'Searching...' : 'Loading...';
+            resultsCount.textContent = 'Loading songs...';
             try {
                 const r = await fetch('/api/requests/search?q=' + encodeURIComponent(query));
                 const d = await r.json();
@@ -396,6 +391,8 @@
             searchBtn.disabled = false;
             searchBtn.innerHTML = '<i class="fa-solid fa-search"></i> Search';
         }
+
+        searchSongs('');
 
         function selectSong(song) {
             selectedSong = song;

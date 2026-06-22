@@ -10,6 +10,8 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Content-Type', 'application/json');
+  // Cache the response at Vercel's edge network for 20 seconds
+  res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate');
 
   try {
     const response = await fetch('https://hellomachifm.duckdns.org/api/nowplaying/hello_machi_fm');
@@ -49,11 +51,11 @@ module.exports = async (req, res) => {
 
     const is_request = !!data.now_playing?.is_request;
     const now = Date.now();
-
-    // ── Dedication lookup (zero Firestore reads) ─────────────────────────────
+    // ── Dedication lookup (conditional database lookup for requests) ─────────
     let current_dedication = null;
     const DEDICATE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
+    // 1. Attempt in-memory lookup first
     if (state.currentDedication && (now - state.dedicationSetAt) < DEDICATE_TTL_MS) {
       const d = state.currentDedication;
       const cleanPlaying = normalizeTitle(title);
@@ -68,6 +70,52 @@ module.exports = async (req, res) => {
           recipient: d.recipient || '',
           message:   d.message   || '',
         };
+      }
+    }
+
+    // 2. If no in-memory match found but stream confirms it's a request, query Firestore
+    if (!current_dedication && is_request && title && title !== 'Hello Machi FM') {
+      try {
+        const FIREBASE_API_KEY = 'AIzaSyDcU-Gh0FjHeRHVy5A4ezE9H3-94u6aIb4';
+        const queryUrl = `https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents:runQuery?key=${FIREBASE_API_KEY}`;
+        const queryJson = {
+          structuredQuery: {
+            from: [{ collectionId: 'requests' }],
+            where: {
+              fieldFilter: {
+                field: { fieldPath: 'title' },
+                op: 'EQUAL',
+                value: { stringValue: title }
+              }
+            },
+            orderBy: [{ field: { fieldPath: 'timestamp' }, direction: 'DESCENDING' }],
+            limit: 1
+          }
+        };
+
+        const fsRes = await fetch(queryUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(queryJson)
+        });
+
+        if (fsRes.ok) {
+          const fsData = await fsRes.json();
+          if (Array.isArray(fsData) && fsData.length > 0 && fsData[0].document) {
+            const fields = fsData[0].document.fields || {};
+            const nickname = fields.nickname?.stringValue || 'A Listener';
+            const recipient = fields.recipient?.stringValue || '';
+            const message = fields.raw_message?.stringValue || fields.dedication?.stringValue || '';
+            
+            current_dedication = {
+              nickname,
+              recipient,
+              message
+            };
+          }
+        }
+      } catch (fsErr) {
+        console.error('API Firestore lookup fallback error:', fsErr);
       }
     }
     // ─────────────────────────────────────────────────────────────────────────

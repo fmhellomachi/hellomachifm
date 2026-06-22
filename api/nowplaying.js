@@ -75,30 +75,57 @@ module.exports = async (req, res) => {
       lastPollFetch = now;
     }
 
-    // Fetch Recent Requests from Firestore if song is a request (cache for 60 seconds)
-    if (is_request) {
-      if (now - lastRequestsFetch > 60000) {
-        try {
-          const reqJson = {
-            structuredQuery: {
-              from: [{ collectionId: "requests" }],
-              orderBy: [{ field: { fieldPath: "timestamp" }, direction: "DESCENDING" }],
-              limit: 5
-            }
-          };
-          const dRes = await fetch("https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents:runQuery?key=AIzaSyDcU-Gh0FjHeRHVy5A4ezE9H3-94u6aIb4", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(reqJson)
-          });
-          if (dRes.ok) cachedRequests = await dRes.json();
-        } catch (e) {
-          console.error("Requests fetch error:", e);
+    // Fetch Recent Requests from Firestore (cache for 5 minutes / 300,000 ms)
+    if (now - lastRequestsFetch > 300000 || !cachedRequests) {
+      try {
+        const reqJson = {
+          structuredQuery: {
+            from: [{ collectionId: "requests" }],
+            orderBy: [{ field: { fieldPath: "timestamp" }, direction: "DESCENDING" }],
+            limit: 100
+          }
+        };
+        const dRes = await fetch("https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents:runQuery?key=AIzaSyDcU-Gh0FjHeRHVy5A4ezE9H3-94u6aIb4", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reqJson)
+        });
+        if (dRes.ok) {
+          const rawResults = await dRes.json();
+          // Filter out empty or null items
+          cachedRequests = Array.isArray(rawResults) ? rawResults.filter(item => item && item.document) : [];
         }
-        lastRequestsFetch = now;
+      } catch (e) {
+        console.error("Requests fetch error:", e);
       }
-    } else {
-      cachedRequests = null; // Clear cache if not a request
+      lastRequestsFetch = now;
+    }
+
+    // Server-side dedication title matching if this song is a request
+    let current_dedication = null;
+    if (is_request && cachedRequests && cachedRequests.length > 0) {
+      const cleanPlayingTitle = (title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      for (const item of cachedRequests) {
+        if (!item.document || !item.document.fields) continue;
+        const fields = item.document.fields;
+        const docRawTitle = fields.title?.stringValue || "";
+        const cleanDocTitle = cleanMetadata(docRawTitle).toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (cleanDocTitle && (cleanDocTitle === cleanPlayingTitle || cleanPlayingTitle.includes(cleanDocTitle) || cleanDocTitle.includes(cleanPlayingTitle))) {
+          let nickname = fields.nickname?.stringValue || "A Listener";
+          let recipient = fields.recipient?.stringValue || "You";
+          let message = fields.raw_message?.stringValue || fields.dedication?.stringValue || "Dedicated Song";
+          
+          if (message.startsWith("From: ") && message.includes("Msg: ")) {
+            message = message.split("Msg: ")[1];
+          }
+          current_dedication = {
+            nickname: nickname,
+            recipient: recipient,
+            message: message
+          };
+          break;
+        }
+      }
     }
 
     res.status(200).json({
@@ -107,7 +134,8 @@ module.exports = async (req, res) => {
       cover_art: coverArt,
       is_request: is_request,
       active_poll: cachedPoll,
-      recent_requests: cachedRequests
+      recent_requests: cachedRequests ? cachedRequests.slice(0, 5) : [], // keep return array small
+      current_dedication: current_dedication
     });
   } catch (err) {
     console.error("Azuracast API proxy fetch error:", err);

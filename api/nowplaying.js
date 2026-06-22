@@ -1,12 +1,19 @@
 // Module-level title → dedication cache (persists across warm serverless invocations)
 // Key = cleaned title string, Value = { data: {nickname,recipient,message}|null, timestamp: ms }
 const dedicationCache = new Map();
+const nowPlayingCache = { timestamp: 0, response: null };
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate');
+  res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=40');
+
+  const now = Date.now();
+  const NOW_PLAYING_TTL = 15 * 1000; // 15 seconds
+  if (nowPlayingCache.response && (now - nowPlayingCache.timestamp) < NOW_PLAYING_TTL) {
+    return res.status(200).json(nowPlayingCache.response);
+  }
 
   try {
     const response = await fetch('https://hellomachifm.duckdns.org/api/nowplaying/hello_machi_fm');
@@ -95,7 +102,7 @@ module.exports = async (req, res) => {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
-    res.status(200).json({
+    const output = {
       title,
       artist,
       cover_art: coverArt,
@@ -103,7 +110,11 @@ module.exports = async (req, res) => {
       active_poll: null,
       recent_requests: [],
       current_dedication,
-    });
+    };
+
+    nowPlayingCache.timestamp = Date.now();
+    nowPlayingCache.response = output;
+    res.status(200).json(output);
   } catch (err) {
     console.error('nowplaying error:', err);
     res.status(200).json({

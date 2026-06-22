@@ -1,16 +1,11 @@
-const state = require('./_state');
-
-// ── NO FIRESTORE READS HERE ──────────────────────────────────────────────────
-// All dedication data flows through /api/dedicate (POST) which stores it in the
-// shared in-memory `state` object. This eliminates all Firestore quota usage
-// from the nowplaying polling loop (every 30 s × N users = huge read counts).
-// ─────────────────────────────────────────────────────────────────────────────
+// Module-level title → dedication cache (persists across warm serverless invocations)
+// Key = cleaned title string, Value = { data: {nickname,recipient,message}|null, timestamp: ms }
+const dedicationCache = new Map();
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Content-Type', 'application/json');
-  // Cache the response at Vercel's edge network for 20 seconds
   res.setHeader('Cache-Control', 's-maxage=20, stale-while-revalidate');
 
   try {
@@ -29,7 +24,6 @@ module.exports = async (req, res) => {
       artist = 'Idhu Namma Area Machi';
     }
 
-    // iTunes cover art
     let coverArt = 'https://hellomachifm.vercel.app/logo.jpg';
     if (title && title !== 'Hello Machi FM' && title !== 'Machi Live Radio') {
       try {
@@ -49,73 +43,54 @@ module.exports = async (req, res) => {
       coverArt += (coverArt.includes('?') ? '&' : '?') + '_t=' + (data.now_playing?.sh_id || Date.now());
     }
 
-    const is_request = !!data.now_playing?.is_request;
-    const now = Date.now();
-    // ── Dedication lookup (conditional database lookup for requests) ─────────
+    // ── Firestore Dedication Lookup ──────────────────────────────────────────
     let current_dedication = null;
-    const DEDICATE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+    const now = Date.now();
+    const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
-    // 1. Attempt in-memory lookup first
-    if (state.currentDedication && (now - state.dedicationSetAt) < DEDICATE_TTL_MS) {
-      const d = state.currentDedication;
-      const cleanPlaying = normalizeTitle(title);
-      const cleanStored  = normalizeTitle(d.songTitle || '');
+    if (title && title !== 'Hello Machi FM' && title !== 'Machi Live Radio') {
+      const cached = dedicationCache.get(title);
+      if (cached && (now - cached.timestamp) < CACHE_TTL) {
+        current_dedication = cached.data;
+      } else {
+        try {
+          const FIREBASE_API_KEY = 'AIzaSyDcU-Gh0FjHeRHVy5A4ezE9H3-94u6aIb4';
+          const queryUrl = `https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents:runQuery?key=${FIREBASE_API_KEY}`;
+          const queryJson = {
+            structuredQuery: {
+              from: [{ collectionId: 'requests' }],
+              where: {
+                fieldFilter: {
+                  field: { fieldPath: 'title' },
+                  op: 'EQUAL',
+                  value: { stringValue: title }
+                }
+              },
+              orderBy: [{ field: { fieldPath: 'timestamp' }, direction: 'DESCENDING' }],
+              limit: 1
+            }
+          };
 
-      if (cleanStored && cleanPlaying &&
-          (cleanPlaying === cleanStored ||
-           cleanPlaying.includes(cleanStored) ||
-           cleanStored.includes(cleanPlaying))) {
-        current_dedication = {
-          nickname:  d.nickname  || 'A Listener',
-          recipient: d.recipient || '',
-          message:   d.message   || '',
-        };
-      }
-    }
+          const fsRes = await fetch(queryUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(queryJson)
+          });
 
-    // 2. If no in-memory match found but stream confirms it's a request, query Firestore
-    if (!current_dedication && is_request && title && title !== 'Hello Machi FM') {
-      try {
-        const FIREBASE_API_KEY = 'AIzaSyDcU-Gh0FjHeRHVy5A4ezE9H3-94u6aIb4';
-        const queryUrl = `https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents:runQuery?key=${FIREBASE_API_KEY}`;
-        const queryJson = {
-          structuredQuery: {
-            from: [{ collectionId: 'requests' }],
-            where: {
-              fieldFilter: {
-                field: { fieldPath: 'title' },
-                op: 'EQUAL',
-                value: { stringValue: title }
-              }
-            },
-            orderBy: [{ field: { fieldPath: 'timestamp' }, direction: 'DESCENDING' }],
-            limit: 1
+          if (fsRes.ok) {
+            const fsData = await fsRes.json();
+            if (Array.isArray(fsData) && fsData.length > 0 && fsData[0].document) {
+              const fields = fsData[0].document.fields || {};
+              current_dedication = {
+                nickname: fields.nickname?.stringValue || 'A Listener',
+                recipient: fields.recipient?.stringValue || '',
+                message: fields.raw_message?.stringValue || fields.dedication?.stringValue || '',
+              };
+            }
           }
-        };
-
-        const fsRes = await fetch(queryUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(queryJson)
-        });
-
-        if (fsRes.ok) {
-          const fsData = await fsRes.json();
-          if (Array.isArray(fsData) && fsData.length > 0 && fsData[0].document) {
-            const fields = fsData[0].document.fields || {};
-            const nickname = fields.nickname?.stringValue || 'A Listener';
-            const recipient = fields.recipient?.stringValue || '';
-            const message = fields.raw_message?.stringValue || fields.dedication?.stringValue || '';
-            
-            current_dedication = {
-              nickname,
-              recipient,
-              message
-            };
-          }
-        }
-      } catch (fsErr) {
-        console.error('API Firestore lookup fallback error:', fsErr);
+        } catch (e) { console.error('Dedication fetch error:', e); }
+        
+        dedicationCache.set(title, { timestamp: now, data: current_dedication });
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
@@ -124,9 +99,9 @@ module.exports = async (req, res) => {
       title,
       artist,
       cover_art: coverArt,
-      is_request,
-      active_poll: null,        // polls managed separately to avoid Firestore reads
-      recent_requests: [],      // removed — was causing 100s of Firestore reads/day
+      is_request: !!data.now_playing?.is_request,
+      active_poll: null,
+      recent_requests: [],
       current_dedication,
     });
   } catch (err) {
@@ -141,10 +116,6 @@ module.exports = async (req, res) => {
     });
   }
 };
-
-function normalizeTitle(text) {
-  return (text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
 
 function cleanMetadata(text) {
   if (!text) return '';

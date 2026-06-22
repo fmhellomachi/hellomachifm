@@ -400,7 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const hudStatus = document.getElementById('hud-status-text');
                 const hudMarquee = document.getElementById('hud-track-marquee');
                 
-                if (hudCover && data.cover_art) hudCover.src = data.cover_art;
+                const coverUrl = data.cover_art ? data.cover_art + (data.cover_art.includes('?') ? '&' : '?') + 'cb=' + Date.now() : '';
+                if (hudCover && coverUrl) hudCover.src = coverUrl;
                 if (hudStatus) hudStatus.textContent = `Live: "${data.title}" by ${data.artist || 'Machi RJ'}`;
                 if (hudMarquee) {
                     hudMarquee.innerHTML = `<span class="marquee-prefix">NOW PLAYING</span> ${data.title.toUpperCase()} — ${(data.artist || 'Hello Machi FM').toUpperCase()}`;
@@ -411,16 +412,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const diskImg = document.getElementById('player-disk-img');
                 
                 if (playerTitle) playerTitle.textContent = data.title;
-                if (diskImg && data.cover_art) diskImg.src = data.cover_art;
+                if (diskImg && coverUrl) diskImg.src = coverUrl;
 
-                // Handle Dedication HUD — use recent_requests from Vercel cache (no Firestore reads)
+                // Handle Dedication HUD — use current_dedication from Vercel /api/nowplaying if available
                 const dedBanner = document.getElementById('hud-dedication-banner');
                 if (dedBanner) {
                     const isRequest = data.is_request || false;
                     const cleanTitle = data.title.toLowerCase().replace(/_/g, ' ').replace(/[-()[\]]/g, ' ').trim();
-                    
-                    if (isRequest && cleanTitle && cleanTitle !== 'hello machi fm' && Array.isArray(data.recent_requests)) {
-                        let bestMatch = null;
+                    const currentDedication = data.current_dedication || null;
+                    let bestMatch = null;
+
+                    if (currentDedication && (currentDedication.nickname || currentDedication.recipient || currentDedication.message)) {
+                        bestMatch = currentDedication;
+                    } else if (isRequest && cleanTitle && cleanTitle !== 'hello machi fm' && Array.isArray(data.recent_requests)) {
                         let bestTime = 0;
                         data.recent_requests.forEach(item => {
                             const fields = item.document && item.document.fields;
@@ -430,21 +434,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             const ts = fields.timestamp && (fields.timestamp.doubleValue || fields.timestamp.integerValue) || 0;
                             if (ts > bestTime) { bestTime = ts; bestMatch = fields; }
                         });
-                        if (bestMatch) {
-                            const fromEl = document.getElementById('hud-dedicate-from');
-                            const toEl = document.getElementById('hud-dedicate-to');
-                            const msgEl = document.getElementById('hud-dedicate-message');
-                            if (fromEl) fromEl.textContent = (bestMatch.nickname && bestMatch.nickname.stringValue) || 'A Listener';
-                            if (toEl) toEl.textContent = (bestMatch.recipient && bestMatch.recipient.stringValue) || 'Loved One';
-                            if (msgEl) {
-                                let msg = (bestMatch.raw_message && bestMatch.raw_message.stringValue) || (bestMatch.dedication && bestMatch.dedication.stringValue) || '🎵 Dedicated Song';
-                                if (msg.includes('Msg: ')) msg = msg.substring(msg.indexOf('Msg: ') + 5);
-                                msgEl.textContent = `"${msg}"`;
-                            }
-                            dedBanner.style.display = 'block';
-                        } else {
-                            dedBanner.style.display = 'none';
+                    }
+
+                    if (bestMatch) {
+                        const fromEl = document.getElementById('hud-dedicate-from');
+                        const toEl = document.getElementById('hud-dedicate-to');
+                        const msgEl = document.getElementById('hud-dedicate-message');
+                        if (fromEl) fromEl.textContent = bestMatch.nickname || bestMatch.nickname?.stringValue || 'A Listener';
+                        if (toEl) toEl.textContent = bestMatch.recipient || bestMatch.recipient?.stringValue || 'Loved One';
+                        if (msgEl) {
+                            let msg = bestMatch.message || bestMatch.raw_message?.stringValue || bestMatch.dedication?.stringValue || '🎵 Dedicated Song';
+                            if (msg.includes('Msg: ')) msg = msg.substring(msg.indexOf('Msg: ') + 5);
+                            msgEl.textContent = `"${msg}"`;
                         }
+                        dedBanner.style.display = 'block';
                     } else {
                         dedBanner.style.display = 'none';
                     }
@@ -458,8 +461,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    pollNowPlaying();
-    setInterval(pollNowPlaying, 20000);
+    // Start visibility-aware polling: faster when visible, slower when hidden
+    const FG_POLL_INTERVAL = 10000; // 10s when page is visible
+    const BG_POLL_INTERVAL = 60000; // 60s when page is hidden/backgrounded
+    let _pollTimer = null;
+    let _currentInterval = FG_POLL_INTERVAL;
+
+    function setNowPlayingLoadingState() {
+        const hudCover = document.getElementById('hud-cover-art');
+        const hudStatus = document.getElementById('hud-status-text');
+        const hudMarquee = document.getElementById('hud-track-marquee');
+        const playerTitle = document.getElementById('now-playing-title');
+        const diskImg = document.getElementById('player-disk-img');
+        try {
+            if (hudCover) hudCover.src = '';
+            if (diskImg) diskImg.src = '';
+            if (hudStatus) hudStatus.textContent = 'Loading...';
+            if (hudMarquee) hudMarquee.innerHTML = `<span class="marquee-prefix">NOW PLAYING</span> LOADING...`;
+            if (playerTitle) playerTitle.textContent = 'Loading...';
+        } catch (e) { /* ignore DOM errors during early load */ }
+    }
+
+    async function schedulePoll() {
+        try {
+            if (!document.hidden) {
+                _currentInterval = FG_POLL_INTERVAL;
+                await pollNowPlaying();
+                _pollTimer = setTimeout(schedulePoll, _currentInterval);
+            } else {
+                _currentInterval = BG_POLL_INTERVAL;
+                _pollTimer = setTimeout(schedulePoll, _currentInterval);
+            }
+        } catch (e) {
+            console.error('schedulePoll error:', e);
+            // back off on repeated errors but cap at 2 minutes
+            const backoff = Math.min(_currentInterval * 2, 120000);
+            _pollTimer = setTimeout(schedulePoll, backoff);
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            // Immediately refresh when coming back to foreground
+            if (_pollTimer) { clearTimeout(_pollTimer); _pollTimer = null; }
+            schedulePoll();
+        }
+    });
+
+    // show loading state immediately so users don't see stale content
+    setNowPlayingLoadingState();
+
+    // kick off the poll loop immediately
+    schedulePoll();
 
     // --- Poll UI — updated from Vercel /api/nowplaying cache (no Firestore onSnapshot) ---
     function updatePollUI(activePollRaw) {

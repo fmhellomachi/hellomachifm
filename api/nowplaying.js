@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
       coverArt = song.art;
     }
     if (coverArt && !coverArt.includes('logo.jpg')) {
-      coverArt += (coverArt.includes('?') ? '&' : '?') + '_t=' + (data.now_playing?.sh_id || Date.now());
+      coverArt += (coverArt.includes('?') ? '&' : '?') + 'cb=' + Date.now();
     }
 
     // ── Firestore Dedication Lookup ──────────────────────────────────────────

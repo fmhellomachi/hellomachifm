@@ -274,16 +274,17 @@
             }
             renderScheduleUI();
 
-            // Also fetch live API status to show auto-detected values from GitHub
+            // Also fetch live API status from Oracle VPS (auto-detected GitHub version)
             try {
-                const apiRes = await fetch('/api/config');
+                const ORACLE_CONFIG = 'http://140.245.193.137:3000/api/config';
+                const apiRes = await fetch(ORACLE_CONFIG);
                 if (apiRes.ok) {
                     const apiCfg = await apiRes.json();
                     const liveStatus = document.getElementById('live-api-status');
                     if (liveStatus) {
                         const verName = apiCfg.latest_version_name ? `v${apiCfg.latest_version_name}` : `code ${apiCfg.latest_version_code}`;
                         liveStatus.innerHTML = `
-                            🤖 <b>GitHub Release</b> (auto-detected)<br>
+                            🤖 <b>Oracle Live Config</b> (Firestore + GitHub auto-detected)<br>
                             📦 <b>${verName}</b> &nbsp;|&nbsp;
                             🔗 <a href="${apiCfg.apk_url}" target="_blank" style="color: #FFD700;">APK URL</a>
                             &nbsp;|&nbsp;
@@ -303,8 +304,8 @@
 
         async function syncFromGitHub() {
             try {
-                const apiRes = await fetch('/api/config?t=' + Date.now());
-                if (!apiRes.ok) throw new Error('API fetch failed');
+                const apiRes = await fetch('http://140.245.193.137:3000/api/config?t=' + Date.now());
+                if (!apiRes.ok) throw new Error('Oracle API fetch failed');
                 const apiCfg = await apiRes.json();
                 document.getElementById('cfg-version-name').value = apiCfg.latest_version_name || '';
                 document.getElementById('cfg-version-code').value = apiCfg.latest_version_code || '';
@@ -312,7 +313,7 @@
                 const verName = apiCfg.latest_version_name ? `v${apiCfg.latest_version_name}` : `code ${apiCfg.latest_version_code}`;
                 alert(`✅ Synced from GitHub!\nVersion: ${verName}\nAPK URL: ${apiCfg.apk_url}`);
             } catch (e) {
-                alert('❌ Failed to fetch from GitHub: ' + e.message);
+                alert('❌ Failed to fetch from Oracle/GitHub: ' + e.message);
             }
         }
 
@@ -367,11 +368,17 @@
             try {
                 const cfgDoc = await db.collection('cms').doc('config').get();
                 if (cfgDoc.exists) {
+                    // Push to legacy Render backend (kept for compatibility)
                     await fetch('https://hello-machi-backend.onrender.com/config', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(cfgDoc.data())
-                    });
+                    }).catch(() => {}); // non-fatal
+
+                    // Bust Oracle VPS config cache so next app launch gets fresh data immediately
+                    await fetch('http://140.245.193.137:3000/api/config/refresh', {
+                        method: 'POST'
+                    }).catch(() => {}); // non-fatal
                 }
             } catch (e) {
                 console.error("Render sync failed:", e);

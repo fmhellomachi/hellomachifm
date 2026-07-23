@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastLoadedTitle = "";
     async function pollNowPlaying() {
         try {
-            const res = await fetch('/api/nowplaying');
+            const res = await fetch('http://140.245.193.137:3000/api/nowplaying');
             const data = await res.json();
             if (data && data.title) {
                 // Update Homepage HUD
@@ -727,7 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Fetch APK Download Config from API ---
-    fetch('/api/config')
+    fetch('http://140.245.193.137:3000/api/config')
         .then(r => r.json())
         .then(cfg => {
             const link = document.getElementById('apk-download-link');

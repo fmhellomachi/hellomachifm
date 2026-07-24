@@ -323,13 +323,17 @@
 
         async function pollMetadata() {
             try {
-                const r = await fetch('http://140.245.193.137:3000/api/nowplaying');
+                let r = await fetch('/api/nowplaying').catch(() => null);
+                if (!r || !r.ok) {
+                    r = await fetch('http://140.245.193.137:3000/api/nowplaying').catch(() => null);
+                }
+                if (!r || !r.ok) return;
                 const d = await r.json();
                 if (d) {
                     if (d.title) {
                         nowPlayingTitle.textContent = d.title;
                     }
-                    if (d.coverArt && d.coverArt !== logo.jpg) {
+                    if (d.coverArt && d.coverArt !== 'logo.jpg') {
                         diskImg.src = d.coverArt;
                     }
                 }
@@ -362,7 +366,11 @@
             searchBtn.textContent = query.trim() ? 'Searching...' : 'Loading...';
             resultsCount.textContent = 'Loading songs...';
             try {
-                const r = await fetch('http://140.245.193.137:3000/api/requests/search?q=' + encodeURIComponent(query));
+                let r = await fetch('/api/requests/search?q=' + encodeURIComponent(query)).catch(() => null);
+                if (!r || !r.ok) {
+                    r = await fetch('http://140.245.193.137:3000/api/requests/search?q=' + encodeURIComponent(query)).catch(() => null);
+                }
+                if (!r || !r.ok) throw new Error('Search failed');
                 const d = await r.json();
                 songList.innerHTML = '';
                 if (d.songs && d.songs.length > 0) {
@@ -467,7 +475,7 @@
             statusMsg.textContent = '⏳ Sending your dedication...';
 
             try {
-                const r = await fetch('http://140.245.193.137:3000/api/requests/submit', {
+                let r = await fetch('/api/requests/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -478,7 +486,22 @@
                         recipient: to,
                         message: msg
                     })
-                });
+                }).catch(() => null);
+                if (!r || !r.ok) {
+                    r = await fetch('http://140.245.193.137:3000/api/requests/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            requestId: selectedSong.requestId,
+                            title: selectedSong.title,
+                            artist: selectedSong.artist,
+                            nickname: from,
+                            recipient: to,
+                            message: msg
+                        })
+                    }).catch(() => null);
+                }
+                if (!r || !r.ok) throw new Error('Submission failed');
                 const d = await r.json();
                 if (d.success) {
                     statusMsg.innerHTML = '✅ ' + d.message;

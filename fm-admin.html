@@ -274,17 +274,19 @@
             }
             renderScheduleUI();
 
-            // Also fetch live API status from Oracle VPS (auto-detected GitHub version)
+            // Fetch live API status (try relative /api/config first to avoid Mixed Content, fallback to Oracle IP)
             try {
-                const ORACLE_CONFIG = 'http://140.245.193.137:3000/api/config';
-                const apiRes = await fetch(ORACLE_CONFIG);
-                if (apiRes.ok) {
+                let apiRes = await fetch('/api/config').catch(() => null);
+                if (!apiRes || !apiRes.ok) {
+                    apiRes = await fetch('http://140.245.193.137:3000/api/config').catch(() => null);
+                }
+                if (apiRes && apiRes.ok) {
                     const apiCfg = await apiRes.json();
                     const liveStatus = document.getElementById('live-api-status');
                     if (liveStatus) {
                         const verName = apiCfg.latest_version_name ? `v${apiCfg.latest_version_name}` : `code ${apiCfg.latest_version_code}`;
                         liveStatus.innerHTML = `
-                            🤖 <b>Oracle Live Config</b> (Firestore + GitHub auto-detected)<br>
+                            🤖 <b>Live API Config</b> (Firestore + GitHub auto-detected)<br>
                             📦 <b>${verName}</b> &nbsp;|&nbsp;
                             🔗 <a href="${apiCfg.apk_url}" target="_blank" style="color: #FFD700;">APK URL</a>
                             &nbsp;|&nbsp;
@@ -304,8 +306,11 @@
 
         async function syncFromGitHub() {
             try {
-                const apiRes = await fetch('http://140.245.193.137:3000/api/config?t=' + Date.now());
-                if (!apiRes.ok) throw new Error('Oracle API fetch failed');
+                let apiRes = await fetch('/api/config?t=' + Date.now()).catch(() => null);
+                if (!apiRes || !apiRes.ok) {
+                    apiRes = await fetch('http://140.245.193.137:3000/api/config?t=' + Date.now()).catch(() => null);
+                }
+                if (!apiRes || !apiRes.ok) throw new Error('API fetch failed');
                 const apiCfg = await apiRes.json();
                 document.getElementById('cfg-version-name').value = apiCfg.latest_version_name || '';
                 document.getElementById('cfg-version-code').value = apiCfg.latest_version_code || '';
@@ -313,7 +318,7 @@
                 const verName = apiCfg.latest_version_name ? `v${apiCfg.latest_version_name}` : `code ${apiCfg.latest_version_code}`;
                 alert(`✅ Synced from GitHub!\nVersion: ${verName}\nAPK URL: ${apiCfg.apk_url}`);
             } catch (e) {
-                alert('❌ Failed to fetch from Oracle/GitHub: ' + e.message);
+                alert('❌ Failed to fetch from API/GitHub: ' + e.message);
             }
         }
 

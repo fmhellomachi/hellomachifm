@@ -392,7 +392,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastLoadedTitle = "";
     async function pollNowPlaying() {
         try {
-            const res = await fetch('http://140.245.193.137:3000/api/nowplaying');
+            let res = await fetch('/api/nowplaying').catch(() => null);
+            if (!res || !res.ok) {
+                res = await fetch('http://140.245.193.137:3000/api/nowplaying').catch(() => null);
+            }
+            if (!res || !res.ok) return;
             const data = await res.json();
             if (data && data.title) {
                 // Update Homepage HUD
@@ -727,9 +731,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Fetch APK Download Config from API ---
-    fetch('http://140.245.193.137:3000/api/config')
-        .then(r => r.json())
-        .then(cfg => {
+    (async () => {
+        try {
+            let r = await fetch('/api/config').catch(() => null);
+            if (!r || !r.ok) {
+                r = await fetch('http://140.245.193.137:3000/api/config').catch(() => null);
+            }
+            if (!r || !r.ok) return;
+            const cfg = await r.json();
             const link = document.getElementById('apk-download-link');
             const ver = document.getElementById('apk-version');
             const navLink = document.getElementById('nav-apk-link');
@@ -739,11 +748,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navLink && cfg.apk_url) {
                 navLink.href = cfg.apk_url;
             }
-            if (ver && cfg.latest_version_code) {
-                ver.textContent = 'v' + cfg.latest_version_code;
+            if (ver && (cfg.latest_version_name || cfg.latest_version_code)) {
+                ver.textContent = cfg.latest_version_name ? 'v' + cfg.latest_version_name : 'v' + cfg.latest_version_code;
             }
-        })
-        .catch(err => console.error('APK config fetch failed:', err));
+        } catch (err) {
+            console.error('APK config fetch failed:', err);
+        }
+    })();
 
     // --- Public Shoutout Wall ---
     const wallFeed = document.getElementById('shoutout-wall-feed');

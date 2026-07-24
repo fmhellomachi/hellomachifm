@@ -50,7 +50,7 @@ module.exports = async (req, res) => {
       coverArt += (coverArt.includes('?') ? '&' : '?') + 'cb=' + Date.now();
     }
 
-    // ── Firestore Dedication Lookup ──────────────────────────────────────────
+    // ── Firestore Dedication Lookup (fuzzy title matching) ───────────────────
     let current_dedication = null;
     const now = Date.now();
     const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -63,18 +63,12 @@ module.exports = async (req, res) => {
         try {
           const FIREBASE_API_KEY = 'AIzaSyDcU-Gh0FjHeRHVy5A4ezE9H3-94u6aIb4';
           const queryUrl = `https://firestore.googleapis.com/v1/projects/hello-machi-fm-6ebe4/databases/(default)/documents:runQuery?key=${FIREBASE_API_KEY}`;
+          // Fetch recent 10 requests and fuzzy-match by title
           const queryJson = {
             structuredQuery: {
               from: [{ collectionId: 'requests' }],
-              where: {
-                fieldFilter: {
-                  field: { fieldPath: 'title' },
-                  op: 'EQUAL',
-                  value: { stringValue: title }
-                }
-              },
               orderBy: [{ field: { fieldPath: 'timestamp' }, direction: 'DESCENDING' }],
-              limit: 1
+              limit: 10
             }
           };
 
@@ -86,13 +80,25 @@ module.exports = async (req, res) => {
 
           if (fsRes.ok) {
             const fsData = await fsRes.json();
-            if (Array.isArray(fsData) && fsData.length > 0 && fsData[0].document) {
-              const fields = fsData[0].document.fields || {};
-              current_dedication = {
-                nickname: fields.nickname?.stringValue || 'A Listener',
-                recipient: fields.recipient?.stringValue || '',
-                message: fields.raw_message?.stringValue || fields.dedication?.stringValue || '',
-              };
+            const playingClean = cleanMetadata(title).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            if (Array.isArray(fsData)) {
+              for (const item of fsData) {
+                if (!item.document || !item.document.fields) continue;
+                const fields = item.document.fields;
+                const reqTitle = fields.title?.stringValue || '';
+                const reqClean = cleanMetadata(reqTitle).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                if (playingClean && reqClean && (playingClean === reqClean || playingClean.includes(reqClean) || reqClean.includes(playingClean))) {
+                  const rawMsg = fields.raw_message?.stringValue || '';
+                  const dedStr = fields.dedication?.stringValue || '';
+                  const msg = rawMsg || (dedStr.includes('Msg: ') ? dedStr.substring(dedStr.indexOf('Msg: ') + 5) : dedStr);
+                  current_dedication = {
+                    nickname:  fields.nickname?.stringValue  || 'A Listener',
+                    recipient: fields.recipient?.stringValue || 'You',
+                    message:   msg || 'Dedicated Song',
+                  };
+                  break;
+                }
+              }
             }
           }
         } catch (e) { console.error('Dedication fetch error:', e); }

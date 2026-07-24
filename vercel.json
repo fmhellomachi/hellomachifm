@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "redirects": [
+    {
+      "source": "/api/nowplaying",
+      "destination": "http://140.245.193.137:3000/api/nowplaying",
+      "permanent": true
+    },
+    {
+      "source": "/api/config",
+      "destination": "http://140.245.193.137:3000/api/config",
+      "permanent": true
+    },
+    {
+      "source": "/api/dedications",
+      "destination": "http://140.245.193.137:3000/api/dedications",
+      "permanent": true
+    }
+  ]
+}
